@@ -13,8 +13,9 @@ class ResearchProject(Base):
     research_type = Column(String)
     notes = Column(Text)
 
-    # علاقة تمكنك من الوصول لكل الأوراق البحثية التابعة للمشروع (papers)
+    # العلاقات مع الجداول الأخرى
     papers = relationship("ResearchPaper", back_populates="project", cascade="all, delete-orphan")
+    questions = relationship("ResearchQuestion", back_populates="project", cascade="all, delete-orphan")
 
 
 class ResearchPaper(Base):
@@ -27,5 +28,22 @@ class ResearchPaper(Base):
     status = Column(String, default="Saved")
     notes = Column(Text)
 
-    # علاقة تمكنك من الوصول للمشروع التابع له الورقة البحثية (project)
+    # العلاقة العكسية مع المشروع
     project = relationship("ResearchProject", back_populates="papers")
+
+
+class ResearchQuestion(Base):
+    __tablename__ = "research_questions"
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("research_projects.id"))
+
+    population = Column(String)
+    intervention = Column(String)
+    comparison = Column(String)
+    outcome = Column(String)
+    question = Column(Text)
+    keywords = Column(Text)
+
+    # العلاقة العكسية مع المشروع
+    project = relationship("ResearchProject", back_populates="questions")
