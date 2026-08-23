@@ -1,5 +1,6 @@
-import pingouin as pg
+from scipy.stats import fisher_exact
 import pandas as pd
+import pingouin as pg
 
 
 def run_ttest(df, group_col, outcome_col):
@@ -114,6 +115,51 @@ def run_spearman_correlation(
     return result
 
 
+def run_chi_square(
+    df,
+    variable_1,
+    variable_2
+):
+
+    contingency_table = pd.crosstab(
+        df[variable_1],
+        df[variable_2]
+    )
+
+    result = pg.chi2_independence(
+        contingency_table
+    )
+
+    return result
+
+
+def run_fisher_exact(
+    df,
+    variable_1,
+    variable_2
+):
+
+    contingency_table = pd.crosstab(
+        df[variable_1],
+        df[variable_2]
+    )
+
+    if contingency_table.shape != (2, 2):
+
+        raise ValueError(
+            "Fisher Exact Test requires a 2x2 contingency table."
+        )
+
+    odds_ratio, p_value = fisher_exact(
+        contingency_table
+    )
+
+    return {
+        "odds_ratio": odds_ratio,
+        "p_value": p_value
+    }
+
+
 def run_analysis(
     df,
     test_name,
@@ -158,6 +204,22 @@ def run_analysis(
     if test_name == "Spearman Correlation":
 
         return run_spearman_correlation(
+            df,
+            variable_1,
+            variable_2
+        )
+
+    if test_name == "Chi-Square Test":
+
+        return run_chi_square(
+            df,
+            variable_1,
+            variable_2
+        )
+
+    if test_name == "Fisher Exact Test":
+
+        return run_fisher_exact(
             df,
             variable_1,
             variable_2
