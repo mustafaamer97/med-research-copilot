@@ -9,7 +9,7 @@ from modules.paper_analyzer import analyze_paper
 from modules.paper_reviewer import review_paper
 from modules.idea_generator import generate_research_ideas
 from modules.protocol_builder import generate_protocol
-from statistics.test_selector import suggest_test
+from stats_analyzer.test_selector import suggest_test
 
 
 Base.metadata.create_all(bind=engine)
