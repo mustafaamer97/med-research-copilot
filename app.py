@@ -35,40 +35,6 @@ st.subheader(
 )
 
 
-uploaded_file = st.file_uploader(
-    "Upload Dataset",
-    type=["csv", "xlsx", "xls"]
-)
-
-if uploaded_file:
-
-    df, report = analyze_dataset(uploaded_file)
-
-    st.success("Dataset loaded successfully")
-
-    st.subheader("Dataset Preview")
-    st.dataframe(df.head())
-
-    st.subheader("Dataset Information")
-    st.write("Rows:", report["rows"])
-    st.write("Columns:", report["columns"])
-    st.write("Duplicates:", report["duplicates"])
-
-    st.subheader("Numeric Columns")
-    st.write(report["numeric_columns"])
-
-    st.subheader("Categorical Columns")
-    st.write(report["categorical_columns"])
-
-    st.subheader("Missing Values")
-    st.json(report["missing_percentage"])
-
-    st.subheader("Normality Test")
-    st.json(report["normality"])
-
-    st.divider()
-
-
 menu = st.sidebar.selectbox(
     "Navigation",
     [
@@ -77,9 +43,9 @@ menu = st.sidebar.selectbox(
         "Research Idea Generator",
         "Research Question Builder",
         "Protocol Builder",
-        "statistical advisor",
+        "📋 Statistical Planning",
         "Data Analysis",
-        "statistical analysis",
+        "📊 Statistical Analysis",
         "Literature Search",
         "Research Library",
         "Paper Analyzer"
@@ -238,7 +204,7 @@ elif menu == "Protocol Builder":
         st.markdown(protocol)
 
 
-elif menu == "statistical advisor":
+elif menu == "📋 Statistical Planning":
 
     from research_analytics.test_selector import suggest_test
 
@@ -296,35 +262,40 @@ elif menu == "Data Analysis":
         "📊 Medical Data Profiler"
     )
 
-    file = st.file_uploader(
-        "Upload CSV or Excel file",
-        type=[
-            "csv",
-            "xlsx"
-        ],
+    uploaded_file = st.file_uploader(
+        "Upload Dataset",
+        type=["csv", "xlsx", "xls"],
         key="data_analysis_uploader"
     )
 
-    if file:
+    if uploaded_file:
 
-        df_da, report_da = analyze_dataset(file)
+        df, report = analyze_dataset(uploaded_file)
 
-        st.subheader(
-            "Dataset Preview"
-        )
+        st.success("Dataset loaded successfully")
 
-        st.dataframe(df_da.head())
+        st.subheader("Dataset Preview")
+        st.dataframe(df.head())
 
-        st.subheader(
-            "Dataset Information"
-        )
+        st.subheader("Dataset Information")
+        st.write("Rows:", report["rows"])
+        st.write("Columns:", report["columns"])
+        st.write("Duplicates:", report["duplicates"])
 
-        st.write(
-            report_da
-        )
+        st.subheader("Numeric Columns")
+        st.write(report["numeric_columns"])
+
+        st.subheader("Categorical Columns")
+        st.write(report["categorical_columns"])
+
+        st.subheader("Missing Values")
+        st.json(report["missing_percentage"])
+
+        st.subheader("Normality Test")
+        st.json(report["normality"])
 
 
-elif menu == "statistical analysis":
+elif menu == "📊 Statistical Analysis":
 
     from research_analytics.analysis_engine import run_ttest
     from research_analytics.report_generator import interpret_p_value
