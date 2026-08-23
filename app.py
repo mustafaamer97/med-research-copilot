@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-from statistics.data_checker import analyze_dataset
+from research_analytics.data_checker import analyze_dataset
 from database.db import engine
 from database.models import Base
 from modules.pubmed import search_pubmed
@@ -240,10 +240,10 @@ elif menu == "Protocol Builder":
 
 elif menu == "statistical advisor":
 
-    from statistics.test_selector import suggest_test
+    from research_analytics.test_selector import suggest_test
 
     st.header(
-        "📊 Medical statistical Advisor"
+        "📊 Medical Statistical Advisor"
     )
 
     variable_type = st.selectbox(
@@ -268,7 +268,7 @@ elif menu == "statistical advisor":
         ]
     )
 
-    if st.button("Suggest statistical Test"):
+    if st.button("Suggest Statistical Test"):
 
         result = suggest_test(
             variable_type,
@@ -326,11 +326,11 @@ elif menu == "Data Analysis":
 
 elif menu == "statistical analysis":
 
-    from statistics.analysis_engine import run_ttest
-    from statistics.report_generator import interpret_p_value
+    from research_analytics.analysis_engine import run_ttest
+    from research_analytics.report_generator import interpret_p_value
 
     st.header(
-        "📊 Automated statistical Analysis"
+        "📊 Automated Statistical Analysis"
     )
 
     file = st.file_uploader(
