@@ -55,6 +55,7 @@ def analyze_dataset(file):
         if len(data) >= 3 and len(data) <= 5000:
             stat, p = shapiro(data)
             normality[col] = {
+                "statistic": round(float(stat), 4),
                 "p_value": round(float(p), 4),
                 "normal": bool(p > 0.05),
             }
