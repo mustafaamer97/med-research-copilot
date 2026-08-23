@@ -306,7 +306,10 @@ elif menu == "Data Analysis":
 elif menu == "📊 Statistical Analysis":
 
     from research_analytics.analysis_engine import run_ttest
-    from research_analytics.report_generator import interpret_p_value
+    from research_analytics.report_generator import (
+        interpret_p_value,
+        generate_academic_report
+    )
 
     st.header(
         "📊 Automated Statistical Analysis"
@@ -371,6 +374,15 @@ elif menu == "📊 Statistical Analysis":
                     p_value
                 )
             )
+
+            st.subheader("Academic Report")
+
+            report = generate_academic_report(
+                "Independent t-test",
+                result
+            )
+
+            st.text(report)
 
 
 elif menu == "Literature Search":
