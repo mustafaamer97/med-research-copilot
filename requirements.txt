@@ -7,3 +7,8 @@ biopython
 pypdf
 pdfplumber
 openai
+openpyxl
+numpy
+scipy
+pingouin
+plotly
