@@ -6,6 +6,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
+from statistics.data_checker import analyze_dataset
 from database.db import engine
 from database.models import Base
 from modules.pubmed import search_pubmed
@@ -32,6 +33,40 @@ st.title("🧬 Med Research Copilot")
 st.subheader(
     "AI Assistant for Medical Research"
 )
+
+
+uploaded_file = st.file_uploader(
+    "Upload Dataset",
+    type=["csv", "xlsx", "xls"]
+)
+
+if uploaded_file:
+
+    df, report = analyze_dataset(uploaded_file)
+
+    st.success("Dataset loaded successfully")
+
+    st.subheader("Dataset Preview")
+    st.dataframe(df.head())
+
+    st.subheader("Dataset Information")
+    st.write("Rows:", report["rows"])
+    st.write("Columns:", report["columns"])
+    st.write("Duplicates:", report["duplicates"])
+
+    st.subheader("Numeric Columns")
+    st.write(report["numeric_columns"])
+
+    st.subheader("Categorical Columns")
+    st.write(report["categorical_columns"])
+
+    st.subheader("Missing Values")
+    st.json(report["missing_percentage"])
+
+    st.subheader("Normality Test")
+    st.json(report["normality"])
+
+    st.divider()
 
 
 menu = st.sidebar.selectbox(
@@ -257,8 +292,6 @@ elif menu == "statistical Advisor":
 
 elif menu == "Data Analysis":
 
-    from statistics.data_checker import analyze_dataset
-
     st.header(
         "📊 Medical Data Profiler"
     )
@@ -268,25 +301,26 @@ elif menu == "Data Analysis":
         type=[
             "csv",
             "xlsx"
-        ]
+        ],
+        key="data_analysis_uploader"
     )
 
     if file:
 
-        df, report = analyze_dataset(file)
+        df_da, report_da = analyze_dataset(file)
 
         st.subheader(
             "Dataset Preview"
         )
 
-        st.dataframe(df.head())
+        st.dataframe(df_da.head())
 
         st.subheader(
             "Dataset Information"
         )
 
         st.write(
-            report
+            report_da
         )
 
 
@@ -301,7 +335,8 @@ elif menu == "statistical Analysis":
 
     file = st.file_uploader(
         "Upload Dataset",
-        type=["csv", "xlsx"]
+        type=["csv", "xlsx"],
+        key="stat_analysis_uploader"
     )
 
     if file:
@@ -310,24 +345,24 @@ elif menu == "statistical Analysis":
 
         if file.name.endswith(".csv"):
 
-            df = pd.read_csv(file)
+            df_sa = pd.read_csv(file)
 
         else:
 
-            df = pd.read_excel(file)
+            df_sa = pd.read_excel(file)
 
         st.dataframe(
-            df.head()
+            df_sa.head()
         )
 
         group = st.selectbox(
             "Grouping variable",
-            df.columns
+            df_sa.columns
         )
 
         outcome = st.selectbox(
             "Outcome variable",
-            df.columns
+            df_sa.columns
         )
 
         if st.button(
@@ -335,7 +370,7 @@ elif menu == "statistical Analysis":
         ):
 
             result = run_ttest(
-                df,
+                df_sa,
                 group,
                 outcome
             )
