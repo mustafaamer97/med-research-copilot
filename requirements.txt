@@ -4,3 +4,5 @@ requests
 sqlalchemy
 python-dotenv
 biopython
+pypdf
+pdfplumber
