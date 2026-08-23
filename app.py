@@ -3,6 +3,7 @@ import streamlit as st
 from database.db import engine
 from database.models import Base
 from modules.pubmed import search_pubmed
+from modules.library import save_paper, get_papers
 
 
 Base.metadata.create_all(bind=engine)
@@ -28,6 +29,7 @@ menu = st.sidebar.selectbox(
         "Dashboard",
         "New Research Project",
         "Literature Search",
+        "Research Library",
         "Paper Analyzer"
     ]
 )
@@ -102,7 +104,7 @@ elif menu == "Literature Search":
 
         if papers:
 
-            for paper in papers:
+            for idx, paper in enumerate(papers):
 
                 st.subheader(
                     paper["title"]
@@ -112,12 +114,63 @@ elif menu == "Literature Search":
                     paper["abstract"]
                 )
 
+                # استخدام idx لضمان عدم تكرار id الأزرار
+                if st.button(f"Save Paper", key=f"save_{idx}"):
+
+                    save_paper(
+                        project_id=1,
+                        title=paper["title"],
+                        abstract=paper["abstract"]
+                    )
+
+                    st.success(
+                        "Paper saved"
+                    )
+
                 st.divider()
 
         else:
 
             st.warning(
                 "No papers found"
+            )
+
+
+elif menu == "Research Library":
+
+    st.header(
+        "📚 Research Library"
+    )
+
+    project_id = st.number_input(
+        "Project ID",
+        min_value=1
+    )
+
+    if st.button("Load Papers"):
+
+        papers = get_papers(
+            project_id
+        )
+
+        if papers:
+
+            for paper in papers:
+
+                st.subheader(
+                    paper.title
+                )
+
+                st.write(
+                    paper.abstract
+                )
+
+                st.divider()
+
+        else:
+
+            st.info(
+                "No saved papers for this project ID."
             )
 
 
