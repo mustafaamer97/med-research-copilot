@@ -38,57 +38,55 @@ def generate_academic_report(
                 result_df["cohen-d"].iloc[0]
             )
 
-            report.append(
-                f"Cohen's d: {d:.3f}"
-            )
-
             abs_d = abs(d)
 
             if abs_d < 0.2:
-
                 interpretation = "negligible effect"
-
             elif abs_d < 0.5:
-
                 interpretation = "small effect"
-
             elif abs_d < 0.8:
-
                 interpretation = "moderate effect"
-
             else:
-
                 interpretation = "large effect"
+
+            report.append(
+                f"Cohen's d: {d:.3f}"
+            )
 
             report.append(
                 f"Effect Size Interpretation: {interpretation}"
             )
 
-            report.append(
-                f"The observed effect size was {interpretation} (Cohen's d = {d:.3f})."
-            )
+        # 95% Confidence Interval
+        if "CI95%" in result_df.columns:
 
-    # ANOVA (في حال وجود p-unc)
-    elif "p-unc" in result_df.columns:
-
-        p_value = float(
-            result_df["p-unc"].iloc[0]
-        )
-
-        report.append(
-            f"P-value: {p_value:.4f}"
-        )
-
-        if p_value < 0.05:
+            ci = result_df["CI95%"].iloc[0]
 
             report.append(
-                "A statistically significant difference was found among the groups."
+                f"95% Confidence Interval: {ci}"
             )
 
-        else:
+        # Statistical Power
+        if "power" in result_df.columns:
+
+            power = float(
+                result_df["power"].iloc[0]
+            )
 
             report.append(
-                "No statistically significant difference was found among the groups."
+                f"Statistical Power: {power:.3f}"
             )
+
+            if power >= 0.80:
+
+                report.append(
+                    "The study appears adequately powered."
+                )
+
+            else:
+
+                report.append(
+                    "The statistical power may be insufficient."
+                )
 
     return "\n\n".join(report)
