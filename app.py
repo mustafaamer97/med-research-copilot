@@ -77,9 +77,9 @@ menu = st.sidebar.selectbox(
         "Research Idea Generator",
         "Research Question Builder",
         "Protocol Builder",
-        "statistical Advisor",
+        "statistical advisor",
         "Data Analysis",
-        "statistical Analysis",
+        "statistical analysis",
         "Literature Search",
         "Research Library",
         "Paper Analyzer"
@@ -238,7 +238,7 @@ elif menu == "Protocol Builder":
         st.markdown(protocol)
 
 
-elif menu == "statistical Advisor":
+elif menu == "statistical advisor":
 
     from statistics.test_selector import suggest_test
 
@@ -324,7 +324,7 @@ elif menu == "Data Analysis":
         )
 
 
-elif menu == "statistical Analysis":
+elif menu == "statistical analysis":
 
     from statistics.analysis_engine import run_ttest
     from statistics.report_generator import interpret_p_value
@@ -343,7 +343,9 @@ elif menu == "statistical Analysis":
 
         import pandas as pd
 
-        if file.name.endswith(".csv"):
+        filename = file.name.lower()
+
+        if filename.endswith(".csv"):
 
             df_sa = pd.read_csv(file)
 
