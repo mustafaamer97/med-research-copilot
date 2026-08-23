@@ -43,6 +43,17 @@ Provide:
 Make ideas suitable for beginner researchers.
 """
 
+PROTOCOL_PROMPT = """
+Act as a clinical research expert.
+
+Generate a structured medical research protocol.
+
+Topic:
+{topic}
+
+Follow scientific methodology.
+"""
+
 # ==================== Database Models ====================
 
 Base = declarative_base()
