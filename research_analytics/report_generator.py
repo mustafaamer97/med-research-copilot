@@ -32,6 +32,9 @@ def generate_academic_report(
             )
 
         # Cohen's d
+        d = None
+        interpretation = "unknown effect"
+
         if "cohen-d" in result_df.columns:
 
             d = float(
@@ -87,6 +90,25 @@ def generate_academic_report(
 
                 report.append(
                     "The statistical power may be insufficient."
+                )
+
+        # Publication-Ready Paragraph
+        if d is not None:
+            if p_value < 0.05:
+                report.append(
+                    f"An independent samples t-test demonstrated "
+                    f"a statistically significant difference "
+                    f"between groups (p = {p_value:.3f}). "
+                    f"The effect size was {interpretation} "
+                    f"(Cohen's d = {d:.2f})."
+                )
+            else:
+                report.append(
+                    f"An independent samples t-test showed "
+                    f"no statistically significant difference "
+                    f"between groups (p = {p_value:.3f}). "
+                    f"The effect size was {interpretation} "
+                    f"(Cohen's d = {d:.2f})."
                 )
 
     return "\n\n".join(report)
