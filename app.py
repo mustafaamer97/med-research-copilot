@@ -1,4 +1,20 @@
+import sys
+import os
 import streamlit as st
+
+# تحديد المسار الرئيسي للمشروع وإضافته لمسارات بايثون
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
+# محاولة استدعاء الدالة بحسب اسم المجلد المتاح
+try:
+    from Statistics.test_selector import suggest_test
+except ModuleNotFoundError:
+    try:
+        from statistics.test_selector import suggest_test
+    except ModuleNotFoundError:
+        from stats_analyzer.test_selector import suggest_test
 
 from database.db import engine
 from database.models import Base
@@ -9,12 +25,6 @@ from modules.paper_analyzer import analyze_paper
 from modules.paper_reviewer import review_paper
 from modules.idea_generator import generate_research_ideas
 from modules.protocol_builder import generate_protocol
-
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'Statistics'))
-
-from test_selector import suggest_test
 
 
 Base.metadata.create_all(bind=engine)
