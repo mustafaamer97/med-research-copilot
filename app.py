@@ -206,14 +206,12 @@ elif menu == "Protocol Builder":
 
 elif menu == "📋 Statistical Planning":
 
-    from research_analytics.test_selector import suggest_test
+    from research_analytics.smart_selector import suggest_test
 
-    st.header(
-        "📊 Medical Statistical Advisor"
-    )
+    st.header("📊 AI Statistical Advisor")
 
-    variable_type = st.selectbox(
-        "Outcome variable type",
+    outcome_type = st.selectbox(
+        "Outcome Type",
         [
             "continuous",
             "categorical"
@@ -221,39 +219,49 @@ elif menu == "📋 Statistical Planning":
     )
 
     groups = st.number_input(
-        "Number of groups",
-        min_value=1,
+        "Number of Groups",
+        min_value=2,
         value=2
     )
 
     objective = st.selectbox(
-        "Research objective",
+        "Objective",
         [
             "comparison",
             "correlation"
         ]
     )
 
-    if st.button("Suggest Statistical Test"):
+    paired = st.checkbox(
+        "Paired Data"
+    )
+
+    normal_distribution = st.checkbox(
+        "Normally Distributed",
+        value=True
+    )
+
+    if st.button(
+        "Recommend Test"
+    ):
 
         result = suggest_test(
-            variable_type,
-            groups,
-            objective
+            outcome_type=outcome_type,
+            groups=groups,
+            objective=objective,
+            paired=paired,
+            normal_distribution=normal_distribution
         )
 
-        st.success(
-            result["test"]
-        )
+        st.success(result["test"])
 
-        st.write(
-            result["reason"]
-        )
+        st.write(result["reason"])
 
-        st.info(
-            "Alternative: "
-            + result.get("alternative", "")
-        )
+        if "alternative" in result:
+
+            st.info(
+                f"Alternative: {result['alternative']}"
+            )
 
 
 elif menu == "Data Analysis":
