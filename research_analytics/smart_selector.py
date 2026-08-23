@@ -1,82 +1,94 @@
-def select_test(
+def suggest_test(
     outcome_type,
-    predictor_type,
     groups,
+    objective="comparison",
     paired=False,
-    objective="comparison"
+    normal_distribution=True
 ):
 
-    # مقارنة متغير مستمر بين مجموعتين
+    # مقارنة بين مجموعتين
 
     if (
         objective == "comparison"
         and outcome_type == "continuous"
         and groups == 2
-        and paired == False
     ):
 
-        return {
-            "test": "Independent t-test",
-            "engine": "pingouin",
-            "alternative": "Mann-Whitney U",
-            "explanation":
-            "Compare means between two independent groups."
-        }
+        if paired:
 
+            return {
+                "test": "Paired t-test"
+                if normal_distribution
+                else "Wilcoxon Signed-Rank Test",
 
-    # قبل وبعد لنفس المرضى
+                "reason":
+                "Paired continuous measurements.",
 
-    if (
-        objective == "comparison"
-        and outcome_type == "continuous"
-        and paired == True
-    ):
+                "engine": "pingouin"
+            }
 
         return {
-            "test": "Paired t-test",
-            "engine": "pingouin",
-            "alternative":
-            "Wilcoxon signed-rank test",
-            "explanation":
-            "Compare measurements before and after intervention."
-        }
+            "test": "Independent t-test"
+            if normal_distribution
+            else "Mann-Whitney U Test",
 
+            "reason":
+            "Comparison of two independent groups.",
+
+            "engine": "pingouin"
+        }
 
     # أكثر من مجموعتين
 
     if (
-        outcome_type == "continuous"
+        objective == "comparison"
+        and outcome_type == "continuous"
         and groups > 2
     ):
 
         return {
-            "test": "ANOVA",
-            "engine": "pingouin",
-            "alternative":
-            "Kruskal-Wallis",
-            "explanation":
-            "Compare continuous outcome among multiple groups."
-        }
+            "test": "ANOVA"
+            if normal_distribution
+            else "Kruskal-Wallis",
 
+            "reason":
+            "Comparison among multiple groups.",
+
+            "engine": "pingouin"
+        }
 
     # متغيرات فئوية
 
-    if (
-        outcome_type == "categorical"
-    ):
+    if outcome_type == "categorical":
 
         return {
-            "test": "Chi-square",
+            "test": "Chi-Square Test",
+
+            "reason":
+            "Association between categorical variables.",
+
             "engine": "pingouin",
+
             "alternative":
-            "Fisher Exact Test",
-            "explanation":
-            "Analyze association between categorical variables."
+            "Fisher Exact Test"
         }
 
+    # ارتباط
+
+    if objective == "correlation":
+
+        return {
+            "test": "Pearson Correlation"
+            if normal_distribution
+            else "Spearman Correlation",
+
+            "reason":
+            "Relationship between variables.",
+
+            "engine": "pingouin"
+        }
 
     return {
-        "test": "More information needed",
-        "explanation":
-        "The study design is not clear."
+        "test": "More information required",
+        "reason": "Unable to determine test."
     }
