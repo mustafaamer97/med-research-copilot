@@ -6,7 +6,7 @@ def generate_academic_report(
     report = []
 
     report.append(
-        f"Statistical Test: {test_name}"
+        f"statistical Test: {test_name}"
     )
 
     # t-test
