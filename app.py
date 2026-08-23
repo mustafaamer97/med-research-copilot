@@ -7,6 +7,7 @@ from modules.library import save_paper, get_papers
 from utils.pdf_tools import extract_text
 from modules.paper_analyzer import analyze_paper
 from modules.paper_reviewer import review_paper
+from modules.idea_generator import generate_research_ideas
 
 
 Base.metadata.create_all(bind=engine)
@@ -31,6 +32,7 @@ menu = st.sidebar.selectbox(
     [
         "Dashboard",
         "New Research Project",
+        "Research Idea Generator",
         "Research Question Builder",
         "Literature Search",
         "Research Library",
@@ -78,6 +80,43 @@ elif menu == "New Research Project":
         st.success(
             "Project created successfully"
         )
+
+
+elif menu == "Research Idea Generator":
+
+    st.header(
+        "💡 AI Research Idea Generator"
+    )
+
+    field = st.text_input(
+        "Enter medical field"
+    )
+
+    if st.button("Generate Ideas"):
+
+        if field:
+
+            with st.spinner(
+                "Generating research ideas..."
+            ):
+
+                ideas = generate_research_ideas(
+                    field
+                )
+
+            st.subheader(
+                "Suggested Research Ideas"
+            )
+
+            st.write(
+                ideas
+            )
+
+        else:
+
+            st.warning(
+                "Please enter a medical field first."
+            )
 
 
 elif menu == "Research Question Builder":
