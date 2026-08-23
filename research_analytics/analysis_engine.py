@@ -48,6 +48,72 @@ def run_anova(df, group_col, outcome_col):
     return result
 
 
+def run_pearson_correlation(
+    df,
+    variable_1,
+    variable_2
+):
+
+    if not pd.api.types.is_numeric_dtype(
+        df[variable_1]
+    ):
+        raise ValueError(
+            f"{variable_1} must be numeric."
+        )
+
+    if not pd.api.types.is_numeric_dtype(
+        df[variable_2]
+    ):
+        raise ValueError(
+            f"{variable_2} must be numeric."
+        )
+
+    data = df[
+        [variable_1, variable_2]
+    ].dropna()
+
+    result = pg.corr(
+        data[variable_1],
+        data[variable_2],
+        method="pearson"
+    )
+
+    return result
+
+
+def run_spearman_correlation(
+    df,
+    variable_1,
+    variable_2
+):
+
+    if not pd.api.types.is_numeric_dtype(
+        df[variable_1]
+    ):
+        raise ValueError(
+            f"{variable_1} must be numeric."
+        )
+
+    if not pd.api.types.is_numeric_dtype(
+        df[variable_2]
+    ):
+        raise ValueError(
+            f"{variable_2} must be numeric."
+        )
+
+    data = df[
+        [variable_1, variable_2]
+    ].dropna()
+
+    result = pg.corr(
+        data[variable_1],
+        data[variable_2],
+        method="spearman"
+    )
+
+    return result
+
+
 def run_analysis(
     df,
     test_name,
@@ -63,5 +129,11 @@ def run_analysis(
 
     if test_name in ["One-way ANOVA", "ANOVA"]:
         return run_anova(df, group_col, outcome_col)
+
+    if test_name in ["Pearson Correlation", "Pearson"]:
+        return run_pearson_correlation(df, group_col, outcome_col)
+
+    if test_name in ["Spearman Correlation", "Spearman"]:
+        return run_spearman_correlation(df, group_col, outcome_col)
 
     raise ValueError(f"Unsupported test: {test_name}")
