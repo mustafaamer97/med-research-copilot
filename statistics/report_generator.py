@@ -1,15 +1,18 @@
-def interpret_p_value(p):
+def explain_result(result):
+
+    p = result["p_val"].iloc[0]
 
     if p < 0.05:
 
-        return (
-            "The result is statistically significant "
-            "(p < 0.05)."
-        )
+        return """
+        توجد دلالة إحصائية.
+        يوجد فرق محتمل بين المجموعتين.
+        يجب تقييم حجم التأثير والسياق السريري.
+        """
 
     else:
 
-        return (
-            "No statistically significant difference "
-            "was detected."
-        )
+        return """
+        لم نجد فرقاً ذا دلالة إحصائية.
+        قد تحتاج الدراسة إلى حجم عينة أكبر.
+        """
