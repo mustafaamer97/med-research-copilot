@@ -6,6 +6,7 @@ from modules.pubmed import search_pubmed
 from modules.library import save_paper, get_papers
 from utils.pdf_tools import extract_text
 from modules.paper_analyzer import analyze_paper
+from modules.paper_reviewer import review_paper
 
 
 Base.metadata.create_all(bind=engine)
@@ -207,3 +208,19 @@ elif menu == "Paper Analyzer":
             )
 
             st.write(value)
+
+        st.divider()
+
+        if st.button("AI Review"):
+
+            with st.spinner(
+                "AI is reviewing the paper..."
+            ):
+
+                review = review_paper(text)
+
+            st.subheader(
+                "🧠 AI Research Review"
+            )
+
+            st.write(review)
