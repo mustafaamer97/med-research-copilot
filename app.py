@@ -243,7 +243,7 @@ elif menu == "statistical advisor":
     from statistics.test_selector import suggest_test
 
     st.header(
-        "📊 Medical Statistical Advisor"
+        "📊 Medical statistical Advisor"
     )
 
     variable_type = st.selectbox(
@@ -268,7 +268,7 @@ elif menu == "statistical advisor":
         ]
     )
 
-    if st.button("Suggest Statistical Test"):
+    if st.button("Suggest statistical Test"):
 
         result = suggest_test(
             variable_type,
@@ -330,7 +330,7 @@ elif menu == "statistical analysis":
     from statistics.report_generator import interpret_p_value
 
     st.header(
-        "📊 Automated Statistical Analysis"
+        "📊 Automated statistical Analysis"
     )
 
     file = st.file_uploader(
