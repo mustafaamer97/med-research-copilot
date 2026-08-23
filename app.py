@@ -4,6 +4,8 @@ from database.db import engine
 from database.models import Base
 from modules.pubmed import search_pubmed
 from modules.library import save_paper, get_papers
+from utils.pdf_tools import extract_text
+from modules.paper_analyzer import analyze_paper
 
 
 Base.metadata.create_all(bind=engine)
@@ -114,7 +116,6 @@ elif menu == "Literature Search":
                     paper["abstract"]
                 )
 
-                # استخدام idx لضمان عدم تكرار id الأزرار
                 if st.button(f"Save Paper", key=f"save_{idx}"):
 
                     save_paper(
@@ -177,16 +178,32 @@ elif menu == "Research Library":
 elif menu == "Paper Analyzer":
 
     st.header(
-        "Scientific Paper Analyzer"
+        "📄 Scientific Paper Analyzer"
     )
 
-    uploaded_file = st.file_uploader(
-        "Upload PDF",
+    file = st.file_uploader(
+        "Upload Research PDF",
         type=["pdf"]
     )
 
-    if uploaded_file:
+    if file:
 
-        st.success(
-            "PDF uploaded successfully"
+        with st.spinner(
+            "Analyzing paper..."
+        ):
+
+            text = extract_text(file)
+
+            analysis = analyze_paper(text)
+
+        st.subheader(
+            "Research Summary"
         )
+
+        for key, value in analysis.items():
+
+            st.markdown(
+                f"### {key}"
+            )
+
+            st.write(value)
