@@ -2,19 +2,9 @@ import sys
 import os
 import streamlit as st
 
-# تحديد المسار الرئيسي للمشروع وإضافته لمسارات بايثون
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
-
-# محاولة استدعاء الدالة بحسب اسم المجلد المتاح
-try:
-    from Statistics.test_selector import suggest_test
-except ModuleNotFoundError:
-    try:
-        from statistics.test_selector import suggest_test
-    except ModuleNotFoundError:
-        from stats_analyzer.test_selector import suggest_test
 
 from database.db import engine
 from database.models import Base
@@ -52,7 +42,7 @@ menu = st.sidebar.selectbox(
         "Research Idea Generator",
         "Research Question Builder",
         "Protocol Builder",
-        "Statistical Advisor",
+        "statistical Advisor",
         "Literature Search",
         "Research Library",
         "Paper Analyzer"
@@ -211,7 +201,9 @@ elif menu == "Protocol Builder":
         st.markdown(protocol)
 
 
-elif menu == "Statistical Advisor":
+elif menu == "statistical Advisor":
+
+    from statistics.test_selector import suggest_test
 
     st.header(
         "📊 Medical Statistical Advisor"
