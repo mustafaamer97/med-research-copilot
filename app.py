@@ -9,7 +9,12 @@ from modules.paper_analyzer import analyze_paper
 from modules.paper_reviewer import review_paper
 from modules.idea_generator import generate_research_ideas
 from modules.protocol_builder import generate_protocol
-from Statistics.test_selector import suggest_test
+
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'Statistics'))
+
+from test_selector import suggest_test
 
 
 Base.metadata.create_all(bind=engine)
