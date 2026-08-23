@@ -44,6 +44,7 @@ menu = st.sidebar.selectbox(
         "Protocol Builder",
         "statistical Advisor",
         "Data Analysis",
+        "statistical Analysis",
         "Literature Search",
         "Research Library",
         "Paper Analyzer"
@@ -287,6 +288,73 @@ elif menu == "Data Analysis":
         st.write(
             report
         )
+
+
+elif menu == "statistical Analysis":
+
+    from statistics.analysis_engine import run_ttest
+    from statistics.report_generator import interpret_p_value
+
+    st.header(
+        "📊 Automated Statistical Analysis"
+    )
+
+    file = st.file_uploader(
+        "Upload Dataset",
+        type=["csv", "xlsx"]
+    )
+
+    if file:
+
+        import pandas as pd
+
+        if file.name.endswith(".csv"):
+
+            df = pd.read_csv(file)
+
+        else:
+
+            df = pd.read_excel(file)
+
+        st.dataframe(
+            df.head()
+        )
+
+        group = st.selectbox(
+            "Grouping variable",
+            df.columns
+        )
+
+        outcome = st.selectbox(
+            "Outcome variable",
+            df.columns
+        )
+
+        if st.button(
+            "Run Analysis"
+        ):
+
+            result = run_ttest(
+                df,
+                group,
+                outcome
+            )
+
+            st.subheader(
+                "Results"
+            )
+
+            st.write(
+                result
+            )
+
+            p_value = result["p-val"].iloc[0]
+
+            st.info(
+                interpret_p_value(
+                    p_value
+                )
+            )
 
 
 elif menu == "Literature Search":
