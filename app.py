@@ -43,6 +43,7 @@ menu = st.sidebar.selectbox(
         "Research Question Builder",
         "Protocol Builder",
         "statistical Advisor",
+        "Data Analysis",
         "Literature Search",
         "Research Library",
         "Paper Analyzer"
@@ -250,6 +251,41 @@ elif menu == "statistical Advisor":
         st.info(
             "Alternative: "
             + result.get("alternative", "")
+        )
+
+
+elif menu == "Data Analysis":
+
+    from statistics.data_checker import analyze_dataset
+
+    st.header(
+        "📊 Medical Data Profiler"
+    )
+
+    file = st.file_uploader(
+        "Upload CSV or Excel file",
+        type=[
+            "csv",
+            "xlsx"
+        ]
+    )
+
+    if file:
+
+        df, report = analyze_dataset(file)
+
+        st.subheader(
+            "Dataset Preview"
+        )
+
+        st.dataframe(df.head())
+
+        st.subheader(
+            "Dataset Information"
+        )
+
+        st.write(
+            report
         )
 
 
