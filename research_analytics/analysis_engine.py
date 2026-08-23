@@ -117,23 +117,52 @@ def run_spearman_correlation(
 def run_analysis(
     df,
     test_name,
-    group_col,
-    outcome_col
+    group_col=None,
+    outcome_col=None,
+    variable_1=None,
+    variable_2=None
 ):
 
     if test_name == "Independent t-test":
-        return run_ttest(df, group_col, outcome_col)
+
+        return run_ttest(
+            df,
+            group_col,
+            outcome_col
+        )
 
     if test_name == "Mann-Whitney U Test":
-        return run_mannwhitney(df, group_col, outcome_col)
 
-    if test_name in ["One-way ANOVA", "ANOVA"]:
-        return run_anova(df, group_col, outcome_col)
+        return run_mannwhitney(
+            df,
+            group_col,
+            outcome_col
+        )
 
-    if test_name in ["Pearson Correlation", "Pearson"]:
-        return run_pearson_correlation(df, group_col, outcome_col)
+    if test_name == "ANOVA":
 
-    if test_name in ["Spearman Correlation", "Spearman"]:
-        return run_spearman_correlation(df, group_col, outcome_col)
+        return run_anova(
+            df,
+            group_col,
+            outcome_col
+        )
 
-    raise ValueError(f"Unsupported test: {test_name}")
+    if test_name == "Pearson Correlation":
+
+        return run_pearson_correlation(
+            df,
+            variable_1,
+            variable_2
+        )
+
+    if test_name == "Spearman Correlation":
+
+        return run_spearman_correlation(
+            df,
+            variable_1,
+            variable_2
+        )
+
+    raise ValueError(
+        f"Unsupported test: {test_name}"
+    )
