@@ -9,6 +9,7 @@ from modules.paper_analyzer import analyze_paper
 from modules.paper_reviewer import review_paper
 from modules.idea_generator import generate_research_ideas
 from modules.protocol_builder import generate_protocol
+from statistics.test_selector import suggest_test
 
 
 Base.metadata.create_all(bind=engine)
@@ -36,6 +37,7 @@ menu = st.sidebar.selectbox(
         "Research Idea Generator",
         "Research Question Builder",
         "Protocol Builder",
+        "Statistical Advisor",
         "Literature Search",
         "Research Library",
         "Paper Analyzer"
@@ -192,6 +194,56 @@ elif menu == "Protocol Builder":
             )
 
         st.markdown(protocol)
+
+
+elif menu == "Statistical Advisor":
+
+    st.header(
+        "📊 Medical Statistical Advisor"
+    )
+
+    variable_type = st.selectbox(
+        "Outcome variable type",
+        [
+            "continuous",
+            "categorical"
+        ]
+    )
+
+    groups = st.number_input(
+        "Number of groups",
+        min_value=1,
+        value=2
+    )
+
+    objective = st.selectbox(
+        "Research objective",
+        [
+            "comparison",
+            "correlation"
+        ]
+    )
+
+    if st.button("Suggest Statistical Test"):
+
+        result = suggest_test(
+            variable_type,
+            groups,
+            objective
+        )
+
+        st.success(
+            result["test"]
+        )
+
+        st.write(
+            result["reason"]
+        )
+
+        st.info(
+            "Alternative: "
+            + result.get("alternative", "")
+        )
 
 
 elif menu == "Literature Search":
