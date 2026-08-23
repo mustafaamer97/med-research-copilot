@@ -31,6 +31,7 @@ menu = st.sidebar.selectbox(
     [
         "Dashboard",
         "New Research Project",
+        "Research Question Builder",
         "Literature Search",
         "Research Library",
         "Paper Analyzer"
@@ -76,6 +77,56 @@ elif menu == "New Research Project":
 
         st.success(
             "Project created successfully"
+        )
+
+
+elif menu == "Research Question Builder":
+
+    st.header(
+        "🧬 PICO Research Question Builder"
+    )
+
+    population = st.text_input(
+        "Population (P)"
+    )
+
+    intervention = st.text_input(
+        "Intervention (I)"
+    )
+
+    comparison = st.text_input(
+        "Comparison (C)"
+    )
+
+    outcome = st.text_input(
+        "Outcome (O)"
+    )
+
+    if st.button("Generate Research Question"):
+
+        from modules.pico_builder import build_pico
+
+        result = build_pico(
+            population,
+            intervention,
+            comparison,
+            outcome
+        )
+
+        st.subheader(
+            "Research Question"
+        )
+
+        st.write(
+            result["question"]
+        )
+
+        st.subheader(
+            "PubMed Search Keywords"
+        )
+
+        st.code(
+            result["keywords"]
         )
 
 
