@@ -8,6 +8,7 @@ from utils.pdf_tools import extract_text
 from modules.paper_analyzer import analyze_paper
 from modules.paper_reviewer import review_paper
 from modules.idea_generator import generate_research_ideas
+from modules.protocol_builder import generate_protocol
 
 
 Base.metadata.create_all(bind=engine)
@@ -34,6 +35,7 @@ menu = st.sidebar.selectbox(
         "New Research Project",
         "Research Idea Generator",
         "Research Question Builder",
+        "Protocol Builder",
         "Literature Search",
         "Research Library",
         "Paper Analyzer"
@@ -167,6 +169,29 @@ elif menu == "Research Question Builder":
         st.code(
             result["keywords"]
         )
+
+
+elif menu == "Protocol Builder":
+
+    st.header(
+        "📋 Research Protocol Builder"
+    )
+
+    idea = st.text_area(
+        "Enter research idea"
+    )
+
+    if st.button("Generate Protocol"):
+
+        with st.spinner(
+            "Building protocol..."
+        ):
+
+            protocol = generate_protocol(
+                idea
+            )
+
+        st.markdown(protocol)
 
 
 elif menu == "Literature Search":
