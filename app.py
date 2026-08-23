@@ -2,6 +2,7 @@ import streamlit as st
 
 from database.db import engine
 from database.models import Base
+from modules.pubmed import search_pubmed
 
 
 Base.metadata.create_all(bind=engine)
@@ -66,7 +67,6 @@ elif menu == "New Research Project":
         ]
     )
 
-
     if st.button("Save Project"):
 
         st.success(
@@ -77,17 +77,48 @@ elif menu == "New Research Project":
 elif menu == "Literature Search":
 
     st.header(
-        "Medical Literature Search"
+        "🔎 PubMed Literature Search"
     )
 
     query = st.text_input(
-        "Enter research topic"
+        "Enter medical topic"
     )
 
-    if st.button("Search"):
-        st.info(
-            "PubMed integration will be added here"
-        )
+    number = st.slider(
+        "Number of papers",
+        1,
+        20,
+        5
+    )
+
+    if st.button("Search PubMed"):
+
+        with st.spinner("Searching medical literature..."):
+
+            papers = search_pubmed(
+                query,
+                number
+            )
+
+        if papers:
+
+            for paper in papers:
+
+                st.subheader(
+                    paper["title"]
+                )
+
+                st.write(
+                    paper["abstract"]
+                )
+
+                st.divider()
+
+        else:
+
+            st.warning(
+                "No papers found"
+            )
 
 
 elif menu == "Paper Analyzer":
