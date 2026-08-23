@@ -9,7 +9,55 @@ def generate_academic_report(
         f"Statistical Test: {test_name}"
     )
 
-    if "p-val" in result_df.columns:
+    # Correlation Analysis (r)
+    if "r" in result_df.columns:
+
+        r = float(
+            result_df["r"].iloc[0]
+        )
+
+        p_value = float(
+            result_df["p-val"].iloc[0]
+        )
+
+        report.append(
+            f"Correlation coefficient (r): {r:.3f}"
+        )
+
+        report.append(
+            f"P-value: {p_value:.4f}"
+        )
+
+        abs_r = abs(r)
+
+        if abs_r < 0.30:
+            strength = "weak"
+        elif abs_r < 0.50:
+            strength = "moderate"
+        else:
+            strength = "strong"
+
+        direction = (
+            "positive"
+            if r > 0
+            else "negative"
+        )
+
+        report.append(
+            f"A {strength} {direction} correlation was observed."
+        )
+
+        if p_value < 0.05:
+            report.append(
+                f"The correlation between the variables was statistically significant (r = {r:.3f}, p = {p_value:.3f})."
+            )
+        else:
+            report.append(
+                f"No statistically significant correlation was observed between the variables (r = {r:.3f}, p = {p_value:.3f})."
+            )
+
+    # Group Comparisons (t-test / Mann-Whitney)
+    elif "p-val" in result_df.columns:
 
         p_value = float(
             result_df["p-val"].iloc[0]
