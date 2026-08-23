@@ -9,8 +9,90 @@ def generate_academic_report(
         f"Statistical Test: {test_name}"
     )
 
+    # Fisher Exact Test
+    if test_name == "Fisher Exact Test":
+
+        p_value = float(
+            result_df["p_value"]
+        )
+
+        odds_ratio = float(
+            result_df["odds_ratio"]
+        )
+
+        report.append(
+            f"Odds Ratio: {odds_ratio:.3f}"
+        )
+
+        report.append(
+            f"P-value: {p_value:.4f}"
+        )
+
+        if p_value < 0.05:
+
+            report.append(
+                "A statistically significant association was observed between the variables."
+            )
+
+        else:
+
+            report.append(
+                "No statistically significant association was observed between the variables."
+            )
+
+        # Publication-Ready Paragraph
+        report.append(
+            f"Fisher's Exact Test showed "
+            f"{'a statistically significant' if p_value < 0.05 else 'no statistically significant'} "
+            f"association between the variables "
+            f"(OR = {odds_ratio:.2f}, p = {p_value:.3f})."
+        )
+
+    # Chi-Square Test
+    elif test_name == "Chi-Square Test":
+
+        chi_row = result_df[
+            result_df["test"] == "pearson"
+        ].iloc[0]
+
+        chi2 = float(
+            chi_row["chi2"]
+        )
+
+        p_value = float(
+            chi_row["pval"]
+        )
+
+        report.append(
+            f"Chi-Square Statistic: {chi2:.3f}"
+        )
+
+        report.append(
+            f"P-value: {p_value:.4f}"
+        )
+
+        if p_value < 0.05:
+
+            report.append(
+                "A statistically significant association was found between the categorical variables."
+            )
+
+        else:
+
+            report.append(
+                "No statistically significant association was found between the categorical variables."
+            )
+
+        # Publication-Ready Paragraph
+        report.append(
+            f"A Chi-Square test of independence "
+            f"{'demonstrated' if p_value < 0.05 else 'did not demonstrate'} "
+            f"a significant association between the variables "
+            f"(χ² = {chi2:.2f}, p = {p_value:.3f})."
+        )
+
     # Correlation Analysis (r)
-    if "r" in result_df.columns:
+    elif isinstance(result_df, pd.DataFrame) and "r" in result_df.columns:
 
         r = float(
             result_df["r"].iloc[0]
@@ -57,7 +139,7 @@ def generate_academic_report(
             )
 
     # Group Comparisons (t-test / Mann-Whitney)
-    elif "p-val" in result_df.columns:
+    elif isinstance(result_df, pd.DataFrame) and "p-val" in result_df.columns:
 
         p_value = float(
             result_df["p-val"].iloc[0]
