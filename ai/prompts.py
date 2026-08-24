@@ -17,32 +17,9 @@ AI must not fabricate:
 - Clinical recommendations
 """
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship
+from ai.system_prompt import SYSTEM_PROMPT
 
 # ==================== Prompts ====================
-
-SYSTEM_PROMPT = """
-You are an evidence-based medical research assistant.
-
-Rules:
-
-- Never invent references.
-- Never invent DOI.
-- Never invent PMID.
-- Never invent statistical results.
-- Never invent guideline recommendations.
-- Never invent sample sizes.
-
-If information is unavailable:
-state clearly:
-'Insufficient evidence available.'
-
-Always separate:
-FACTS
-ASSUMPTIONS
-LIMITATIONS
-"""
 
 PAPER_REVIEW_PROMPT = f"""
 {SYSTEM_PROMPT}
@@ -72,7 +49,7 @@ Paper text:
 RESEARCH_IDEA_PROMPT = f"""
 {SYSTEM_PROMPT}
 
-Generate 3 realistic and feasible medical research ideas.
+Generate 3 realistic and feasible medical research ideas for the field: {{field}}.
 
 Requirements:
 
@@ -81,7 +58,7 @@ Requirements:
 - Low-cost if possible.
 - Scientifically meaningful.
 - Avoid unrealistic assumptions.
-- Do not invent references.
+- Do not provide references, DOIs, PMIDs, study names, or publication details unless they are supplied in the evidence context.
 
 For each idea provide:
 
@@ -90,7 +67,7 @@ For each idea provide:
 3. PICO Framework
 4. Study Design
 5. Target Population
-6. Suggested Sample Size Range
+6. Sample Size Considerations (Investigator Decision Required)
 7. PubMed Search Keywords
 8. Scientific Importance
 9. Expected Challenges
@@ -125,52 +102,3 @@ Include:
 13. Ethical Considerations
 14. Potential Limitations
 """
-
-# ==================== Database Models ====================
-
-Base = declarative_base()
-
-
-class ResearchProject(Base):
-    __tablename__ = "research_projects"
-
-    id = Column(Integer, primary_key=True)
-    title = Column(String)
-    field = Column(String)
-    research_type = Column(String)
-    notes = Column(Text)
-
-    # العلاقات مع الجداول الأخرى
-    papers = relationship("ResearchPaper", back_populates="project", cascade="all, delete-orphan")
-    questions = relationship("ResearchQuestion", back_populates="project", cascade="all, delete-orphan")
-
-
-class ResearchPaper(Base):
-    __tablename__ = "research_papers"
-
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("research_projects.id"))
-    title = Column(String)
-    abstract = Column(Text)
-    status = Column(String, default="Saved")
-    notes = Column(Text)
-
-    # العلاقة العكسية مع المشروع
-    project = relationship("ResearchProject", back_populates="papers")
-
-
-class ResearchQuestion(Base):
-    __tablename__ = "research_questions"
-
-    id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("research_projects.id"))
-
-    population = Column(String)
-    intervention = Column(String)
-    comparison = Column(String)
-    outcome = Column(String)
-    question = Column(Text)
-    keywords = Column(Text)
-
-    # العلاقة العكسية مع المشروع
-    project = relationship("ResearchProject", back_populates="questions")
