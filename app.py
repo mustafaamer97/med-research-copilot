@@ -391,6 +391,10 @@ elif menu == "Research Library":
             project_id
         )
 
+        st.info(
+            f"Total Papers: {len(papers)}"
+        )
+
         if papers:
 
             for paper in papers:
