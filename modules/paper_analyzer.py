@@ -82,6 +82,60 @@ def detect_study_design(text):
     return "Not detected"
 
 
+def extract_pico(text):
+
+    lower_text = text.lower()
+
+    pico = {
+        "Population": "",
+        "Intervention": "",
+        "Comparison": "",
+        "Outcome": ""
+    }
+
+    keywords = {
+        "Population": [
+            "patients",
+            "participants",
+            "subjects"
+        ],
+
+        "Intervention": [
+            "intervention",
+            "treatment",
+            "drug"
+        ],
+
+        "Comparison": [
+            "control",
+            "placebo",
+            "comparison"
+        ],
+
+        "Outcome": [
+            "outcome",
+            "result",
+            "endpoint"
+        ]
+    }
+
+    for field, terms in keywords.items():
+
+        for term in terms:
+
+            pos = lower_text.find(term)
+
+            if pos != -1:
+
+                pico[field] = text[
+                    pos:pos + 300
+                ].strip()
+
+                break
+
+    return pico
+
+
 def analyze_paper(text):
 
     sections = {
@@ -117,6 +171,10 @@ def analyze_paper(text):
                 )
 
                 break
+
+    sections["PICO"] = (
+        extract_pico(text)
+    )
 
     return sections
 
