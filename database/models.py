@@ -30,6 +30,12 @@ class ResearchPaper(Base):
 
     title = Column(String)
 
+    authors = Column(Text)
+
+    journal = Column(String)
+
+    publication_year = Column(String)
+
     doi = Column(String)
 
     pubmed_url = Column(Text)
