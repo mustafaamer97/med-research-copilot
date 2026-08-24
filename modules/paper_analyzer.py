@@ -1,56 +1,74 @@
+SECTION_KEYWORDS = {
+
+    "Objective": [
+        "objective",
+        "background",
+        "aim",
+        "purpose"
+    ],
+
+    "Methods": [
+        "methods",
+        "methodology",
+        "materials and methods"
+    ],
+
+    "Results": [
+        "results",
+        "findings"
+    ],
+
+    "Conclusion": [
+        "conclusion",
+        "conclusions"
+    ],
+
+    "Limitations": [
+        "limitations",
+        "strengths and limitations"
+    ]
+}
+
+
 def analyze_paper(text):
 
     sections = {
 
+        "Title": "",
         "Objective": "",
+        "Study Design": "",
+        "Population": "",
         "Methods": "",
         "Results": "",
+        "Conclusion": "",
         "Limitations": ""
 
     }
 
-
     lower_text = text.lower()
 
+    for section_name, keywords in SECTION_KEYWORDS.items():
 
-    if "objective" in lower_text:
+        for keyword in keywords:
 
-        sections["Objective"] = extract_section(
-            text,
-            "objective"
-        )
+            if keyword in lower_text:
 
+                sections[
+                    section_name
+                ] = extract_section(
+                    text,
+                    keyword
+                )
 
-    if "method" in lower_text:
-
-        sections["Methods"] = extract_section(
-            text,
-            "method"
-        )
-
-
-    if "result" in lower_text:
-
-        sections["Results"] = extract_section(
-            text,
-            "result"
-        )
-
-
-    if "limitation" in lower_text:
-
-        sections["Limitations"] = extract_section(
-            text,
-            "limitation"
-        )
-
+                break
 
     return sections
-
 
 
 def extract_section(text, keyword):
 
     start = text.lower().find(keyword)
 
-    return text[start:start+1000]
+    end = start + 1500
+
+    return text[start:end].strip()
