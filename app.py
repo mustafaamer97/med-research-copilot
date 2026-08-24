@@ -334,6 +334,14 @@ elif menu == "Literature Search":
                     paper["title"]
                 )
 
+                if paper.get("doi"):
+                    st.write("DOI:", paper["doi"])
+
+                if paper.get("url"):
+                    st.markdown(
+                        f"[Open in PubMed]({paper['url']})"
+                    )
+
                 st.write(
                     paper["abstract"]
                 )
