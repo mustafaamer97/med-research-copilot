@@ -55,6 +55,7 @@ def get_details(ids):
     papers = []
 
     for article in records["PubmedArticle"]:
+
         # استبعاد الدراسات الحيوانية
         if is_animal_study(article):
             continue
@@ -64,7 +65,14 @@ def get_details(ids):
         abstract = ""
 
         try:
-            abstract = article["MedlineCitation"]["Article"]["Abstract"]["AbstractText"][0]
+            abstract_parts = article[
+                "MedlineCitation"
+            ]["Article"]["Abstract"]["AbstractText"]
+
+            abstract = " ".join(
+                [str(part) for part in abstract_parts]
+            )
+
         except:
             pass
 
@@ -80,7 +88,9 @@ def get_details(ids):
 
         try:
             for item in article["PubmedData"]["ArticleIdList"]:
+
                 if item.attributes.get("IdType") == "doi":
+
                     doi = str(item)
                     break
 
@@ -133,7 +143,20 @@ def get_details(ids):
         except:
             pass
 
-        # استخراج نوع الدراسة Publication Type
+        publication_date = ""
+
+        try:
+            pub_date = article[
+                "MedlineCitation"
+            ]["Article"]["Journal"]["JournalIssue"]["PubDate"]
+
+            publication_date = " ".join(
+                [str(v) for v in pub_date.values()]
+            )
+
+        except:
+            pass
+
         publication_type = ""
 
         try:
@@ -148,6 +171,47 @@ def get_details(ids):
         except:
             pass
 
+        mesh_terms = ""
+
+        try:
+            mesh_list = article[
+                "MedlineCitation"
+            ]["MeshHeadingList"]
+
+            mesh_terms = ", ".join(
+                [
+                    str(mesh["DescriptorName"])
+                    for mesh in mesh_list
+                ]
+            )
+
+        except:
+            pass
+
+        language = ""
+
+        try:
+            language = ", ".join(
+                article["MedlineCitation"]
+                ["Article"]
+                ["Language"]
+            )
+
+        except:
+            pass
+
+        country = ""
+
+        try:
+            country = str(
+                article["MedlineCitation"]
+                ["MedlineJournalInfo"]
+                ["Country"]
+            )
+
+        except:
+            pass
+
         papers.append(
             {
                 "pmid": pmid,
@@ -155,9 +219,13 @@ def get_details(ids):
                 "authors": authors,
                 "journal": journal,
                 "year": year,
+                "publication_date": publication_date,
                 "doi": doi,
                 "url": pubmed_url,
                 "publication_type": publication_type,
+                "mesh_terms": mesh_terms,
+                "language": language,
+                "country": country,
                 "abstract": str(abstract)
             }
         )
