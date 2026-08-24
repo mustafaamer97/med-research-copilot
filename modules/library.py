@@ -9,11 +9,31 @@ def save_paper(
 
     db = SessionLocal()
 
+    doi = paper.get("doi", "")
+
+    # منع التكرار إذا كان DOI موجوداً
+    if doi:
+
+        existing = db.query(
+            ResearchPaper
+        ).filter(
+            ResearchPaper.doi == doi
+        ).first()
+
+        if existing:
+
+            db.close()
+
+            return {
+                "saved": False,
+                "message": "Paper already exists"
+            }
+
     paper_record = ResearchPaper(
         project_id=project_id,
         title=paper["title"],
         abstract=paper["abstract"],
-        doi=paper.get("doi", ""),
+        doi=doi,
         pubmed_url=paper.get("url", "")
     )
 
@@ -22,6 +42,11 @@ def save_paper(
     db.commit()
 
     db.close()
+
+    return {
+        "saved": True,
+        "message": "Paper saved"
+    }
 
 
 def get_papers(project_id):
