@@ -408,9 +408,81 @@ elif menu == "Research Library":
                 project_id
             )
 
-        st.info(
-            f"Total Papers: {len(papers)}"
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Total Papers",
+                len(papers)
+            )
+
+        with col2:
+
+            doi_count = len(
+                [
+                    p for p in papers
+                    if getattr(p, "doi", None)
+                ]
+            )
+
+            st.metric(
+                "Papers with DOI",
+                doi_count
+            )
+
+        with col3:
+
+            journal_count = len(
+                set(
+                    [
+                        p.journal
+                        for p in papers
+                        if getattr(
+                            p,
+                            "journal",
+                            None
+                        )
+                    ]
+                )
+            )
+
+            st.metric(
+                "Journals",
+                journal_count
+            )
+
+        years = sorted(
+            list(
+                set(
+                    [
+                        p.publication_year
+                        for p in papers
+                        if getattr(
+                            p,
+                            "publication_year",
+                            None
+                        )
+                    ]
+                )
+            ),
+            reverse=True
         )
+
+        selected_year = st.selectbox(
+            "Filter by Year",
+            ["All"] + years
+        )
+
+        if (
+            selected_year != "All"
+        ):
+
+            papers = [
+                p
+                for p in papers
+                if p.publication_year
+                == selected_year
+            ]
 
         if papers:
 
