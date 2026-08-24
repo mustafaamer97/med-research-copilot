@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 def generate_academic_report(
     test_name,
     result_df
