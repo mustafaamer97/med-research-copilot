@@ -34,7 +34,10 @@ def save_paper(
         title=paper["title"],
         abstract=paper["abstract"],
         doi=doi,
-        pubmed_url=paper.get("url", "")
+        pubmed_url=paper.get("url", ""),
+        authors=paper.get("authors", ""),
+        journal=paper.get("journal", ""),
+        publication_year=paper.get("year", "")
     )
 
     db.add(paper_record)
