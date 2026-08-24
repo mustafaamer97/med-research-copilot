@@ -1,31 +1,57 @@
 from ai.llm_engine import ask_ai
 
 
-def generate_protocol(research_idea):
+def generate_protocol(
+    research_idea,
+    study_type="Clinical Trial"
+):
 
     prompt = f"""
+You are an expert in medical research methodology.
 
-You are a medical research methodology expert.
+Create a professional research protocol.
 
-Create a complete research protocol.
-
-Research idea:
+Research Idea:
 {research_idea}
 
+Study Type:
+{study_type}
 
-Include:
+Generate the protocol using the following sections:
 
 1. Title
-2. Background
-3. Research Question
-4. Objectives
-5. Study Design
-6. Population
-7. Inclusion Criteria
-8. Exclusion Criteria
-9. Outcomes
-10. Statistical Analysis Plan
 
+2. Background and Rationale
+
+3. Research Question
+
+4. Primary Objective
+
+5. Secondary Objectives
+
+6. Study Design
+
+7. Study Population
+
+8. Inclusion Criteria
+
+9. Exclusion Criteria
+
+10. Sample Size Considerations
+
+11. Data Collection Methods
+
+12. Primary Outcome
+
+13. Secondary Outcomes
+
+14. Statistical Analysis Plan
+
+15. Ethical Considerations
+
+16. Expected Impact
+
+Write the protocol in a professional academic style.
 """
 
     result = ask_ai(prompt)
