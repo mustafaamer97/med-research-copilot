@@ -57,7 +57,10 @@ def save_paper(
         authors=paper.get("authors", ""),
         journal=paper.get("journal", ""),
         publication_year=paper.get("year", ""),
-        url=paper.get("url", "")
+        publication_date=paper.get("publication_date", ""),
+        publication_type=paper.get("publication_type", ""),
+        url=paper.get("url", ""),
+        status="Saved"
     )
 
     db.add(paper_record)
