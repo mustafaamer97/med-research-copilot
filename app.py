@@ -350,8 +350,7 @@ elif menu == "Literature Search":
 
                     save_paper(
                         project_id=1,
-                        title=paper["title"],
-                        abstract=paper["abstract"]
+                        paper=paper
                     )
 
                     st.success(
@@ -391,6 +390,18 @@ elif menu == "Research Library":
                 st.subheader(
                     paper.title
                 )
+
+                if paper.doi:
+
+                    st.write(
+                        f"DOI: {paper.doi}"
+                    )
+
+                if paper.pubmed_url:
+
+                    st.markdown(
+                        f"[Open in PubMed]({paper.pubmed_url})"
+                    )
 
                 st.write(
                     paper.abstract
