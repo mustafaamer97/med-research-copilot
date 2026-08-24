@@ -204,6 +204,18 @@ elif menu == "Protocol Builder":
         "Enter research idea"
     )
 
+    study_type = st.selectbox(
+        "Study Type",
+        [
+            "Clinical Trial",
+            "Cohort Study",
+            "Case-Control Study",
+            "Cross-Sectional Study",
+            "Systematic Review",
+            "Meta-analysis"
+        ]
+    )
+
     if st.button("Generate Protocol"):
 
         with st.spinner(
@@ -211,7 +223,8 @@ elif menu == "Protocol Builder":
         ):
 
             protocol = generate_protocol(
-                idea
+                idea,
+                study_type
             )
 
         st.markdown(protocol)
