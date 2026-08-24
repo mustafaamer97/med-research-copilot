@@ -60,6 +60,8 @@ def get_papers(project_id):
         ResearchPaper
     ).filter(
         ResearchPaper.project_id == project_id
+    ).order_by(
+        ResearchPaper.publication_year.desc().nullslast()
     ).all()
 
     db.close()
