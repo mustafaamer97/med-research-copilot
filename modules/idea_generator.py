@@ -1,8 +1,7 @@
+import streamlit as st
 from ai.llm_engine import ask_ai
 from ai.prompts import RESEARCH_IDEA_PROMPT
-from modules.evidence_search import (
-    get_recent_evidence
-)
+from modules.evidence_search import get_recent_evidence
 
 
 def generate_research_ideas(field):
@@ -40,5 +39,8 @@ research ideas.
 {prompt}
 
 """
+
+    # عرض سياق الأدلة على واجهة Streamlit مؤقتاً للمعاينة والتحقق
+    st.write(evidence_text)
 
     return ask_ai(final_prompt)
