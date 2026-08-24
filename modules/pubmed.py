@@ -1,11 +1,29 @@
 from Bio import Entrez
 
-
 Entrez.email = "your_email@example.com"
 
 
-def search_pubmed(query, max_results=10):
+def is_animal_study(article):
+    try:
+        mesh_terms = article["MedlineCitation"]["MeshHeadingList"]
 
+        for mesh in mesh_terms:
+            if str(mesh["DescriptorName"]).lower() in [
+                "mice",
+                "rats",
+                "animals",
+                "cats",
+                "dogs"
+            ]:
+                return True
+
+    except:
+        pass
+
+    return False
+
+
+def search_pubmed(query, max_results=10):
     handle = Entrez.esearch(
         db="pubmed",
         term=query,
@@ -25,7 +43,6 @@ def search_pubmed(query, max_results=10):
 
 
 def get_details(ids):
-
     handle = Entrez.efetch(
         db="pubmed",
         id=",".join(ids),
@@ -38,6 +55,9 @@ def get_details(ids):
     papers = []
 
     for article in records["PubmedArticle"]:
+        # استبعاد الدراسات الحيوانية
+        if is_animal_study(article):
+            continue
 
         title = article["MedlineCitation"]["Article"]["ArticleTitle"]
 
@@ -59,11 +79,8 @@ def get_details(ids):
         doi = ""
 
         try:
-
             for item in article["PubmedData"]["ArticleIdList"]:
-
                 if item.attributes.get("IdType") == "doi":
-
                     doi = str(item)
                     break
 
@@ -73,7 +90,6 @@ def get_details(ids):
         authors = ""
 
         try:
-
             author_list = article[
                 "MedlineCitation"
             ]["Article"]["AuthorList"]
@@ -92,7 +108,6 @@ def get_details(ids):
         journal = ""
 
         try:
-
             journal = str(
                 article["MedlineCitation"]
                 ["Article"]
@@ -106,7 +121,6 @@ def get_details(ids):
         year = ""
 
         try:
-
             year = str(
                 article["MedlineCitation"]
                 ["Article"]
@@ -114,6 +128,21 @@ def get_details(ids):
                 ["JournalIssue"]
                 ["PubDate"]
                 ["Year"]
+            )
+
+        except:
+            pass
+
+        # استخراج نوع الدراسة Publication Type
+        publication_type = ""
+
+        try:
+            publication_types = article[
+                "MedlineCitation"
+            ]["Article"]["PublicationTypeList"]
+
+            publication_type = ", ".join(
+                [str(p) for p in publication_types]
             )
 
         except:
@@ -128,6 +157,7 @@ def get_details(ids):
                 "year": year,
                 "doi": doi,
                 "url": pubmed_url,
+                "publication_type": publication_type,
                 "abstract": str(abstract)
             }
         )
