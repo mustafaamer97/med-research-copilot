@@ -55,14 +55,26 @@ Journal:
 Publication Type:
 {paper.get("publication_type", "")}
 
+Evidence Level:
+{paper.get("evidence_level", "Unknown")}
+
 Publication Date:
 {paper.get("publication_date", "")}
+
+Year:
+{paper.get("year", "")}
 
 PMID:
 {paper.get("pmid", "")}
 
 DOI:
 {paper.get("doi", "")}
+
+Country:
+{paper.get("country", "")}
+
+Language:
+{paper.get("language", "")}
 
 MeSH Terms:
 {paper.get("mesh_terms", "")}
@@ -94,6 +106,12 @@ Most Common Study Types:
 Most Common Journals:
 {gap_report.get("top_journals", [])}
 
+Most Common Countries:
+{gap_report.get("top_countries", [])}
+
+Most Common MeSH Terms:
+{gap_report.get("top_mesh_terms", [])}
+
 """
 
     # =========================
@@ -110,15 +128,24 @@ Evidence Context
 
 {evidence_text}
 
-==================================
+==================================================
 
 {gap_text}
 
-==================================
+==================================================
 
 Instructions
 
+You are a medical research advisor.
+
 Use ONLY the evidence provided above.
+
+Prioritize findings coming from:
+
+- Level 1 Evidence
+- Level 2 Evidence
+
+Before using lower-level evidence.
 
 Identify:
 
@@ -128,7 +155,15 @@ Identify:
 4. Missing Methodologies
 5. Future Research Opportunities
 
-Generate evidence-based research ideas.
+Generate 5 high-quality research ideas.
+
+For each idea provide:
+
+- Title
+- Rationale
+- Potential Study Design
+- Suggested Population
+- Expected Clinical Impact
 
 Do NOT invent:
 
@@ -137,8 +172,9 @@ Do NOT invent:
 - PMID
 - Statistical Results
 - Sample Sizes
+- Study Findings not present in the evidence
 
-Base your suggestions ONLY on the evidence supplied.
+Base your suggestions ONLY on the supplied evidence.
 
 {prompt}
 
@@ -162,11 +198,11 @@ Base your suggestions ONLY on the evidence supplied.
 
     with st.expander("PubMed Evidence"):
 
-        st.write(evidence_text)
+        st.text(evidence_text)
 
     with st.expander("Research Gap Analysis"):
 
-        st.write(gap_text)
+        st.text(gap_text)
 
     # =========================
     # Generate Ideas
