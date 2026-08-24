@@ -70,10 +70,62 @@ def get_details(ids):
         except:
             pass
 
+        authors = ""
+
+        try:
+
+            author_list = article[
+                "MedlineCitation"
+            ]["Article"]["AuthorList"]
+
+            authors = ", ".join(
+                [
+                    f"{a.get('ForeName', '')} {a.get('LastName', '')}".strip()
+                    for a in author_list
+                    if "LastName" in a
+                ]
+            )
+
+        except:
+            pass
+
+        journal = ""
+
+        try:
+
+            journal = str(
+                article["MedlineCitation"]
+                ["Article"]
+                ["Journal"]
+                ["Title"]
+            )
+
+        except:
+            pass
+
+        year = ""
+
+        try:
+
+            year = str(
+                article["MedlineCitation"]
+                ["Article"]
+                ["Journal"]
+                ["JournalIssue"]
+                ["PubDate"]
+                ["Year"]
+            )
+
+        except:
+            pass
+
         papers.append(
             {
                 "pmid": pmid,
                 "title": str(title),
+                "authors": authors,
+                "journal": journal,
+                "year": year,
                 "doi": doi,
                 "url": pubmed_url,
                 "abstract": str(abstract)
