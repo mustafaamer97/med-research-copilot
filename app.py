@@ -602,3 +602,10 @@ elif menu == "Paper Analyzer":
             )
 
             st.write(review)
+
+
+st.divider()
+
+if st.button("فحص النماذج المتاحة لحسابي"):
+    st.write("النماذج المتاحة لمفتاحك حالياً:")
+    st.json(list_available_models())
