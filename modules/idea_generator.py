@@ -40,7 +40,12 @@ research ideas.
 
 """
 
-    # عرض سياق الأدلة على واجهة Streamlit مؤقتاً للمعاينة والتحقق
+    # طباعة سياق الأدلة في الـ Console للتحقق التشخيصي
+    print("========== EVIDENCE ==========")
+    print(evidence_text)
+    print("========== END ==========")
+
+    # عرض سياق الأدلة على واجهة Streamlit مؤقتاً
     st.write(evidence_text)
 
     return ask_ai(final_prompt)
