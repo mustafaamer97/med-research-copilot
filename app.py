@@ -6,6 +6,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
+from ai.llm_engine import list_available_models
 from research_analytics.data_checker import analyze_dataset
 from database.db import engine
 from database.models import Base
