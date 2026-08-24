@@ -21,28 +21,96 @@ from research_analytics.report_generator import (
 def render():
 
     st.header(
-        "📊 Automated Statistical Analysis"
+        "📊 Research Analytics"
     )
 
     uploaded_file = st.file_uploader(
         "Upload Dataset",
-        type=["csv", "xlsx"]
+        type=["csv", "xlsx", "xls"]
     )
 
-    if not uploaded_file:
+    if uploaded_file is None:
         return
 
-    if uploaded_file.name.endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file)
+    # =========================
+    # Load Dataset
+    # =========================
 
-    st.subheader("Dataset Preview")
-    st.dataframe(df.head())
+    if uploaded_file.name.endswith(".csv"):
+
+        df = pd.read_csv(
+            uploaded_file
+        )
+
+    else:
+
+        df = pd.read_excel(
+            uploaded_file
+        )
+
+    st.success(
+        "Dataset loaded successfully"
+    )
+
+    # =========================
+    # Dataset Preview
+    # =========================
+
+    st.subheader(
+        "Dataset Preview"
+    )
+
+    st.dataframe(
+        df.head()
+    )
+
+    # =========================
+    # Data Checker
+    # =========================
 
     _, report = analyze_dataset(
         uploaded_file
     )
+
+    st.subheader(
+        "Dataset Information"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.metric(
+            "Rows",
+            report["rows"]
+        )
+
+        st.metric(
+            "Columns",
+            report["columns"]
+        )
+
+    with col2:
+
+        st.metric(
+            "Duplicates",
+            report["duplicates"]
+        )
+
+        st.metric(
+            "Numeric Variables",
+            len(
+                report[
+                    "numeric_columns"
+                ]
+            )
+        )
+
+    st.divider()
+
+    # =========================
+    # Variable Selection
+    # =========================
 
     group_col = st.selectbox(
         "Grouping Variable",
@@ -51,8 +119,14 @@ def render():
 
     outcome_col = st.selectbox(
         "Outcome Variable",
-        df.columns
+        report[
+            "numeric_columns"
+        ]
     )
+
+    # =========================
+    # Smart Analysis
+    # =========================
 
     if st.button(
         "Run Smart Analysis"
@@ -79,6 +153,10 @@ def render():
             recommendation["reason"]
         )
 
+        # =====================
+        # Statistical Analysis
+        # =====================
+
         result = run_analysis(
             df=df,
             test_name=
@@ -91,7 +169,13 @@ def render():
             "Statistical Results"
         )
 
-        st.dataframe(result)
+        st.dataframe(
+            result
+        )
+
+        # =====================
+        # Academic Report
+        # =====================
 
         report_text = (
             generate_academic_report(
@@ -101,7 +185,9 @@ def render():
         )
 
         st.subheader(
-            "Academic Interpretation"
+            "Academic Report"
         )
 
-        st.write(report_text)
+        st.write(
+            report_text
+        )
