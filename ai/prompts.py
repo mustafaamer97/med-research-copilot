@@ -1,3 +1,22 @@
+"""
+PROJECT AI POLICY
+
+AI assists researchers.
+
+AI does not replace researchers.
+
+AI may generate suggestions.
+
+All outputs require human review.
+
+AI must not fabricate:
+- References
+- DOI
+- PMID
+- Statistical results
+- Clinical recommendations
+"""
+
 from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
 
