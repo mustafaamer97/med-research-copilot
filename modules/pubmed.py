@@ -13,7 +13,7 @@ def is_animal_study(article):
                 "rats",
                 "animals",
                 "cats",
-                "dogs"
+                "dogs",
             ]:
                 return True
 
@@ -23,12 +23,29 @@ def is_animal_study(article):
     return False
 
 
+def is_low_evidence_study(publication_type):
+
+    publication_type = publication_type.lower()
+
+    excluded_types = [
+        "editorial",
+        "letter",
+        "comment",
+        "news",
+        "interview",
+        "biography",
+    ]
+
+    for item in excluded_types:
+
+        if item in publication_type:
+            return True
+
+    return False
+
+
 def search_pubmed(query, max_results=10):
-    handle = Entrez.esearch(
-        db="pubmed",
-        term=query,
-        retmax=max_results
-    )
+    handle = Entrez.esearch(db="pubmed", term=query, retmax=max_results)
 
     results = Entrez.read(handle)
 
@@ -44,10 +61,7 @@ def search_pubmed(query, max_results=10):
 
 def get_details(ids):
     handle = Entrez.efetch(
-        db="pubmed",
-        id=",".join(ids),
-        rettype="medline",
-        retmode="xml"
+        db="pubmed", id=",".join(ids), rettype="medline", retmode="xml"
     )
 
     records = Entrez.read(handle)
@@ -65,24 +79,18 @@ def get_details(ids):
         abstract = ""
 
         try:
-            abstract_parts = article[
-                "MedlineCitation"
-            ]["Article"]["Abstract"]["AbstractText"]
+            abstract_parts = article["MedlineCitation"]["Article"]["Abstract"][
+                "AbstractText"
+            ]
 
-            abstract = " ".join(
-                [str(part) for part in abstract_parts]
-            )
+            abstract = " ".join([str(part) for part in abstract_parts])
 
         except:
             pass
 
-        pmid = str(
-            article["MedlineCitation"]["PMID"]
-        )
+        pmid = str(article["MedlineCitation"]["PMID"])
 
-        pubmed_url = (
-            f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
-        )
+        pubmed_url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
 
         doi = ""
 
@@ -100,9 +108,7 @@ def get_details(ids):
         authors = ""
 
         try:
-            author_list = article[
-                "MedlineCitation"
-            ]["Article"]["AuthorList"]
+            author_list = article["MedlineCitation"]["Article"]["AuthorList"]
 
             authors = ", ".join(
                 [
@@ -119,10 +125,7 @@ def get_details(ids):
 
         try:
             journal = str(
-                article["MedlineCitation"]
-                ["Article"]
-                ["Journal"]
-                ["Title"]
+                article["MedlineCitation"]["Article"]["Journal"]["Title"]
             )
 
         except:
@@ -132,12 +135,9 @@ def get_details(ids):
 
         try:
             year = str(
-                article["MedlineCitation"]
-                ["Article"]
-                ["Journal"]
-                ["JournalIssue"]
-                ["PubDate"]
-                ["Year"]
+                article["MedlineCitation"]["Article"]["Journal"][
+                    "JournalIssue"
+                ]["PubDate"]["Year"]
             )
 
         except:
@@ -146,13 +146,11 @@ def get_details(ids):
         publication_date = ""
 
         try:
-            pub_date = article[
-                "MedlineCitation"
-            ]["Article"]["Journal"]["JournalIssue"]["PubDate"]
+            pub_date = article["MedlineCitation"]["Article"]["Journal"][
+                "JournalIssue"
+            ]["PubDate"]
 
-            publication_date = " ".join(
-                [str(v) for v in pub_date.values()]
-            )
+            publication_date = " ".join([str(v) for v in pub_date.values()])
 
         except:
             pass
@@ -160,29 +158,26 @@ def get_details(ids):
         publication_type = ""
 
         try:
-            publication_types = article[
-                "MedlineCitation"
-            ]["Article"]["PublicationTypeList"]
+            publication_types = article["MedlineCitation"]["Article"][
+                "PublicationTypeList"
+            ]
 
-            publication_type = ", ".join(
-                [str(p) for p in publication_types]
-            )
+            publication_type = ", ".join([str(p) for p in publication_types])
 
         except:
             pass
 
+        # استبعاد المقالات ضعيفة القيمة البحثية
+        if is_low_evidence_study(publication_type):
+            continue
+
         mesh_terms = ""
 
         try:
-            mesh_list = article[
-                "MedlineCitation"
-            ]["MeshHeadingList"]
+            mesh_list = article["MedlineCitation"]["MeshHeadingList"]
 
             mesh_terms = ", ".join(
-                [
-                    str(mesh["DescriptorName"])
-                    for mesh in mesh_list
-                ]
+                [str(mesh["DescriptorName"]) for mesh in mesh_list]
             )
 
         except:
@@ -192,9 +187,7 @@ def get_details(ids):
 
         try:
             language = ", ".join(
-                article["MedlineCitation"]
-                ["Article"]
-                ["Language"]
+                article["MedlineCitation"]["Article"]["Language"]
             )
 
         except:
@@ -204,13 +197,40 @@ def get_details(ids):
 
         try:
             country = str(
-                article["MedlineCitation"]
-                ["MedlineJournalInfo"]
-                ["Country"]
+                article["MedlineCitation"]["MedlineJournalInfo"]["Country"]
             )
 
         except:
             pass
+
+        # تحديد مستوى قوة الدليل
+        evidence_level = "Unknown"
+
+        pt = publication_type.lower()
+
+        if "meta-analysis" in pt:
+            evidence_level = "Level 1"
+
+        elif "systematic review" in pt:
+            evidence_level = "Level 1"
+
+        elif "randomized controlled trial" in pt:
+            evidence_level = "Level 2"
+
+        elif "clinical trial" in pt:
+            evidence_level = "Level 2"
+
+        elif "cohort" in pt:
+            evidence_level = "Level 3"
+
+        elif "observational study" in pt:
+            evidence_level = "Level 3"
+
+        elif "case-control" in pt:
+            evidence_level = "Level 4"
+
+        elif "case report" in pt:
+            evidence_level = "Level 5"
 
         papers.append(
             {
@@ -223,10 +243,11 @@ def get_details(ids):
                 "doi": doi,
                 "url": pubmed_url,
                 "publication_type": publication_type,
+                "evidence_level": evidence_level,
                 "mesh_terms": mesh_terms,
                 "language": language,
                 "country": country,
-                "abstract": str(abstract)
+                "abstract": str(abstract),
             }
         )
 
