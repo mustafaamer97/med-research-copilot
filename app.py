@@ -399,6 +399,24 @@ elif menu == "Research Library":
                     paper.title
                 )
 
+                if paper.authors:
+
+                    st.write(
+                        f"Authors: {paper.authors}"
+                    )
+
+                if paper.journal:
+
+                    st.write(
+                        f"Journal: {paper.journal}"
+                    )
+
+                if paper.publication_year:
+
+                    st.write(
+                        f"Year: {paper.publication_year}"
+                    )
+
                 if paper.doi:
 
                     st.write(
