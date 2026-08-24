@@ -1,3 +1,38 @@
+STUDY_DESIGN_PATTERNS = {
+
+    "Randomized Controlled Trial": [
+        "randomized controlled trial",
+        "randomised controlled trial",
+        "randomized trial",
+        "randomised trial"
+    ],
+
+    "Cohort Study": [
+        "cohort study",
+        "prospective cohort",
+        "retrospective cohort"
+    ],
+
+    "Case-Control Study": [
+        "case-control study",
+        "case control study"
+    ],
+
+    "Cross-Sectional Study": [
+        "cross-sectional",
+        "cross sectional study"
+    ],
+
+    "Systematic Review": [
+        "systematic review"
+    ],
+
+    "Meta-analysis": [
+        "meta-analysis",
+        "meta analysis"
+    ]
+}
+
 SECTION_KEYWORDS = {
 
     "Objective": [
@@ -30,6 +65,23 @@ SECTION_KEYWORDS = {
 }
 
 
+def detect_study_design(text):
+
+    lower_text = text.lower()
+
+    for design, patterns in (
+        STUDY_DESIGN_PATTERNS.items()
+    ):
+
+        for pattern in patterns:
+
+            if pattern in lower_text:
+
+                return design
+
+    return "Not detected"
+
+
 def analyze_paper(text):
 
     sections = {
@@ -44,6 +96,10 @@ def analyze_paper(text):
         "Limitations": ""
 
     }
+
+    sections["Study Design"] = (
+        detect_study_design(text)
+    )
 
     lower_text = text.lower()
 
