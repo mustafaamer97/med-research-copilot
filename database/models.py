@@ -30,17 +30,24 @@ class ResearchPaper(Base):
 
     title = Column(String)
 
+    abstract = Column(Text)
+
+    pmid = Column(String)
+
+    doi = Column(
+        String,
+        unique=True
+    )
+
     authors = Column(Text)
 
     journal = Column(String)
 
     publication_year = Column(String)
 
-    doi = Column(String)
+    publication_type = Column(String)
 
-    pubmed_url = Column(Text)
-
-    abstract = Column(Text)
+    url = Column(String)
 
     status = Column(
         String,
