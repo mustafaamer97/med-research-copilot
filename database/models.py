@@ -45,6 +45,8 @@ class ResearchPaper(Base):
 
     publication_year = Column(String)
 
+    publication_date = Column(String)
+
     publication_type = Column(String)
 
     url = Column(String)
