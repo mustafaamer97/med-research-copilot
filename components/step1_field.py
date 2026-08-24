@@ -79,20 +79,24 @@ def render_step1():
         "keywords": keywords,
     }
 
-    st.session_state["research_context"] = context
+    st.markdown("---")
 
-    st.success(
+    st.subheader("Research Context Summary")
+
+    st.info(
         f"""
-        Research Context Ready
+**Medical Field:** {field}
 
-        Field: {field}
+**Target Population:** {population}
 
-        Population: {population}
+**Study Design:** {study_design}
 
-        Study Design: {study_design}
+**Data Source:** {data_source}
 
-        Data Source: {data_source}
-        """
+**Keywords:** {keywords if keywords else 'Not specified'}
+"""
     )
+
+    st.session_state["research_context"] = context
 
     return context
