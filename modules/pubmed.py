@@ -24,7 +24,6 @@ def search_pubmed(query, max_results=10):
     return papers
 
 
-
 def get_details(ids):
 
     handle = Entrez.efetch(
@@ -49,10 +48,34 @@ def get_details(ids):
         except:
             pass
 
+        pmid = str(
+            article["MedlineCitation"]["PMID"]
+        )
+
+        pubmed_url = (
+            f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+        )
+
+        doi = ""
+
+        try:
+
+            for item in article["PubmedData"]["ArticleIdList"]:
+
+                if item.attributes.get("IdType") == "doi":
+
+                    doi = str(item)
+                    break
+
+        except:
+            pass
 
         papers.append(
             {
+                "pmid": pmid,
                 "title": str(title),
+                "doi": doi,
+                "url": pubmed_url,
                 "abstract": str(abstract)
             }
         )
