@@ -22,14 +22,39 @@ class ResearchPaper(Base):
     __tablename__ = "research_papers"
 
     id = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("research_projects.id"))
-    title = Column(String)
+
+    project_id = Column(
+        Integer,
+        ForeignKey("research_projects.id")
+    )
+
+    pmid = Column(String)
+
+    title = Column(Text)
+
+    authors = Column(Text)
+
+    journal = Column(String)
+
+    publication_year = Column(String)
+
+    doi = Column(String)
+
+    pubmed_url = Column(Text)
+
     abstract = Column(Text)
-    status = Column(String, default="Saved")
+
+    status = Column(
+        String,
+        default="Saved"
+    )
+
     notes = Column(Text)
 
-    # العلاقة العكسية مع المشروع
-    project = relationship("ResearchProject", back_populates="papers")
+    project = relationship(
+        "ResearchProject",
+        back_populates="papers"
+    )
 
 
 class ResearchQuestion(Base):
