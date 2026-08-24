@@ -9,12 +9,36 @@ from modules.research_gap_detector import detect_research_gaps
 
 def generate_research_ideas(field):
 
+    # =========================
+    # Fetch Evidence
+    # =========================
+
     papers = get_recent_evidence(field)
 
-    # تحليل الفجوات البحثية
+    if not papers:
+
+        return """
+FACTS
+No PubMed evidence was retrieved.
+
+ASSUMPTIONS
+None.
+
+LIMITATIONS
+Unable to generate evidence-based ideas.
+"""
+
+    # =========================
+    # Gap Analysis
+    # =========================
+
     gap_report = detect_research_gaps(
         papers
     )
+
+    # =========================
+    # Evidence Context
+    # =========================
 
     evidence_text = ""
 
@@ -23,41 +47,58 @@ def generate_research_ideas(field):
         evidence_text += f"""
 
 Title:
-{paper.get('title', '')}
+{paper.get("title", "")}
 
 Journal:
-{paper.get('journal', '')}
+{paper.get("journal", "")}
 
 Publication Type:
-{paper.get('publication_type', '')}
+{paper.get("publication_type", "")}
 
-Evidence Level:
-{paper.get('evidence_level', '')}
+Publication Date:
+{paper.get("publication_date", "")}
+
+PMID:
+{paper.get("pmid", "")}
+
+DOI:
+{paper.get("doi", "")}
+
+MeSH Terms:
+{paper.get("mesh_terms", "")}
 
 Abstract:
-{paper.get('abstract', '')}
+{paper.get("abstract", "")}
 
-----------------------------------------
+--------------------------------------------------
 
 """
+
+    # =========================
+    # Gap Report
+    # =========================
 
     gap_text = f"""
 
 Research Gap Analysis
 
 Total Papers:
-{gap_report['total_papers']}
+{gap_report.get("total_papers", 0)}
 
 Most Common Topics:
-{gap_report['top_keywords']}
+{gap_report.get("top_keywords", [])}
 
 Most Common Study Types:
-{gap_report['study_types']}
+{gap_report.get("study_types", [])}
 
 Most Common Journals:
-{gap_report['top_journals']}
+{gap_report.get("top_journals", [])}
 
 """
+
+    # =========================
+    # Build Prompt
+    # =========================
 
     prompt = RESEARCH_IDEA_PROMPT.format(
         field=field
@@ -69,29 +110,44 @@ Evidence Context
 
 {evidence_text}
 
+==================================
+
 {gap_text}
+
+==================================
 
 Instructions
 
-Use ONLY the evidence above.
+Use ONLY the evidence provided above.
 
 Identify:
 
-1. Knowledge gaps
-2. Under-studied topics
-3. Missing populations
-4. Missing outcomes
-5. Missing methodologies
+1. Knowledge Gaps
+2. Under-studied Populations
+3. Under-studied Outcomes
+4. Missing Methodologies
+5. Future Research Opportunities
 
-Generate realistic research ideas based on these gaps.
+Generate evidence-based research ideas.
 
-Do not invent references.
+Do NOT invent:
+
+- References
+- DOI
+- PMID
+- Statistical Results
+- Sample Sizes
+
+Base your suggestions ONLY on the evidence supplied.
 
 {prompt}
 
 """
 
-    # Console Debug
+    # =========================
+    # Debug Console
+    # =========================
+
     print("========== EVIDENCE ==========")
     print(evidence_text)
 
@@ -100,14 +156,21 @@ Do not invent references.
 
     print("========== END ==========")
 
-    # Debug داخل Streamlit
-    with st.expander("Evidence Context"):
+    # =========================
+    # Streamlit Debug View
+    # =========================
+
+    with st.expander("PubMed Evidence"):
 
         st.write(evidence_text)
 
     with st.expander("Research Gap Analysis"):
 
         st.write(gap_text)
+
+    # =========================
+    # Generate Ideas
+    # =========================
 
     return ask_ai(
         final_prompt,
