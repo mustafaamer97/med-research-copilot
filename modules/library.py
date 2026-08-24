@@ -2,27 +2,26 @@ from database.db import SessionLocal
 from database.models import ResearchPaper
 
 
-
 def save_paper(
     project_id,
-    title,
-    abstract
+    paper
 ):
 
     db = SessionLocal()
 
-    paper = ResearchPaper(
+    paper_record = ResearchPaper(
         project_id=project_id,
-        title=title,
-        abstract=abstract
+        title=paper["title"],
+        abstract=paper["abstract"],
+        doi=paper.get("doi", ""),
+        pubmed_url=paper.get("url", "")
     )
 
-    db.add(paper)
+    db.add(paper_record)
 
     db.commit()
 
     db.close()
-
 
 
 def get_papers(project_id):
