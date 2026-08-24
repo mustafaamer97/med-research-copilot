@@ -566,7 +566,13 @@ elif menu == "Paper Analyzer":
                 f"### {key}"
             )
 
-            st.write(value)
+            if isinstance(value, dict):
+
+                st.json(value)
+
+            else:
+
+                st.write(value)
 
         st.divider()
 
