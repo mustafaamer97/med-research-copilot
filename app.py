@@ -348,14 +348,22 @@ elif menu == "Literature Search":
 
                 if st.button(f"Save Paper", key=f"save_{idx}"):
 
-                    save_paper(
+                    result = save_paper(
                         project_id=1,
                         paper=paper
                     )
 
-                    st.success(
-                        "Paper saved"
-                    )
+                    if result["saved"]:
+
+                        st.success(
+                            result["message"]
+                        )
+
+                    else:
+
+                        st.warning(
+                            result["message"]
+                        )
 
                 st.divider()
 
