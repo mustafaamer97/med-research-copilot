@@ -10,7 +10,11 @@ from research_analytics.data_checker import analyze_dataset
 from database.db import engine
 from database.models import Base
 from modules.pubmed import search_pubmed
-from modules.library import save_paper, get_papers
+from modules.library import (
+    save_paper,
+    get_papers,
+    search_papers
+)
 from utils.pdf_tools import extract_text
 from modules.paper_analyzer import analyze_paper
 from modules.paper_reviewer import review_paper
@@ -385,11 +389,24 @@ elif menu == "Research Library":
         min_value=1
     )
 
+    search_term = st.text_input(
+        "Search Title, DOI or Author"
+    )
+
     if st.button("Load Papers"):
 
-        papers = get_papers(
-            project_id
-        )
+        if search_term:
+
+            papers = search_papers(
+                project_id,
+                search_term
+            )
+
+        else:
+
+            papers = get_papers(
+                project_id
+            )
 
         st.info(
             f"Total Papers: {len(papers)}"
