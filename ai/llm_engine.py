@@ -10,9 +10,9 @@ api_key = st.secrets.get("GEMINI_API_KEY") if "GEMINI_API_KEY" in st.secrets els
 if api_key:
     genai.configure(api_key=api_key)
 
-# ضبط النموذج الأساسي والنموذج الاحتياطي
-PRIMARY_MODEL = "gemini-1.5-flash"
-FALLBACK_MODEL = "gemini-1.5-pro"
+# ضبط أسماء النماذج وفقاً لطلبك
+PRIMARY_MODEL = "gemini-3.6-flash"
+FALLBACK_MODEL = "gemini-3.5-flash"
 
 
 def ask_ai(prompt: str) -> str:
@@ -36,7 +36,7 @@ def ask_ai(prompt: str) -> str:
         return response.text
 
     except Exception as e:
-        # تجربة النموذج الاحتياطي في حال حدوث خلل مؤقت
+        # تجربة النموذج الاحتياطي في حال حدوث خلل مؤقت أو خطأ 404
         try:
             fallback_model = genai.GenerativeModel(
                 FALLBACK_MODEL,
