@@ -6,7 +6,7 @@ PRIORITY_FILTERS = [
     "meta-analysis",
     "randomized controlled trial",
     "clinical trial",
-    "cohort",
+    "cohort study",
     "observational study"
 ]
 
@@ -19,14 +19,23 @@ def get_recent_evidence(topic):
 
         query = f"{topic} AND {study_type}"
 
-        papers = search_pubmed(
-            query,
-            max_results=10
-        )
+        try:
 
-        all_papers.extend(papers)
+            papers = search_pubmed(
+                query,
+                max_results=10
+            )
+
+            all_papers.extend(papers)
+
+        except Exception as e:
+
+            print(
+                f"Evidence search error ({study_type}): {e}"
+            )
 
     # إزالة التكرار بواسطة PMID
+
     unique_papers = {}
 
     for paper in all_papers:
@@ -34,11 +43,15 @@ def get_recent_evidence(topic):
         pmid = paper.get("pmid")
 
         if pmid:
+
             unique_papers[pmid] = paper
 
-    papers = list(unique_papers.values())
+    papers = list(
+        unique_papers.values()
+    )
 
-    # ترتيب حسب قوة الدليل
+    # ترتيب حسب مستوى الدليل
+
     ranking = {
         "Level 1": 1,
         "Level 2": 2,
@@ -49,8 +62,11 @@ def get_recent_evidence(topic):
     }
 
     papers.sort(
-        key=lambda x: ranking.get(
-            x.get("evidence_level", "Unknown"),
+        key=lambda paper: ranking.get(
+            paper.get(
+                "evidence_level",
+                "Unknown"
+            ),
             99
         )
     )
