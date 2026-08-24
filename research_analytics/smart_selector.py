@@ -1,94 +1,84 @@
-def suggest_test(
-    outcome_type,
-    groups,
-    objective="comparison",
-    paired=False,
-    normal_distribution=True
+def auto_select_group_comparison_test(
+    df,
+    report,
+    group_col,
+    outcome_col
 ):
 
-    # مقارنة بين مجموعتين
+    # التأكد أن المتغير الناتج رقمي
 
-    if (
-        objective == "comparison"
-        and outcome_type == "continuous"
-        and groups == 2
-    ):
+    if outcome_col not in report["numeric_columns"]:
 
-        if paired:
+        return {
+            "test": None,
+            "reason":
+            "Outcome variable must be numeric."
+        }
+
+    # عدد المجموعات
+
+    groups = (
+        df[group_col]
+        .dropna()
+        .nunique()
+    )
+
+    # الطبيعية
+
+    normal = True
+
+    if outcome_col in report["normality"]:
+
+        normal = report["normality"][
+            outcome_col
+        ]["normal"]
+
+    # مجموعتان
+
+    if groups == 2:
+
+        if normal:
 
             return {
-                "test": "Paired t-test"
-                if normal_distribution
-                else "Wilcoxon Signed-Rank Test",
+                "test":
+                "Independent t-test",
 
                 "reason":
-                "Paired continuous measurements.",
-
-                "engine": "pingouin"
+                "Two groups with normal distribution."
             }
 
         return {
-            "test": "Independent t-test"
-            if normal_distribution
-            else "Mann-Whitney U Test",
+            "test":
+            "Mann-Whitney U Test",
 
             "reason":
-            "Comparison of two independent groups.",
-
-            "engine": "pingouin"
+            "Two groups with non-normal distribution."
         }
 
     # أكثر من مجموعتين
 
-    if (
-        objective == "comparison"
-        and outcome_type == "continuous"
-        and groups > 2
-    ):
+    if groups > 2:
+
+        if normal:
+
+            return {
+                "test":
+                "ANOVA",
+
+                "reason":
+                "Multiple groups with normal distribution."
+            }
 
         return {
-            "test": "ANOVA"
-            if normal_distribution
-            else "Kruskal-Wallis",
+            "test":
+            "Kruskal-Wallis",
 
             "reason":
-            "Comparison among multiple groups.",
-
-            "engine": "pingouin"
-        }
-
-    # متغيرات فئوية
-
-    if outcome_type == "categorical":
-
-        return {
-            "test": "Chi-Square Test",
-
-            "reason":
-            "Association between categorical variables.",
-
-            "engine": "pingouin",
-
-            "alternative":
-            "Fisher Exact Test"
-        }
-
-    # ارتباط
-
-    if objective == "correlation":
-
-        return {
-            "test": "Pearson Correlation"
-            if normal_distribution
-            else "Spearman Correlation",
-
-            "reason":
-            "Relationship between variables.",
-
-            "engine": "pingouin"
+            "Multiple groups with non-normal distribution."
         }
 
     return {
-        "test": "More information required",
-        "reason": "Unable to determine test."
+        "test": None,
+        "reason":
+        "Unable to determine appropriate test."
     }
