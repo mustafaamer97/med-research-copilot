@@ -4,15 +4,23 @@ from scipy.stats import shapiro
 
 def analyze_dataset(file):
 
-    # قراءة الملف مع التحقق من الامتداد بأمان
+    # إعادة ضبط مؤشر قراءة الملف لضمان البدء من البداية
+    file.seek(0)
+
     filename = file.name.lower()
 
-    if filename.endswith(".csv"):
-        df = pd.read_csv(file)
-    elif filename.endswith((".xlsx", ".xls")):
-        df = pd.read_excel(file)
-    else:
-        raise ValueError("Unsupported file format")
+    # محاولة قراءة الملف مع التعامل الآمن مع الأخطاء
+    try:
+        if filename.endswith(".csv"):
+            df = pd.read_csv(file)
+        elif filename.endswith((".xlsx", ".xls")):
+            df = pd.read_excel(file)
+        else:
+            raise ValueError("Unsupported file format")
+    except Exception as e:
+        raise ValueError(
+            f"Failed to read dataset: {str(e)}"
+        )
 
     report = {
         "rows": len(df),
