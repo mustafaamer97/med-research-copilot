@@ -6,6 +6,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
+# --- الاستيرادات ---
+from components.step1_field import render_step1
 from research_analytics.data_checker import analyze_dataset
 from database.db import engine
 from database.models import Base
@@ -22,7 +24,12 @@ from modules.idea_generator import generate_research_ideas
 from modules.protocol_builder import generate_protocol
 
 
+# إنشاء الجداول في قاعدة البيانات إن لم تكن موجودة
 Base.metadata.create_all(bind=engine)
+
+# تهيئة سياق البحث في session_state في حال لم يكن معرفاً من قبل
+if "research_context" not in st.session_state:
+    st.session_state["research_context"] = {}
 
 
 st.set_page_config(
@@ -38,20 +45,12 @@ st.subheader(
     "AI Assistant for Medical Research"
 )
 
-# --- تم تعطيل رافع الملفات العام المؤقت لعدم الحاجة إليه هنا ---
-# uploaded_file = st.file_uploader(
-#     "Upload Dataset",
-#     type=["csv", "xlsx", "xls"]
-# )
-# if uploaded_file:
-#     df, report = analyze_dataset(uploaded_file)
-#     ...
-
-
+# --- القائمة الجانبية التنقلية ---
 menu = st.sidebar.selectbox(
     "Navigation",
     [
         "Dashboard",
+        "Step 1: Research Field & Setup",
         "New Research Project",
         "Research Idea Generator",
         "Research Question Builder",
@@ -78,30 +77,25 @@ if menu == "Dashboard":
     )
 
 
+elif menu == "Step 1: Research Field & Setup":
+
+    # تشغيل الخطوة الأولى المخصصة للباحث المبتدئ وتخزين البيانات داخل st.session_state["research_context"]
+    render_step1()
+
+
 elif menu == "New Research Project":
 
     st.header("Create Research Project")
+
+    # يمكن أيضاً تشغيل الخطوة الأولى هنا مباشرة أو استخدامها لإعداد مشروع جديد
+    render_step1()
 
     title = st.text_input(
         "Research Title"
     )
 
-    field = st.text_input(
-        "Medical Field"
-    )
-
-    research_type = st.selectbox(
-        "Research Type",
-        [
-            "Clinical Trial",
-            "Systematic Review",
-            "Cohort Study",
-            "Case Report"
-        ]
-    )
-
     if st.button("Save Project"):
-
+        st.session_state["research_context"]["project_title"] = title
         st.success(
             "Project created successfully"
         )
@@ -113,8 +107,12 @@ elif menu == "Research Idea Generator":
         "💡 AI Research Idea Generator"
     )
 
+    # جلب التخصص الافتراضي من سياق البحث إن وجد
+    default_field = st.session_state["research_context"].get("field", "")
+
     field = st.text_input(
-        "Enter medical field"
+        "Enter medical field",
+        value=default_field
     )
 
     if st.button("Generate Ideas"):
@@ -296,17 +294,6 @@ elif menu == "Data Analysis":
         "📊 Medical Data Profiler"
     )
 
-    # --- تم تعطيل رافع الملفات هنا مؤقتاً لتجنب أي تداخل مع صفحات التحليل الأخرى ---
-    # uploaded_file = st.file_uploader(
-    #     "Upload Dataset",
-    #     type=["csv", "xlsx", "xls"],
-    #     key="data_analysis_uploader"
-    # )
-    # if uploaded_file:
-    #     df, report = analyze_dataset(uploaded_file)
-    #     st.success("Dataset loaded successfully")
-    #     ...
-    
     st.info("Data analysis components are being managed via Analytics module.")
 
 
