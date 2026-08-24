@@ -10,8 +10,9 @@ def save_paper(
     db = SessionLocal()
 
     doi = paper.get("doi", "")
+    pmid = paper.get("pmid", "")
 
-    # منع التكرار إذا كان DOI موجوداً
+    # منع التكرار بواسطة DOI
     if doi:
 
         existing = db.query(
@@ -26,18 +27,37 @@ def save_paper(
 
             return {
                 "saved": False,
-                "message": "Paper already exists"
+                "message": "Paper already exists (DOI)"
+            }
+
+    # منع التكرار بواسطة PMID
+    elif pmid:
+
+        existing = db.query(
+            ResearchPaper
+        ).filter(
+            ResearchPaper.pmid == pmid
+        ).first()
+
+        if existing:
+
+            db.close()
+
+            return {
+                "saved": False,
+                "message": "Paper already exists (PMID)"
             }
 
     paper_record = ResearchPaper(
         project_id=project_id,
-        title=paper["title"],
-        abstract=paper["abstract"],
+        title=paper.get("title", ""),
+        abstract=paper.get("abstract", ""),
+        pmid=pmid,
         doi=doi,
-        pubmed_url=paper.get("url", ""),
         authors=paper.get("authors", ""),
         journal=paper.get("journal", ""),
-        publication_year=paper.get("year", "")
+        publication_year=paper.get("year", ""),
+        url=paper.get("url", "")
     )
 
     db.add(paper_record)
@@ -89,7 +109,15 @@ def search_papers(
         )
         |
         (
+            ResearchPaper.pmid.contains(search_term)
+        )
+        |
+        (
             ResearchPaper.authors.contains(search_term)
+        )
+        |
+        (
+            ResearchPaper.journal.contains(search_term)
         )
     ).all()
 
