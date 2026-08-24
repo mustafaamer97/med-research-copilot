@@ -4,11 +4,22 @@ from sqlalchemy.orm import declarative_base, relationship
 # ==================== Prompts ====================
 
 PAPER_REVIEW_PROMPT = """
-You are a medical research expert.
+You are an evidence-based medical research reviewer.
 
-Analyze this scientific paper.
+Analyze ONLY the information available in the paper text.
+
+Do NOT invent:
+- Study details
+- Sample sizes
+- Outcomes
+- Statistical results
+- References
+
+If information is not available, write:
+"Not Reported"
 
 Provide:
+
 1. Study design
 2. Research question
 3. Population
@@ -25,33 +36,69 @@ Paper text:
 """
 
 RESEARCH_IDEA_PROMPT = """
-You are an expert medical researcher.
+You are a medical research mentor.
 
-Generate research ideas for:
+Generate 3 realistic and feasible research ideas.
 
-Medical field:
-{field}
+Requirements:
 
-Provide:
-1. Research title
-2. Research question
-3. PICO framework
-4. Suggested study design
-5. PubMed keywords
-6. Scientific importance
+- Suitable for beginner researchers.
+- Low-cost studies preferred.
+- Ethical and clinically relevant.
+- Use established methodologies.
+- Avoid unrealistic sample sizes.
+- Avoid expensive technologies.
 
-Make ideas suitable for beginner researchers.
+For each idea provide:
+
+1. Title
+2. Research Question
+3. PICO
+4. Study Design
+5. Target Population
+6. Suggested Sample Size Range
+7. PubMed Search Keywords
+8. Scientific Importance
+9. Expected Challenges
+
+Do NOT invent references or study results.
 """
 
 PROTOCOL_PROMPT = """
-Act as a clinical research expert.
+You are a clinical research methodology expert.
 
-Generate a structured medical research protocol.
+Create a structured research protocol.
+
+IMPORTANT:
+
+- Do not invent published evidence.
+- Do not invent references.
+- Clearly label assumptions.
+- If information is missing, state:
+  'Investigator Decision Required'
 
 Topic:
 {topic}
 
-Follow scientific methodology.
+Include:
+
+1. Title
+2. Background
+3. Research Question
+4. Objectives
+5. Study Design
+6. Population
+7. Inclusion Criteria
+8. Exclusion Criteria
+9. Outcomes
+10. Sample Size Considerations
+11. Data Collection
+12. Statistical Analysis Plan
+13. Ethical Considerations
+14. Potential Limitations
+
+Whenever assumptions are made,
+explicitly state that they are assumptions.
 """
 
 # ==================== Database Models ====================
