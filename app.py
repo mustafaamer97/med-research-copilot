@@ -6,7 +6,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-from ai.llm_engine import list_available_models
 from research_analytics.data_checker import analyze_dataset
 from database.db import engine
 from database.models import Base
@@ -603,10 +602,3 @@ elif menu == "Paper Analyzer":
             )
 
             st.write(review)
-
-
-st.divider()
-
-if st.button("فحص النماذج المتاحة لحسابي"):
-    st.write("النماذج المتاحة لمفتاحك حالياً:")
-    st.json(list_available_models())
