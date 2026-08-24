@@ -6,7 +6,7 @@ python-dotenv
 biopython
 pypdf
 pdfplumber
-openai
+google-generativeai
 openpyxl
 numpy
 scipy
