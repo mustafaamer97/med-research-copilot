@@ -34,6 +34,15 @@ st.subheader(
     "AI Assistant for Medical Research"
 )
 
+# --- تم تعطيل رافع الملفات العام المؤقت لعدم الحاجة إليه هنا ---
+# uploaded_file = st.file_uploader(
+#     "Upload Dataset",
+#     type=["csv", "xlsx", "xls"]
+# )
+# if uploaded_file:
+#     df, report = analyze_dataset(uploaded_file)
+#     ...
+
 
 menu = st.sidebar.selectbox(
     "Navigation",
@@ -270,37 +279,18 @@ elif menu == "Data Analysis":
         "📊 Medical Data Profiler"
     )
 
-    uploaded_file = st.file_uploader(
-        "Upload Dataset",
-        type=["csv", "xlsx", "xls"],
-        key="data_analysis_uploader"
-    )
-
-    if uploaded_file:
-
-        df, report = analyze_dataset(uploaded_file)
-
-        st.success("Dataset loaded successfully")
-
-        st.subheader("Dataset Preview")
-        st.dataframe(df.head())
-
-        st.subheader("Dataset Information")
-        st.write("Rows:", report["rows"])
-        st.write("Columns:", report["columns"])
-        st.write("Duplicates:", report["duplicates"])
-
-        st.subheader("Numeric Columns")
-        st.write(report["numeric_columns"])
-
-        st.subheader("Categorical Columns")
-        st.write(report["categorical_columns"])
-
-        st.subheader("Missing Values")
-        st.json(report["missing_percentage"])
-
-        st.subheader("Normality Test")
-        st.json(report["normality"])
+    # --- تم تعطيل رافع الملفات هنا مؤقتاً لتجنب أي تداخل مع صفحات التحليل الأخرى ---
+    # uploaded_file = st.file_uploader(
+    #     "Upload Dataset",
+    #     type=["csv", "xlsx", "xls"],
+    #     key="data_analysis_uploader"
+    # )
+    # if uploaded_file:
+    #     df, report = analyze_dataset(uploaded_file)
+    #     st.success("Dataset loaded successfully")
+    #     ...
+    
+    st.info("Data analysis components are being managed via Analytics module.")
 
 
 elif menu == "📊 Statistical Analysis":
