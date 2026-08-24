@@ -2,6 +2,7 @@ import os
 import streamlit as st
 import google.generativeai as genai
 from ai.system_prompt import SYSTEM_PROMPT
+from ai.ai_guardrails import validate_prompt
 
 # جلب API Key آلياً سواء من Streamlit Secrets أو من المتغيرات المحلية
 api_key = st.secrets.get("GEMINI_API_KEY") if "GEMINI_API_KEY" in st.secrets else os.getenv("GEMINI_API_KEY")
@@ -16,26 +17,17 @@ FALLBACK_MODEL = "gemini-1.5-pro"
 
 def ask_ai(prompt: str) -> str:
     """
-    إرسال الاستعلام إلى نموذج Gemini مع إضافة SYSTEM_PROMPT كتعليمات نظام
-    والتعامل مع الأخطاء والتحويل التلقائي للنموذج الاحتياطي.
+    إرسال الاستعلام إلى نموذج Gemini بعد التحقق من قواعد الحماية (Guardrails) 
+    مع إرفاق SYSTEM_PROMPT والتعامل مع الأخطاء والتحويل التلقائي للنموذج الاحتياطي.
     """
     if not api_key:
         return "AI Error: لم يتم إعداد GEMINI_API_KEY داخل Secrets في Streamlit Cloud."
 
-    # تجهيز نظام الرسائل واستخدام SYSTEM_PROMPT المستورد
-    messages = [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ]
+    # التحقق من سلامة النص المدخل عبر AI Guardrails قبل إرسال الطلب
+    if not validate_prompt(prompt):
+        return "Request blocked by AI Guardrails."
 
     try:
-        # استخدام system_instruction لضمان التزام النموذج بقواعد النظام
         model = genai.GenerativeModel(
             PRIMARY_MODEL,
             system_instruction=SYSTEM_PROMPT
