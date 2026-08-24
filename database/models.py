@@ -28,15 +28,7 @@ class ResearchPaper(Base):
         ForeignKey("research_projects.id")
     )
 
-    pmid = Column(String)
-
-    title = Column(Text)
-
-    authors = Column(Text)
-
-    journal = Column(String)
-
-    publication_year = Column(String)
+    title = Column(String)
 
     doi = Column(String)
 
