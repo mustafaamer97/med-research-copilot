@@ -310,6 +310,9 @@ elif menu == "📊 Statistical Analysis":
         interpret_p_value,
         generate_academic_report
     )
+    from research_analytics.smart_selector import (
+        auto_select_group_comparison_test
+    )
 
     st.header(
         "📊 Automated Statistical Analysis"
@@ -347,6 +350,29 @@ elif menu == "📊 Statistical Analysis":
         outcome = st.selectbox(
             "Outcome variable",
             df_sa.columns
+        )
+
+        analysis_report = analyze_dataset(file)[1]
+
+        recommendation = (
+            auto_select_group_comparison_test(
+                df_sa,
+                analysis_report,
+                group,
+                outcome
+            )
+        )
+
+        st.subheader(
+            "AI Recommendation"
+        )
+
+        st.success(
+            recommendation["test"]
+        )
+
+        st.write(
+            recommendation["reason"]
         )
 
         if st.button(
