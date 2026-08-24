@@ -52,6 +52,29 @@ DATA_SOURCES = [
     "Literature Only",
 ]
 
+FIELD_KEYWORD_HINTS = {
+    "Cardiology": "heart failure, NT-proBNP, ejection fraction, mortality",
+    "Neurology": "stroke, epilepsy, cognition, MRI",
+    "Oncology": "survival, chemotherapy, tumor markers",
+    "Endocrinology": "diabetes, HbA1c, insulin resistance",
+    "Gastroenterology": "IBD, colonoscopy, liver disease",
+    "Pulmonology": "COPD, asthma, spirometry",
+    "Nephrology": "CKD, dialysis, eGFR",
+    "Infectious Diseases": "COVID-19, sepsis, antimicrobial resistance",
+    "Psychiatry": "depression, anxiety, quality of life",
+    "Dermatology": "psoriasis, eczema, skin lesions",
+    "Pediatrics": "growth, vaccination, childhood disease",
+    "Obstetrics & Gynecology": "pregnancy outcomes, infertility",
+    "General Surgery": "postoperative complications, wound infection",
+    "Orthopedic Surgery": "fractures, arthroplasty, outcomes",
+    "Neurosurgery": "brain tumors, spinal surgery",
+    "Urology": "prostate cancer, kidney stones",
+    "Ophthalmology": "glaucoma, cataract, visual acuity",
+    "Otolaryngology (ENT)": "hearing loss, sinusitis",
+    "Emergency Medicine": "triage, trauma, emergency care",
+    "Public Health": "prevalence, risk factors, screening",
+}
+
 
 def render_step1():
 
@@ -68,7 +91,8 @@ def render_step1():
     data_source = st.selectbox("Available Data Source", DATA_SOURCES)
 
     keywords = st.text_area(
-        "Initial Keywords", placeholder="diabetes, insulin resistance, obesity"
+        "Initial Keywords",
+        placeholder=FIELD_KEYWORD_HINTS.get(field, "Enter important keywords"),
     )
 
     context = {
@@ -98,5 +122,16 @@ def render_step1():
     )
 
     st.session_state["research_context"] = context
+
+    if keywords.strip():
+        if st.button(
+            "Save Context & Go to Idea Generator ➜",
+            use_container_width=True,
+            type="primary",
+        ):
+            st.session_state["context_completed"] = True
+            st.success("Research context saved successfully.")
+    else:
+        st.warning("Please enter at least one keyword before continuing.")
 
     return context
