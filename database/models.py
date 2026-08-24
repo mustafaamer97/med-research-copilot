@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Index
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -32,12 +32,12 @@ class ResearchPaper(Base):
 
     abstract = Column(Text)
 
-    pmid = Column(String)
-
-    doi = Column(
+    pmid = Column(
         String,
         unique=True
     )
+
+    doi = Column(String)
 
     authors = Column(Text)
 
@@ -61,6 +61,12 @@ class ResearchPaper(Base):
     project = relationship(
         "ResearchProject",
         back_populates="papers"
+    )
+
+    # إنشاء الفهارس لتسريع استعلامات البحث وتجنب بطء الأداء مع زيادة البيانات
+    __table_args__ = (
+        Index("idx_pmid", "pmid"),
+        Index("idx_doi", "doi"),
     )
 
 
