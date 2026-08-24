@@ -67,3 +67,32 @@ def get_papers(project_id):
     db.close()
 
     return papers
+
+
+def search_papers(
+    project_id,
+    search_term
+):
+
+    db = SessionLocal()
+
+    papers = db.query(
+        ResearchPaper
+    ).filter(
+        ResearchPaper.project_id == project_id,
+        (
+            ResearchPaper.title.contains(search_term)
+        )
+        |
+        (
+            ResearchPaper.doi.contains(search_term)
+        )
+        |
+        (
+            ResearchPaper.authors.contains(search_term)
+        )
+    ).all()
+
+    db.close()
+
+    return papers
