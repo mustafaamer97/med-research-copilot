@@ -33,20 +33,12 @@ def render():
         return
 
     # =========================
-    # Load Dataset
+    # Load Dataset & Analyze
     # =========================
 
-    if uploaded_file.name.endswith(".csv"):
-
-        df = pd.read_csv(
-            uploaded_file
-        )
-
-    else:
-
-        df = pd.read_excel(
-            uploaded_file
-        )
+    df, report = analyze_dataset(
+        uploaded_file
+    )
 
     st.success(
         "Dataset loaded successfully"
@@ -65,12 +57,8 @@ def render():
     )
 
     # =========================
-    # Data Checker
+    # Data Checker Information
     # =========================
-
-    _, report = analyze_dataset(
-        uploaded_file
-    )
 
     st.subheader(
         "Dataset Information"
@@ -159,8 +147,7 @@ def render():
 
         result = run_analysis(
             df=df,
-            test_name=
-                recommendation["test"],
+            test_name=recommendation["test"],
             group_col=group_col,
             outcome_col=outcome_col
         )
