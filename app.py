@@ -41,6 +41,9 @@ if "selected_research_idea" not in st.session_state:
 if "research_question" not in st.session_state:
     st.session_state["research_question"] = {}
 
+if "question_completed" not in st.session_state:
+    st.session_state["question_completed"] = False
+
 if "literature_search" not in st.session_state:
     st.session_state["literature_search"] = {}
 
@@ -349,27 +352,28 @@ Description:
         )
 
         if st.button(
-            "Save Research Question"
+            "Save Research Question",
+            use_container_width=True,
+            type="primary"
         ):
 
-            st.session_state[
-                "research_question"
-            ] = result
+            st.session_state["research_question"] = result
 
-            st.session_state[
-                "question_completed"
-            ] = True
+            st.session_state["question_completed"] = True
 
             st.success(
-                "Research question saved."
+                "Research Question saved successfully."
             )
+
+            st.rerun()
 
 
 elif menu == "Step 4: Literature Search & Analyzer":
 
-    if not st.session_state[
-        "question_completed"
-    ]:
+    if not st.session_state.get(
+        "question_completed",
+        False
+    ):
 
         st.warning(
             "Please complete Step 3 first."
