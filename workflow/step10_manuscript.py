@@ -1,29 +1,57 @@
 import streamlit as st
 
 
-def render_step10():
+def render():
 
     st.header(
         "📄 Manuscript & Journal Finder"
+    )
+
+    st.info(
+        """
+Prepare manuscript information and target journals
+for publication planning.
+"""
     )
 
     manuscript_title = st.text_input(
         "Manuscript Title"
     )
 
+    manuscript_type = st.selectbox(
+        "Manuscript Type",
+        [
+            "Original Research",
+            "Systematic Review",
+            "Meta-Analysis",
+            "Case Report",
+            "Case Series",
+            "Short Communication",
+            "Letter to Editor"
+        ]
+    )
+
     target_journal = st.text_input(
         "Target Journal"
     )
 
+    keywords = st.text_area(
+        "Manuscript Keywords"
+    )
+
     if st.button(
-        "Save Manuscript Plan"
+        "💾 Save Manuscript Plan",
+        use_container_width=True,
+        type="primary"
     ):
 
         st.session_state[
             "manuscript_package"
         ] = {
             "title": manuscript_title,
-            "journal": target_journal
+            "type": manuscript_type,
+            "journal": target_journal,
+            "keywords": keywords
         }
 
         st.session_state[
@@ -31,12 +59,27 @@ def render_step10():
         ] = True
 
         st.success(
-            "Manuscript plan saved."
+            "Manuscript plan saved successfully."
+        )
+
+    if st.session_state.get(
+        "manuscript_package"
+    ):
+
+        st.subheader(
+            "Current Manuscript Plan"
+        )
+
+        st.json(
+            st.session_state[
+                "manuscript_package"
+            ]
         )
 
     if st.session_state.get(
         "manuscript_completed"
     ):
+
         st.success(
             "✅ Step 10 Completed"
         )
