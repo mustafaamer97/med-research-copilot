@@ -1,5 +1,9 @@
 import streamlit as st
 
+from modules.idea_validator import (
+    validate_research_idea
+)
+
 
 MEDICAL_FIELDS = [
     "Cardiology",
@@ -80,19 +84,36 @@ def render_step1():
 
     st.header("Step 1: Research Context & Scope")
 
-    st.write("Define your research area before building the question.")
+    st.write(
+        "Define your research area before building the research question."
+    )
 
-    field = st.selectbox("Main Medical Field", MEDICAL_FIELDS)
+    field = st.selectbox(
+        "Main Medical Field",
+        MEDICAL_FIELDS
+    )
 
-    population = st.selectbox("Target Population", TARGET_POPULATIONS)
+    population = st.selectbox(
+        "Target Population",
+        TARGET_POPULATIONS
+    )
 
-    study_design = st.selectbox("Study Design", STUDY_DESIGNS)
+    study_design = st.selectbox(
+        "Study Design",
+        STUDY_DESIGNS
+    )
 
-    data_source = st.selectbox("Available Data Source", DATA_SOURCES)
+    data_source = st.selectbox(
+        "Available Data Source",
+        DATA_SOURCES
+    )
 
     keywords = st.text_area(
         "Initial Keywords",
-        placeholder=FIELD_KEYWORD_HINTS.get(field, "Enter important keywords"),
+        placeholder=FIELD_KEYWORD_HINTS.get(
+            field,
+            "Enter important keywords"
+        ),
     )
 
     context = {
@@ -103,9 +124,74 @@ def render_step1():
         "keywords": keywords,
     }
 
+    st.session_state["research_context"] = context
+
+    # =========================
+    # Feasibility Assessment
+    # =========================
+
+    validation = validate_research_idea(
+        study_design,
+        data_source
+    )
+
     st.markdown("---")
 
-    st.subheader("Research Context Summary")
+    st.subheader(
+        "Research Feasibility Assessment"
+    )
+
+    if validation["feasibility"] == "High":
+
+        st.success(
+            f"""
+Feasibility Score: {validation['score']}/100
+
+Feasibility Level: HIGH
+"""
+        )
+
+    elif validation["feasibility"] == "Moderate":
+
+        st.warning(
+            f"""
+Feasibility Score: {validation['score']}/100
+
+Feasibility Level: MODERATE
+"""
+        )
+
+    else:
+
+        st.error(
+            f"""
+Feasibility Score: {validation['score']}/100
+
+Feasibility Level: LOW
+"""
+        )
+
+    if validation["notes"]:
+
+        with st.expander(
+            "Why was this score assigned?"
+        ):
+
+            for note in validation["notes"]:
+
+                st.write(
+                    f"• {note}"
+                )
+
+    # =========================
+    # Research Context Summary
+    # =========================
+
+    st.markdown("---")
+
+    st.subheader(
+        "Research Context Summary"
+    )
 
     st.info(
         f"""
@@ -121,17 +207,30 @@ def render_step1():
 """
     )
 
-    st.session_state["research_context"] = context
+    # =========================
+    # Continue Button
+    # =========================
 
     if keywords.strip():
+
         if st.button(
             "Save Context & Go to Idea Generator ➜",
             use_container_width=True,
             type="primary",
         ):
-            st.session_state["context_completed"] = True
-            st.success("Research context saved successfully.")
+
+            st.session_state[
+                "context_completed"
+            ] = True
+
+            st.success(
+                "Research context saved successfully."
+            )
+
     else:
-        st.warning("Please enter at least one keyword before continuing.")
+
+        st.warning(
+            "Please enter at least one keyword before continuing."
+        )
 
     return context
