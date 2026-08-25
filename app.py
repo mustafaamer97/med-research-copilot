@@ -394,14 +394,20 @@ elif menu == "Step 4: Literature Search & Analyzer":
         height=120
     )
 
-    number = st.slider(
+    st.markdown("### 📄 Search Settings")
+
+    number = st.selectbox(
         "Number of papers",
-        1,
-        20,
-        5
+        [5, 10, 20, 50],
+        index=1,
+        help="Maximum number of PubMed papers to retrieve"
     )
 
-    if st.button("Search PubMed"):
+    if st.button(
+        "🔎 Search PubMed",
+        use_container_width=True,
+        type="primary"
+    ):
 
         with st.spinner("Searching medical literature..."):
 
@@ -413,49 +419,157 @@ elif menu == "Step 4: Literature Search & Analyzer":
         if papers:
             st.session_state["literature_search"] = papers
             st.session_state["literature_completed"] = True
-
-            for idx, paper in enumerate(papers):
-
-                st.subheader(
-                    paper["title"]
-                )
-
-                if paper.get("doi"):
-                    st.write("DOI:", paper["doi"])
-
-                if paper.get("url"):
-                    st.markdown(
-                        f"[Open in PubMed]({paper['url']})"
-                    )
-
-                st.write(
-                    paper["abstract"]
-                )
-
-                if st.button(f"Save Paper", key=f"save_{idx}"):
-
-                    result = save_paper(
-                        project_id=1,
-                        paper=paper
-                    )
-
-                    if result["saved"]:
-
-                        st.success(
-                            result["message"]
-                        )
-
-                    else:
-
-                        st.warning(
-                            result["message"]
-                        )
-
-                st.divider()
-
         else:
             st.session_state["literature_completed"] = False
             st.warning("No papers found. Please adjust your search query.")
+
+    # عرض نتائج البحث والبطاقات إن وُجدت أوراق في الجلسة
+    papers = st.session_state.get("literature_search", [])
+
+    if papers:
+        st.success(
+            f"Found {len(papers)} papers"
+        )
+
+        level1 = len([
+            p for p in papers
+            if p.get("evidence_level") == "Level 1"
+        ])
+
+        level2 = len([
+            p for p in papers
+            if p.get("evidence_level") == "Level 2"
+        ])
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Total Papers",
+                len(papers)
+            )
+
+        with col2:
+            st.metric(
+                "Level 1",
+                level1
+            )
+
+        with col3:
+            st.metric(
+                "Level 2",
+                level2
+            )
+
+        st.divider()
+
+        selected_level = st.selectbox(
+            "Evidence Filter",
+            [
+                "All",
+                "Level 1",
+                "Level 2",
+                "Level 3",
+                "Level 4"
+            ]
+        )
+
+        filtered_papers = papers
+        if selected_level != "All":
+            filtered_papers = [
+                p for p in papers
+                if p.get("evidence_level") == selected_level
+            ]
+
+        for idx, paper in enumerate(filtered_papers):
+
+            with st.container():
+
+                st.markdown("---")
+
+                st.markdown(
+                    f"### 📄 {paper.get('title', 'No Title')}"
+                )
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.metric(
+                        "Year",
+                        paper.get("year", "N/A")
+                    )
+
+                with col2:
+                    st.metric(
+                        "Evidence",
+                        paper.get(
+                            "evidence_level",
+                            "Unknown"
+                        )
+                    )
+
+                with col3:
+                    st.metric(
+                        "Journal",
+                        (
+                            paper.get(
+                                "journal",
+                                "N/A"
+                            )[:20]
+                        )
+                    )
+
+                if paper.get("doi"):
+
+                    st.caption(
+                        f"DOI: {paper['doi']}"
+                    )
+
+                with st.expander(
+                    "📖 View Abstract"
+                ):
+
+                    st.write(
+                        paper.get(
+                            "abstract",
+                            "No abstract available."
+                        )
+                    )
+
+                col_a, col_b = st.columns(2)
+
+                with col_a:
+
+                    if paper.get("url"):
+
+                        st.link_button(
+                            "🔗 Open PubMed",
+                            paper["url"]
+                        )
+
+                with col_b:
+
+                    if st.button(
+                        "💾 Save Paper",
+                        key=f"save_{idx}"
+                    ):
+
+                        result = save_paper(
+                            project_id=1,
+                            paper=paper
+                        )
+
+                        if result["saved"]:
+
+                            st.success(
+                                result["message"]
+                            )
+
+                        else:
+
+                            st.warning(
+                                result["message"]
+                            )
 
     if st.session_state.get(
         "literature_completed"
