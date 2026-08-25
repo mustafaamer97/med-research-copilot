@@ -32,43 +32,123 @@ def render():
         "📋 Research Protocol Builder"
     )
 
-    st.info(
-        "Generate a complete research protocol from your selected idea."
-    )
+    # ==================================
+    # Load Previous Steps
+    # ==================================
 
-    # ==================================
-    # Load Idea Automatically
-    # ==================================
+    research_context = st.session_state.get(
+        "research_context",
+        {}
+    )
 
     selected_idea = st.session_state.get(
         "selected_research_idea",
         {}
     )
 
-    default_idea = selected_idea.get(
-        "description",
-        ""
+    research_question = st.session_state.get(
+        "research_question",
+        {}
     )
+
+    literature = st.session_state.get(
+        "literature_search",
+        []
+    )
+
+    # ==================================
+    # Context Summary
+    # ==================================
+
+    st.subheader(
+        "Research Context"
+    )
+
+    if research_context:
+
+        st.info(
+            f"""
+Field: {research_context.get('field','')}
+
+Population: {research_context.get('population','')}
+
+Study Design: {research_context.get('study_design','')}
+
+Data Source: {research_context.get('data_source','')}
+"""
+        )
+
+    # ==================================
+    # Research Idea
+    # ==================================
 
     if selected_idea:
 
         st.subheader(
-            "Selected Research Idea"
+            "Research Idea"
         )
 
         st.info(
             f"""
 Title:
-{selected_idea.get('title', '')}
+{selected_idea.get('title','')}
 
 Description:
-{selected_idea.get('description', '')}
+{selected_idea.get('description','')}
 """
         )
 
     # ==================================
+    # Research Question
+    # ==================================
+
+    if research_question:
+
+        st.subheader(
+            "Research Question"
+        )
+
+        st.success(
+            research_question.get(
+                "question",
+                ""
+            )
+        )
+
+    # ==================================
+    # Evidence Summary
+    # ==================================
+
+    if literature:
+
+        st.subheader(
+            "Evidence Summary"
+        )
+
+        st.metric(
+            "Retrieved Papers",
+            len(literature)
+        )
+
+        for paper in literature[:5]:
+
+            st.caption(
+                f"""
+{paper.get('year','')} |
+{paper.get('evidence_level','Unknown')}
+
+{paper.get('title','')}
+"""
+            )
+
+    # ==================================
     # Protocol Inputs
     # ==================================
+
+    default_idea = selected_idea.get(
+        "description",
+        ""
+    )
 
     idea = st.text_area(
         "Research Idea",
@@ -96,8 +176,10 @@ Description:
         ):
 
             protocol = generate_protocol(
-                idea,
-                study_type
+                research_idea=idea,
+                study_type=study_type,
+                research_context=research_context,
+                research_question=research_question
             )
 
         st.session_state[
@@ -136,7 +218,7 @@ Description:
         )
 
     # ==================================
-    # Completion Status
+    # Completion
     # ==================================
 
     if st.session_state.get(
