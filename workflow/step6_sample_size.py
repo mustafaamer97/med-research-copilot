@@ -1,15 +1,9 @@
 import streamlit as st
 
+from research_analytics.sample_size_engine import (
+    calculate_sample_size
+)
 
-STUDY_TYPES = [
-    "Randomized Controlled Trial (RCT)",
-    "Prospective Cohort",
-    "Retrospective Cohort",
-    "Case-Control",
-    "Cross-Sectional",
-    "Diagnostic Study",
-]
-    
 
 def render():
 
@@ -20,25 +14,30 @@ def render():
     st.info(
         """
 Estimate the required sample size
-before starting data collection.
+before starting the study.
 """
     )
 
     study_type = st.selectbox(
         "Study Type",
-        STUDY_TYPES
+        [
+            "RCT",
+            "Cohort",
+            "Case-Control",
+            "Cross-Sectional"
+        ]
     )
 
     effect_size = st.number_input(
-        "Expected Effect Size",
-        min_value=0.10,
-        max_value=5.00,
-        value=0.50,
-        step=0.10
+        "Expected Effect Size (Cohen's d)",
+        min_value=0.1,
+        max_value=2.0,
+        value=0.5,
+        step=0.1
     )
 
     alpha = st.number_input(
-        "Alpha (Type I Error)",
+        "Alpha",
         min_value=0.01,
         max_value=0.20,
         value=0.05,
@@ -46,51 +45,67 @@ before starting data collection.
     )
 
     power = st.number_input(
-        "Statistical Power",
+        "Power",
         min_value=0.50,
         max_value=0.99,
         value=0.80,
         step=0.05
     )
 
-    st.markdown("---")
-
     if st.button(
-        "💾 Save Sample Size Plan",
-        use_container_width=True,
-        type="primary"
+        "Calculate Sample Size",
+        type="primary",
+        use_container_width=True
     ):
 
-        st.session_state[
-            "sample_size_plan"
-        ] = {
-            "study_type": study_type,
-            "effect_size": effect_size,
-            "alpha": alpha,
-            "power": power,
-        }
+        try:
 
-        st.session_state[
-            "sample_size_completed"
-        ] = True
+            n = calculate_sample_size(
+                effect_size,
+                alpha,
+                power
+            )
 
-        st.success(
-            "Sample size plan saved successfully."
-        )
+            total_n = n * 2
 
-    if st.session_state.get(
+            st.success(
+                f"""
+Required sample size per group: {n}
+
+Total sample size: {total_n}
+"""
+            )
+
+            st.session_state[
+                "sample_size_plan"
+            ] = {
+                "study_type": study_type,
+                "effect_size": effect_size,
+                "alpha": alpha,
+                "power": power,
+                "per_group": n,
+                "total_sample": total_n
+            }
+
+            st.session_state[
+                "sample_size_completed"
+            ] = True
+
+        except Exception as e:
+
+            st.error(str(e))
+
+    plan = st.session_state.get(
         "sample_size_plan"
-    ):
+    )
+
+    if plan:
 
         st.subheader(
             "Current Sample Size Plan"
         )
 
-        st.json(
-            st.session_state[
-                "sample_size_plan"
-            ]
-        )
+        st.json(plan)
 
     if st.session_state.get(
         "sample_size_completed"
