@@ -1,4 +1,4 @@
-from scipy.stats import fisher_exact
+from scipy.stats import fisher_exact, kruskal
 import pandas as pd
 import pingouin as pg
 
@@ -47,6 +47,39 @@ def run_anova(df, group_col, outcome_col):
     )
 
     return result
+
+
+def run_kruskal(
+    df,
+    group_col,
+    outcome_col
+):
+
+    groups = (
+        df[group_col]
+        .dropna()
+        .unique()
+    )
+
+    samples = []
+
+    for group in groups:
+
+        samples.append(
+            df[
+                df[group_col] == group
+            ][outcome_col]
+            .dropna()
+        )
+
+    statistic, p_value = kruskal(
+        *samples
+    )
+
+    return {
+        "Statistic": statistic,
+        "P-value": p_value
+    }
 
 
 def run_pearson_correlation(
@@ -188,6 +221,14 @@ def run_analysis(
     if test_name == "ANOVA":
 
         return run_anova(
+            df,
+            group_col,
+            outcome_col
+        )
+
+    if test_name == "Kruskal-Wallis":
+
+        return run_kruskal(
             df,
             group_col,
             outcome_col
