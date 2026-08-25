@@ -23,7 +23,6 @@ from modules.paper_reviewer import review_paper
 from modules.idea_generator import generate_research_ideas
 from modules.protocol_builder import generate_protocol
 
-
 # إنشاء الجداول في قاعدة البيانات إن لم تكن موجودة
 Base.metadata.create_all(bind=engine)
 
@@ -89,13 +88,11 @@ for key, value in WORKFLOW_STEPS.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
-
 st.set_page_config(
     page_title="Med Research Copilot",
     page_icon="🧬",
     layout="wide"
 )
-
 
 st.title("🧬 Med Research Copilot")
 
@@ -139,7 +136,6 @@ menu = st.sidebar.radio(
     ]
 )
 
-
 # --- معالجة الشروط بناءً على القائمة المحدثة ---
 
 if menu == "🏠 Dashboard":
@@ -153,11 +149,9 @@ if menu == "🏠 Dashboard":
         """
     )
 
-
 elif menu == "Step 1: Context & Scope Builder":
 
     render_step1()
-
 
 elif menu == "Step 2: Idea Generator & Validation":
 
@@ -269,7 +263,6 @@ elif menu == "Step 2: Idea Generator & Validation":
             "✅ Step 2 Completed"
         )
 
-
 elif menu == "Step 3: Research Question Builder":
 
     if not st.session_state.get("idea_completed", False):
@@ -344,7 +337,6 @@ Description:
 
             st.rerun()
 
-
 elif menu == "Step 4: Literature Search & Analyzer":
 
     st.subheader("DEBUG")
@@ -418,15 +410,9 @@ elif menu == "Step 4: Literature Search & Analyzer":
                 number
             )
 
-        st.session_state[
-            "literature_search"
-        ] = papers
-
-        st.session_state[
-            "literature_completed"
-        ] = True
-
         if papers:
+            st.session_state["literature_search"] = papers
+            st.session_state["literature_completed"] = True
 
             for idx, paper in enumerate(papers):
 
@@ -468,10 +454,8 @@ elif menu == "Step 4: Literature Search & Analyzer":
                 st.divider()
 
         else:
-
-            st.warning(
-                "No papers found"
-            )
+            st.session_state["literature_completed"] = False
+            st.warning("No papers found. Please adjust your search query.")
 
     if st.session_state.get(
         "literature_completed"
@@ -481,12 +465,12 @@ elif menu == "Step 4: Literature Search & Analyzer":
             "✅ Step 4 Completed"
         )
 
-
 elif menu == "Step 5: Protocol Builder":
 
-    if not st.session_state[
-        "literature_completed"
-    ]:
+    if not st.session_state.get(
+        "literature_completed",
+        False
+    ):
 
         st.warning(
             "Please complete Step 4 first."
@@ -527,7 +511,6 @@ elif menu == "Step 5: Protocol Builder":
 
         st.markdown(protocol)
 
-
 elif menu == "Step 6: Sample Size & Power":
 
     st.header(
@@ -537,7 +520,6 @@ elif menu == "Step 6: Sample Size & Power":
     st.info(
         "This module will be connected during Phase 3."
     )
-
 
 elif menu == "Step 7: Ethics & IRB":
 
@@ -549,7 +531,6 @@ elif menu == "Step 7: Ethics & IRB":
         "This module will be connected during Phase 3."
     )
 
-
 elif menu == "Step 8: Data Collection":
 
     st.header(
@@ -560,13 +541,11 @@ elif menu == "Step 8: Data Collection":
         "This module will be connected during Phase 4."
     )
 
-
 elif menu == "Step 9: Statistical Analysis":
 
     from pages.analytics_page import render
 
     render()
-
 
 elif menu == "Step 10: Manuscript & Journal Finder":
 
@@ -577,7 +556,6 @@ elif menu == "Step 10: Manuscript & Journal Finder":
     st.info(
         "This module will be connected during Phase 6."
     )
-
 
 elif menu == "Research Library":
 
@@ -734,7 +712,6 @@ elif menu == "Research Library":
             st.info(
                 "No saved papers for this project ID."
             )
-
 
 elif menu == "Paper Analyzer":
 
