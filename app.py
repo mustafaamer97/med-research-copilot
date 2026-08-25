@@ -80,26 +80,71 @@ st.subheader(
 )
 
 # --- القائمة الجانبية التنقلية ---
-menu = st.sidebar.selectbox(
-    "Navigation",
+st.sidebar.title("🧬 Med Research Copilot")
+
+menu = st.sidebar.radio(
+    "Research Workflow",
     [
-        "Dashboard",
-        "Step 1: Research Field & Setup",
-        "New Research Project",
-        "Research Idea Generator",
-        "Research Question Builder",
-        "Protocol Builder",
-        "📋 Statistical Planning",
-        "Data Analysis",
-        "📊 Statistical Analysis",
-        "Literature Search",
-        "Research Library",
-        "Paper Analyzer"
+
+        # =========================
+        # Dashboard
+        # =========================
+
+        "🏠 Dashboard",
+
+        # =========================
+        # PHASE 1
+        # =========================
+
+        "PHASE 1 • Step 1: Context & Scope Builder",
+        "PHASE 1 • Step 2: Idea Generator & Validation",
+        "PHASE 1 • Step 3: Research Question Builder",
+
+        # =========================
+        # PHASE 2
+        # =========================
+
+        "PHASE 2 • Step 4: Literature Search",
+        "PHASE 2 • Step 5: Protocol Builder",
+
+        # =========================
+        # PHASE 3
+        # =========================
+
+        "PHASE 3 • Step 6: Sample Size & Statistical Planning",
+        "PHASE 3 • Step 7: IRB & Ethics Package",
+
+        # =========================
+        # PHASE 4
+        # =========================
+
+        "PHASE 4 • Step 8: Data Collection",
+
+        # =========================
+        # PHASE 5
+        # =========================
+
+        "PHASE 5 • Step 9: Statistical Analysis",
+
+        # =========================
+        # PHASE 6
+        # =========================
+
+        "PHASE 6 • Step 10: Manuscript & Publication",
+
+        # =========================
+        # Tools
+        # =========================
+
+        "📚 Research Library",
+        "📄 Paper Analyzer"
     ]
 )
 
 
-if menu == "Dashboard":
+# --- معالجة الشروط بناءً على القائمة المحدثة ---
+
+if menu == "🏠 Dashboard":
 
     st.write(
         """
@@ -111,31 +156,13 @@ if menu == "Dashboard":
     )
 
 
-elif menu == "Step 1: Research Field & Setup":
+elif menu == "PHASE 1 • Step 1: Context & Scope Builder":
 
     # تشغيل الخطوة الأولى المخصصة للباحث المبتدئ وتخزين البيانات داخل st.session_state["research_context"]
     render_step1()
 
 
-elif menu == "New Research Project":
-
-    st.header("Create Research Project")
-
-    # يمكن أيضاً تشغيل الخطوة الأولى هنا مباشرة أو استخدامها لإعداد مشروع جديد
-    render_step1()
-
-    title = st.text_input(
-        "Research Title"
-    )
-
-    if st.button("Save Project"):
-        st.session_state["research_context"]["project_title"] = title
-        st.success(
-            "Project created successfully"
-        )
-
-
-elif menu == "Research Idea Generator":
+elif menu == "PHASE 1 • Step 2: Idea Generator & Validation":
 
     st.header(
         "💡 AI Research Idea Generator"
@@ -176,7 +203,7 @@ elif menu == "Research Idea Generator":
             )
 
 
-elif menu == "Research Question Builder":
+elif menu == "PHASE 1 • Step 3: Research Question Builder":
 
     st.header(
         "🧬 PICO Research Question Builder"
@@ -226,119 +253,7 @@ elif menu == "Research Question Builder":
         )
 
 
-elif menu == "Protocol Builder":
-
-    st.header(
-        "📋 Research Protocol Builder"
-    )
-
-    idea = st.text_area(
-        "Enter research idea"
-    )
-
-    study_type = st.selectbox(
-        "Study Type",
-        [
-            "Clinical Trial",
-            "Cohort Study",
-            "Case-Control Study",
-            "Cross-Sectional Study",
-            "Systematic Review",
-            "Meta-analysis"
-        ]
-    )
-
-    if st.button("Generate Protocol"):
-
-        with st.spinner(
-            "Building protocol..."
-        ):
-
-            protocol = generate_protocol(
-                idea,
-                study_type
-            )
-
-        st.markdown(protocol)
-
-
-elif menu == "📋 Statistical Planning":
-
-    from research_analytics.smart_selector import suggest_test
-
-    st.header("📊 AI Statistical Advisor")
-
-    outcome_type = st.selectbox(
-        "Outcome Type",
-        [
-            "continuous",
-            "categorical"
-        ]
-    )
-
-    groups = st.number_input(
-        "Number of Groups",
-        min_value=2,
-        value=2
-    )
-
-    objective = st.selectbox(
-        "Objective",
-        [
-            "comparison",
-            "correlation"
-        ]
-    )
-
-    paired = st.checkbox(
-        "Paired Data"
-    )
-
-    normal_distribution = st.checkbox(
-        "Normally Distributed",
-        value=True
-    )
-
-    if st.button(
-        "Recommend Test"
-    ):
-
-        result = suggest_test(
-            outcome_type=outcome_type,
-            groups=groups,
-            objective=objective,
-            paired=paired,
-            normal_distribution=normal_distribution
-        )
-
-        st.success(result["test"])
-
-        st.write(result["reason"])
-
-        if "alternative" in result:
-
-            st.info(
-                f"Alternative: {result['alternative']}"
-            )
-
-
-elif menu == "Data Analysis":
-
-    st.header(
-        "📊 Medical Data Profiler"
-    )
-
-    st.info("Data analysis components are being managed via Analytics module.")
-
-
-elif menu == "📊 Statistical Analysis":
-
-    from pages.analytics_page import render
-
-    render()
-
-
-elif menu == "Literature Search":
+elif menu == "PHASE 2 • Step 4: Literature Search":
 
     st.header(
         "🔎 PubMed Literature Search"
@@ -412,7 +327,143 @@ elif menu == "Literature Search":
             )
 
 
-elif menu == "Research Library":
+elif menu == "PHASE 2 • Step 5: Protocol Builder":
+
+    st.header(
+        "📋 Research Protocol Builder"
+    )
+
+    idea = st.text_area(
+        "Enter research idea"
+    )
+
+    study_type = st.selectbox(
+        "Study Type",
+        [
+            "Clinical Trial",
+            "Cohort Study",
+            "Case-Control Study",
+            "Cross-Sectional Study",
+            "Systematic Review",
+            "Meta-analysis"
+        ]
+    )
+
+    if st.button("Generate Protocol"):
+
+        with st.spinner(
+            "Building protocol..."
+        ):
+
+            protocol = generate_protocol(
+                idea,
+                study_type
+            )
+
+        st.markdown(protocol)
+
+
+elif menu == "PHASE 3 • Step 6: Sample Size & Statistical Planning":
+
+    from research_analytics.smart_selector import suggest_test
+
+    st.header("📊 AI Statistical Advisor")
+
+    outcome_type = st.selectbox(
+        "Outcome Type",
+        [
+            "continuous",
+            "categorical"
+        ]
+    )
+
+    groups = st.number_input(
+        "Number of Groups",
+        min_value=2,
+        value=2
+    )
+
+    objective = st.selectbox(
+        "Objective",
+        [
+            "comparison",
+            "correlation"
+        ]
+    )
+
+    paired = st.checkbox(
+        "Paired Data"
+    )
+
+    normal_distribution = st.checkbox(
+        "Normally Distributed",
+        value=True
+    )
+
+    if st.button(
+        "Recommend Test"
+    ):
+
+        result = suggest_test(
+            outcome_type=outcome_type,
+            groups=groups,
+            objective=objective,
+            paired=paired,
+            normal_distribution=normal_distribution
+        )
+
+        st.success(result["test"])
+
+        st.write(result["reason"])
+
+        if "alternative" in result:
+
+            st.info(
+                f"Alternative: {result['alternative']}"
+            )
+
+
+elif menu == "PHASE 3 • Step 7: IRB & Ethics Package":
+
+    st.header(
+        "📑 IRB & Ethics Package"
+    )
+
+    st.info(
+        "Coming soon..."
+    )
+
+
+elif menu == "PHASE 4 • Step 8: Data Collection":
+
+    st.header(
+        "🗂 Data Collection"
+    )
+
+    st.info(
+        "Coming soon..."
+    )
+
+
+elif menu == "PHASE 5 • Step 9: Statistical Analysis":
+
+    from pages.analytics_page import render
+
+    render()
+
+
+elif menu == "PHASE 6 • Step 10: Manuscript & Publication":
+
+    st.header(
+        "📝 Manuscript & Publication"
+    )
+
+    st.info(
+        "Coming soon..."
+    )
+
+
+elif menu == "📚 Research Library":
 
     st.header(
         "📚 Research Library"
@@ -569,7 +620,7 @@ elif menu == "Research Library":
             )
 
 
-elif menu == "Paper Analyzer":
+elif menu == "📄 Paper Analyzer":
 
     st.header(
         "📄 Scientific Paper Analyzer"
