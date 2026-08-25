@@ -65,6 +65,28 @@ if "analysis_results" not in st.session_state:
 if "manuscript_package" not in st.session_state:
     st.session_state["manuscript_package"] = {}
 
+# =========================
+# Workflow Completion Flags
+# =========================
+
+WORKFLOW_STEPS = {
+    "context_completed": False,
+    "idea_completed": False,
+    "question_completed": False,
+    "literature_completed": False,
+    "protocol_completed": False,
+    "sample_size_completed": False,
+    "irb_completed": False,
+    "data_collection_completed": False,
+    "analysis_completed": False,
+    "manuscript_completed": False,
+}
+
+for key, value in WORKFLOW_STEPS.items():
+
+    if key not in st.session_state:
+        st.session_state[key] = value
+
 
 st.set_page_config(
     page_title="Med Research Copilot",
@@ -133,7 +155,6 @@ if menu == "🏠 Dashboard":
 
 elif menu == "Step 1: Context & Scope Builder":
 
-    # تشغيل الخطوة الأولى المخصصة للباحث المبتدئ وتخزين البيانات داخل st.session_state["research_context"]
     render_step1()
 
 
@@ -143,7 +164,6 @@ elif menu == "Step 2: Idea Generator & Validation":
         "💡 AI Research Idea Generator"
     )
 
-    # جلب التخصص الافتراضي من سياق البحث إن وجد
     default_field = st.session_state["research_context"].get("field", "")
 
     field = st.text_input(
@@ -179,6 +199,14 @@ elif menu == "Step 2: Idea Generator & Validation":
 
 
 elif menu == "Step 3: Research Question Builder":
+
+    if not st.session_state["idea_completed"]:
+
+        st.warning(
+            "Please complete Step 2 first."
+        )
+
+        st.stop()
 
     st.header(
         "🧬 PICO Research Question Builder"
@@ -229,6 +257,14 @@ elif menu == "Step 3: Research Question Builder":
 
 
 elif menu == "Step 4: Literature Search & Analyzer":
+
+    if not st.session_state["question_completed"]:
+
+        st.warning(
+            "Please complete Step 3 first."
+        )
+
+        st.stop()
 
     st.header(
         "🔎 PubMed Literature Search"
