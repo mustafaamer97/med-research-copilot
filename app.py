@@ -340,83 +340,34 @@ elif menu == "Step 5: Protocol Builder":
 
 elif menu == "Step 6: Sample Size & Power":
 
-    from research_analytics.smart_selector import suggest_test
-
-    st.header("📊 AI Statistical Advisor")
-
-    outcome_type = st.selectbox(
-        "Outcome Type",
-        [
-            "continuous",
-            "categorical"
-        ]
+    st.header(
+        "Step 6: Sample Size & Power Calculator"
     )
 
-    groups = st.number_input(
-        "Number of Groups",
-        min_value=2,
-        value=2
+    st.info(
+        "This module will be connected during Phase 3."
     )
-
-    objective = st.selectbox(
-        "Objective",
-        [
-            "comparison",
-            "correlation"
-        ]
-    )
-
-    paired = st.checkbox(
-        "Paired Data"
-    )
-
-    normal_distribution = st.checkbox(
-        "Normally Distributed",
-        value=True
-    )
-
-    if st.button(
-        "Recommend Test"
-    ):
-
-        result = suggest_test(
-            outcome_type=outcome_type,
-            groups=groups,
-            objective=objective,
-            paired=paired,
-            normal_distribution=normal_distribution
-        )
-
-        st.success(result["test"])
-
-        st.write(result["reason"])
-
-        if "alternative" in result:
-
-            st.info(
-                f"Alternative: {result['alternative']}"
-            )
 
 
 elif menu == "Step 7: Ethics & IRB":
 
     st.header(
-        "📑 IRB & Ethics Package"
+        "Step 7: IRB & Ethical Approval"
     )
 
     st.info(
-        "Coming soon..."
+        "This module will be connected during Phase 3."
     )
 
 
 elif menu == "Step 8: Data Collection":
 
     st.header(
-        "🗂 Data Collection"
+        "Step 8: Data Collection Sheet Generator"
     )
 
     st.info(
-        "Coming soon..."
+        "This module will be connected during Phase 4."
     )
 
 
@@ -430,11 +381,11 @@ elif menu == "Step 9: Statistical Analysis":
 elif menu == "Step 10: Manuscript & Journal Finder":
 
     st.header(
-        "📝 Manuscript & Publication"
+        "Step 10: Manuscript Draft & Journal Finder"
     )
 
     st.info(
-        "Coming soon..."
+        "This module will be connected during Phase 6."
     )
 
 
