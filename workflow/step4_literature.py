@@ -2,6 +2,9 @@ import streamlit as st
 
 from modules.multi_source_search import search_all_sources
 from modules.library import save_paper
+from modules.research_gap_detector import (
+    detect_research_gaps
+)
 
 
 def render():
@@ -73,6 +76,20 @@ def render():
 
     if not papers:
         return
+
+    # ==========================================
+    # Research Gap Analysis
+    # ==========================================
+
+    analysis = detect_research_gaps(papers)
+
+    st.session_state["research_gap_analysis"] = analysis
+
+    st.subheader("🎯 Research Gaps")
+
+    for gap in analysis["research_gaps"]:
+
+        st.warning(gap)
 
     # ==========================================
     # Filtering
