@@ -56,6 +56,11 @@ def render():
         []
     )
 
+    gap_analysis = st.session_state.get(
+        "research_gap_analysis",
+        {}
+    )
+
     # ==================================
     # Context Summary
     # ==================================
@@ -142,6 +147,36 @@ Description:
             )
 
     # ==================================
+    # Research Gap Summary
+    # ==================================
+
+    if gap_analysis:
+
+        st.subheader(
+            "Research Gap Analysis"
+        )
+
+        top_keywords = gap_analysis.get(
+            "top_keywords",
+            []
+        )
+
+        if top_keywords:
+
+            st.write(
+                "Most Common Literature Keywords"
+            )
+
+            st.write(
+                ", ".join(
+                    [
+                        item[0]
+                        for item in top_keywords[:10]
+                    ]
+                )
+            )
+
+    # ==================================
     # Protocol Inputs
     # ==================================
 
@@ -179,7 +214,15 @@ Description:
                 research_idea=idea,
                 study_type=study_type,
                 research_context=research_context,
-                research_question=research_question
+                research_question=research_question,
+                research_gaps=gap_analysis.get(
+                    "research_gaps",
+                    []
+                ),
+                keywords=gap_analysis.get(
+                    "top_keywords",
+                    []
+                )
             )
 
         st.session_state[
