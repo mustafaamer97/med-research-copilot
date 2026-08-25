@@ -187,9 +187,37 @@ elif menu == "Step 2: Idea Generator & Validation":
                 "Suggested Research Ideas"
             )
 
-            st.write(
-                ideas
+            st.write(ideas)
+
+            st.session_state[
+                "generated_ideas"
+            ] = ideas
+
+            st.markdown("---")
+
+            selected_title = st.text_input(
+                "Selected Research Idea Title"
             )
+
+            if st.button(
+                "Approve Research Idea"
+            ):
+
+                st.session_state[
+                    "selected_research_idea"
+                ] = {
+                    "field": field,
+                    "title": selected_title,
+                    "ideas_text": ideas
+                }
+
+                st.session_state[
+                    "idea_completed"
+                ] = True
+
+                st.success(
+                    "Research idea approved successfully."
+                )
 
         else:
 
@@ -207,6 +235,21 @@ elif menu == "Step 3: Research Question Builder":
         )
 
         st.stop()
+
+    idea_data = st.session_state.get(
+        "selected_research_idea",
+        {}
+    )
+
+    if idea_data:
+
+        st.info(
+            f"""
+Selected Idea:
+
+{idea_data.get('title','')}
+"""
+        )
 
     st.header(
         "🧬 PICO Research Question Builder"
