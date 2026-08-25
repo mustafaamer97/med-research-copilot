@@ -6,19 +6,17 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-# --- استيراد خطوات سير العمل (Workflow Steps 1–5) ---
-from workflow.step1_context import render as step1_render
-from workflow.step2_idea import render as step2_render
-from workflow.step3_question import render as step3_render
-from workflow.step4_literature import render as step4_render
-from workflow.step5_protocol import render as step5_render
-
-# --- استيراد خطوات سير العمل (Workflow Steps 6–10) ---
-from components.step6_sample_size import render_step6
-from components.step7_irb import render_step7
-from components.step8_data_collection import render_step8
-from components.step9_statistics import render_step9
-from components.step10_manuscript import render_step10
+# --- استيراد جميع خطوات سير العمل من مجلد workflow ---
+from workflow.step1_field import render_step1
+from workflow.step2_idea import render_step2
+from workflow.step3_question import render_step3
+from workflow.step4_literature import render_step4
+from workflow.step5_protocol import render_step5
+from workflow.step6_sample_size import render_step6
+from workflow.step7_irb import render_step7
+from workflow.step8_data_collection import render_step8
+from workflow.step9_statistics import render_step9
+from workflow.step10_manuscript import render_step10
 
 # --- الاستيرادات الأخرى والأدوات ---
 from database.db import engine
@@ -155,19 +153,19 @@ if menu == "🏠 Dashboard":
     )
 
 elif menu == "Step 1: Context & Scope Builder":
-    step1_render()
+    render_step1()
 
 elif menu == "Step 2: Idea Generator & Validation":
-    step2_render()
+    render_step2()
 
 elif menu == "Step 3: Research Question Builder":
-    step3_render()
+    render_step3()
 
 elif menu == "Step 4: Literature Search & Analyzer":
-    step4_render()
+    render_step4()
 
 elif menu == "Step 5: Protocol Builder":
-    step5_render()
+    render_step5()
 
 elif menu == "Step 6: Sample Size & Power":
     render_step6()
