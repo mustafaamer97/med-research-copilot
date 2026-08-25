@@ -161,37 +161,54 @@ elif menu == "Step 1: Context & Scope Builder":
 elif menu == "Step 2: Idea Generator & Validation":
 
     st.header(
-        "💡 AI Research Idea Generator"
+        "💡 Research Idea Management"
     )
 
-    default_field = st.session_state["research_context"].get("field", "")
-
-    field = st.text_input(
-        "Enter medical field",
-        value=default_field
+    idea_mode = st.radio(
+        "Research Idea Source",
+        [
+            "Generate New Idea",
+            "I Already Have a Research Idea"
+        ]
     )
 
-    if st.button("Generate Ideas"):
+    if idea_mode == "Generate New Idea":
 
-        if field:
+        default_field = (
+            st.session_state["research_context"]
+            .get("field", "")
+        )
 
-            with st.spinner(
-                "Generating research ideas..."
-            ):
+        field = st.text_input(
+            "Medical Field",
+            value=default_field
+        )
 
-                ideas = generate_research_ideas(
-                    field
-                )
+        if st.button("Generate Ideas"):
 
-            st.subheader(
-                "Suggested Research Ideas"
-            )
+            if field:
 
-            st.write(ideas)
+                with st.spinner(
+                    "Generating research ideas..."
+                ):
 
-            st.session_state[
-                "generated_ideas"
-            ] = ideas
+                    ideas = generate_research_ideas(
+                        field
+                    )
+
+                st.subheader("Suggested Research Ideas")
+
+                st.write(ideas)
+
+                st.session_state[
+                    "generated_ideas"
+                ] = ideas
+
+            else:
+
+                st.warning("Please enter a medical field first.")
+
+        if "generated_ideas" in st.session_state:
 
             st.markdown("---")
 
@@ -199,16 +216,15 @@ elif menu == "Step 2: Idea Generator & Validation":
                 "Selected Research Idea Title"
             )
 
-            if st.button(
-                "Approve Research Idea"
-            ):
+            if st.button("Approve Research Idea"):
 
                 st.session_state[
                     "selected_research_idea"
                 ] = {
-                    "field": field,
+                    "field": field if 'field' in locals() else default_field,
                     "title": selected_title,
-                    "ideas_text": ideas
+                    "ideas_text": st.session_state["generated_ideas"],
+                    "source": "generated"
                 }
 
                 st.session_state[
@@ -219,11 +235,43 @@ elif menu == "Step 2: Idea Generator & Validation":
                     "Research idea approved successfully."
                 )
 
-        else:
+    else:
 
-            st.warning(
-                "Please enter a medical field first."
+        idea_title = st.text_input(
+            "Research Idea Title"
+        )
+
+        idea_description = st.text_area(
+            "Research Idea Description"
+        )
+
+        if st.button(
+            "Use This Idea"
+        ):
+
+            st.session_state[
+                "selected_research_idea"
+            ] = {
+                "title": idea_title,
+                "description": idea_description,
+                "source": "manual"
+            }
+
+            st.session_state[
+                "idea_completed"
+            ] = True
+
+            st.success(
+                "Research idea saved."
             )
+
+    if st.session_state.get(
+        "selected_research_idea"
+    ):
+
+        st.success(
+            "✅ Step 2 Completed"
+        )
 
 
 elif menu == "Step 3: Research Question Builder":
