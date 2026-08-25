@@ -31,6 +31,40 @@ Base.metadata.create_all(bind=engine)
 if "research_context" not in st.session_state:
     st.session_state["research_context"] = {}
 
+# =========================
+# Workflow State
+# =========================
+
+if "selected_research_idea" not in st.session_state:
+    st.session_state["selected_research_idea"] = {}
+
+if "research_question" not in st.session_state:
+    st.session_state["research_question"] = {}
+
+if "literature_search" not in st.session_state:
+    st.session_state["literature_search"] = {}
+
+if "research_protocol" not in st.session_state:
+    st.session_state["research_protocol"] = {}
+
+if "sample_size_plan" not in st.session_state:
+    st.session_state["sample_size_plan"] = {}
+
+if "irb_package" not in st.session_state:
+    st.session_state["irb_package"] = {}
+
+if "data_collection_plan" not in st.session_state:
+    st.session_state["data_collection_plan"] = {}
+
+if "statistical_plan" not in st.session_state:
+    st.session_state["statistical_plan"] = {}
+
+if "analysis_results" not in st.session_state:
+    st.session_state["analysis_results"] = {}
+
+if "manuscript_package" not in st.session_state:
+    st.session_state["manuscript_package"] = {}
+
 
 st.set_page_config(
     page_title="Med Research Copilot",
