@@ -1,57 +1,156 @@
 from ai.llm_engine import ask_ai
 
+from modules.protocol_context_builder import (
+    build_protocol_context
+)
+
 
 def generate_protocol(
-    research_idea,
+    research_idea="",
     study_type="Clinical Trial"
 ):
 
+    protocol_context = (
+        build_protocol_context()
+    )
+
+    research_context = (
+        protocol_context.get(
+            "context",
+            {}
+        )
+    )
+
+    idea = (
+        protocol_context.get(
+            "idea",
+            {}
+        )
+    )
+
+    question = (
+        protocol_context.get(
+            "question",
+            {}
+        )
+    )
+
+    evidence = (
+        protocol_context.get(
+            "evidence",
+            []
+        )
+    )
+
     prompt = f"""
-You are an expert in medical research methodology.
+You are a senior medical researcher,
+clinical epidemiologist,
+and biostatistician.
 
-Create a professional research protocol.
+Build a complete academic research protocol.
 
-Research Idea:
-{research_idea}
+=================================================
+RESEARCH CONTEXT
+=================================================
 
-Study Type:
-{study_type}
+Medical Field:
+{research_context.get("field","")}
 
-Generate the protocol using the following sections:
+Target Population:
+{research_context.get("population","")}
 
-1. Title
+Study Design:
+{research_context.get("study_design","")}
+
+Data Source:
+{research_context.get("data_source","")}
+
+Keywords:
+{research_context.get("keywords","")}
+
+=================================================
+RESEARCH IDEA
+=================================================
+
+Title:
+{idea.get("title","")}
+
+Description:
+{idea.get("description","")}
+
+=================================================
+PICO QUESTION
+=================================================
+
+Research Question:
+{question.get("question","")}
+
+Search Strategy:
+{question.get("keywords","")}
+
+=================================================
+BEST AVAILABLE EVIDENCE
+=================================================
+
+{chr(10).join(evidence)}
+
+=================================================
+REQUEST
+=================================================
+
+Generate a professional research protocol.
+
+Include:
+
+1. Protocol Title
 
 2. Background and Rationale
 
-3. Research Question
+3. Literature Gap
 
-4. Primary Objective
+4. Research Question
 
-5. Secondary Objectives
+5. Hypothesis
 
-6. Study Design
+6. Primary Objective
 
-7. Study Population
+7. Secondary Objectives
 
-8. Inclusion Criteria
+8. Study Design
 
-9. Exclusion Criteria
+9. Study Setting
 
-10. Sample Size Considerations
+10. Study Population
 
-11. Data Collection Methods
+11. Inclusion Criteria
 
-12. Primary Outcome
+12. Exclusion Criteria
 
-13. Secondary Outcomes
+13. Sample Size Considerations
 
-14. Statistical Analysis Plan
+14. Data Collection Plan
 
-15. Ethical Considerations
+15. Variables
 
-16. Expected Impact
+16. Primary Outcome
 
-Write the protocol in a professional academic style.
+17. Secondary Outcomes
+
+18. Statistical Analysis Plan
+
+19. Bias Reduction Strategy
+
+20. Ethical Considerations
+
+21. Expected Impact
+
+22. Future Research Directions
+
+Write using academic medical research style.
+
+Use the provided evidence whenever possible.
+
+Avoid generic text.
 """
 
     result = ask_ai(prompt)
