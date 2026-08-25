@@ -94,6 +94,100 @@ def generate_academic_report(
             f"(χ² = {chi2:.2f}, p = {p_value:.3f})."
         )
 
+    # Linear Regression
+    elif test_name == "Linear Regression":
+
+        r_squared = result_df.get(
+            "r_squared",
+            None
+        )
+
+        report.append(
+            "Multiple Linear Regression Analysis"
+        )
+
+        if r_squared is not None:
+
+            report.append(
+                f"R²: {r_squared:.3f}"
+            )
+
+        coefficients = result_df[
+            "results"
+        ]
+
+        for _, row in coefficients.iterrows():
+
+            variable = row["Variable"]
+
+            coefficient = row[
+                "Coefficient"
+            ]
+
+            p_value = row[
+                "P-value"
+            ]
+
+            report.append(
+                f"{variable}: β={coefficient:.3f}, p={p_value:.4f}"
+            )
+
+        report.append(
+            "Variables with p < 0.05 were considered independent predictors of the outcome."
+        )
+
+    # Logistic Regression
+    elif test_name == "Logistic Regression":
+
+        pseudo_r2 = result_df.get(
+            "pseudo_r_squared",
+            None
+        )
+
+        report.append(
+            "Multivariable Logistic Regression Analysis"
+        )
+
+        if pseudo_r2 is not None:
+
+            report.append(
+                f"Pseudo R²: {pseudo_r2:.3f}"
+            )
+
+        coefficients = result_df[
+            "results"
+        ]
+
+        for _, row in coefficients.iterrows():
+
+            variable = row["Variable"]
+
+            odds_ratio = row[
+                "Odds Ratio"
+            ]
+
+            p_value = row[
+                "P-value"
+            ]
+
+            ci_low = row[
+                "CI Lower"
+            ]
+
+            ci_high = row[
+                "CI Upper"
+            ]
+
+            report.append(
+                f"{variable}: OR={odds_ratio:.3f} "
+                f"(95% CI {ci_low:.3f}-{ci_high:.3f}), "
+                f"p={p_value:.4f}"
+            )
+
+        report.append(
+            "Odds ratios greater than 1 indicate increased odds of the outcome."
+        )
+
     # Correlation Analysis (r)
     elif isinstance(result_df, pd.DataFrame) and "r" in result_df.columns:
 
