@@ -352,6 +352,19 @@ def render():
                     result["results"]
                 )
 
+                report_text = generate_academic_report(
+                    regression_type,
+                    result
+                )
+
+                st.subheader(
+                    "Academic Report"
+                )
+
+                st.write(
+                    report_text
+                )
+
                 with st.expander(
                     "Model Summary"
                 ):
