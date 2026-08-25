@@ -1,5 +1,8 @@
 import streamlit as st
-from modules.idea_generator import generate_research_ideas
+
+from modules.idea_generator import (
+    generate_research_ideas
+)
 
 
 def render():
@@ -16,11 +19,20 @@ def render():
         ]
     )
 
+    # ==================================
+    # Generate New Idea
+    # ==================================
+
     if idea_mode == "Generate New Research Idea":
 
         default_field = (
-            st.session_state["research_context"]
-            .get("field", "")
+            st.session_state.get(
+                "research_context",
+                {}
+            ).get(
+                "field",
+                ""
+            )
         )
 
         field = st.text_input(
@@ -28,7 +40,9 @@ def render():
             value=default_field
         )
 
-        if st.button("Generate Ideas"):
+        if st.button(
+            "Generate Ideas"
+        ):
 
             if field:
 
@@ -40,12 +54,6 @@ def render():
                         field
                     )
 
-                st.subheader(
-                    "Suggested Research Ideas"
-                )
-
-                st.write(ideas)
-
                 st.session_state[
                     "generated_ideas"
                 ] = ideas
@@ -55,6 +63,49 @@ def render():
                 st.warning(
                     "Please select a field first."
                 )
+
+        if st.session_state.get(
+            "generated_ideas"
+        ):
+
+            st.subheader(
+                "Suggested Research Ideas"
+            )
+
+            st.write(
+                st.session_state[
+                    "generated_ideas"
+                ]
+            )
+
+            if st.button(
+                "Use Generated Ideas"
+            ):
+
+                st.session_state[
+                    "selected_research_idea"
+                ] = {
+                    "title":
+                    "Generated Research Ideas",
+                    "description":
+                    st.session_state[
+                        "generated_ideas"
+                    ],
+                    "source":
+                    "AI"
+                }
+
+                st.session_state[
+                    "idea_completed"
+                ] = True
+
+                st.success(
+                    "Research idea saved successfully."
+                )
+
+    # ==================================
+    # Existing Idea
+    # ==================================
 
     else:
 
@@ -89,6 +140,10 @@ def render():
             st.success(
                 "Research idea saved successfully."
             )
+
+    # ==================================
+    # Completion Status
+    # ==================================
 
     if st.session_state.get(
         "selected_research_idea"
