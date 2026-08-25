@@ -1,10 +1,29 @@
 import streamlit as st
 
+from modules.journal_recommender import (
+    recommend_journals
+)
+
 
 def render():
 
     st.header(
         "📄 Manuscript & Journal Finder"
+    )
+
+    literature = st.session_state.get(
+        "literature_search",
+        []
+    )
+
+    research_context = st.session_state.get(
+        "research_context",
+        {}
+    )
+
+    field = research_context.get(
+        "field",
+        ""
     )
 
     st.info(
@@ -17,6 +36,30 @@ for publication planning.
     manuscript_title = st.text_input(
         "Manuscript Title"
     )
+
+    if literature:
+
+        recommendations = (
+            recommend_journals(
+                literature,
+                field
+            )
+        )
+
+        st.subheader(
+            "🎯 Recommended Journals"
+        )
+
+        for item in recommendations:
+
+            st.info(
+                f"""
+{item['journal']}
+
+Supporting Papers:
+{item['supporting_papers']}
+"""
+            )
 
     manuscript_type = st.selectbox(
         "Manuscript Type",
