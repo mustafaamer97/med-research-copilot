@@ -85,6 +85,7 @@ WORKFLOW_STEPS = {
 for key, value in WORKFLOW_STEPS.items():
 
     if key not in st.session_state:
+
         st.session_state[key] = value
 
 
@@ -164,8 +165,8 @@ elif menu == "Step 2: Idea Generator & Validation":
         "💡 Research Idea Workspace"
     )
 
-    mode = st.radio(
-        "Choose Workflow",
+    idea_mode = st.radio(
+        "Research Idea Source",
         [
             "Generate New Research Idea",
             "I Already Have a Research Idea"
@@ -174,10 +175,10 @@ elif menu == "Step 2: Idea Generator & Validation":
 
     # ==================================
     # PATH A
-    # Generate Idea
+    # Generate New Idea
     # ==================================
 
-    if mode == "Generate New Research Idea":
+    if idea_mode == "Generate New Research Idea":
 
         default_field = (
             st.session_state["research_context"]
@@ -196,7 +197,7 @@ elif menu == "Step 2: Idea Generator & Validation":
             if field:
 
                 with st.spinner(
-                    "Generating ideas..."
+                    "Generating research ideas..."
                 ):
 
                     ideas = generate_research_ideas(
@@ -248,29 +249,42 @@ elif menu == "Step 2: Idea Generator & Validation":
                 "selected_research_idea"
             ] = {
                 "title": idea_title,
-                "description": idea_description
+                "description": idea_description,
+                "source": "manual"
             }
+
+            st.session_state[
+                "idea_completed"
+            ] = True
 
             st.success(
                 "Research idea saved successfully."
             )
 
-            st.json(
-                st.session_state[
-                    "selected_research_idea"
-                ]
-            )
+    if st.session_state.get(
+        "selected_research_idea"
+    ):
+
+        st.success(
+            "✅ Step 2 Completed"
+        )
 
 
 elif menu == "Step 3: Research Question Builder":
 
-    if not st.session_state["idea_completed"]:
+    if not st.session_state[
+        "idea_completed"
+    ]:
 
         st.warning(
             "Please complete Step 2 first."
         )
 
         st.stop()
+
+    st.header(
+        "🧬 PICO Research Question Builder"
+    )
 
     idea_data = st.session_state.get(
         "selected_research_idea",
@@ -281,15 +295,15 @@ elif menu == "Step 3: Research Question Builder":
 
         st.info(
             f"""
-Selected Idea:
+Selected Research Idea
 
-{idea_data.get('title','')}
+Title:
+{idea_data.get('title', '')}
+
+Description:
+{idea_data.get('description', '')}
 """
         )
-
-    st.header(
-        "🧬 PICO Research Question Builder"
-    )
 
     population = st.text_input(
         "Population (P)"
