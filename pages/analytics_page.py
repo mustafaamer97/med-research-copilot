@@ -97,84 +97,265 @@ def render():
     st.divider()
 
     # =========================
-    # Variable Selection
+    # Analysis Type Selection
     # =========================
 
-    group_col = st.selectbox(
-        "Grouping Variable",
-        df.columns
-    )
-
-    outcome_col = st.selectbox(
-        "Outcome Variable",
-        report[
-            "numeric_columns"
+    analysis_type = st.selectbox(
+        "Analysis Type",
+        [
+            "Group Comparison",
+            "Correlation Analysis",
+            "Categorical Association",
+            "Regression Analysis"
         ]
     )
 
     # =========================
-    # Smart Analysis
+    # Group Comparison
     # =========================
 
-    if st.button(
-        "Run Smart Analysis"
-    ):
+    if analysis_type == "Group Comparison":
 
-        recommendation = (
-            auto_select_group_comparison_test(
-                df,
-                report,
-                group_col,
-                outcome_col
+        group_col = st.selectbox(
+            "Grouping Variable",
+            df.columns
+        )
+
+        outcome_col = st.selectbox(
+            "Outcome Variable",
+            report["numeric_columns"]
+        )
+
+        if st.button(
+            "Run Analysis"
+        ):
+
+            recommendation = (
+                auto_select_group_comparison_test(
+                    df,
+                    report,
+                    group_col,
+                    outcome_col
+                )
             )
-        )
 
-        st.subheader(
-            "AI Recommendation"
-        )
-
-        st.success(
-            recommendation["test"]
-        )
-
-        st.write(
-            recommendation["reason"]
-        )
-
-        # =====================
-        # Statistical Analysis
-        # =====================
-
-        result = run_analysis(
-            df=df,
-            test_name=recommendation["test"],
-            group_col=group_col,
-            outcome_col=outcome_col
-        )
-
-        st.subheader(
-            "Statistical Results"
-        )
-
-        st.dataframe(
-            result
-        )
-
-        # =====================
-        # Academic Report
-        # =====================
-
-        report_text = (
-            generate_academic_report(
-                recommendation["test"],
-                result
+            st.success(
+                recommendation["test"]
             )
+
+            st.write(
+                recommendation["reason"]
+            )
+
+            result = run_analysis(
+                df=df,
+                test_name=recommendation["test"],
+                group_col=group_col,
+                outcome_col=outcome_col
+            )
+
+            st.dataframe(result)
+
+            report_text = (
+                generate_academic_report(
+                    recommendation["test"],
+                    result
+                )
+            )
+
+            st.subheader(
+                "Academic Report"
+            )
+
+            st.write(
+                report_text
+            )
+
+    # =========================
+    # Correlation Analysis
+    # =========================
+
+    elif analysis_type == "Correlation Analysis":
+
+        variable_1 = st.selectbox(
+            "Variable 1",
+            report["numeric_columns"]
         )
 
-        st.subheader(
-            "Academic Report"
+        variable_2 = st.selectbox(
+            "Variable 2",
+            report["numeric_columns"]
         )
 
-        st.write(
-            report_text
+        correlation_type = st.selectbox(
+            "Correlation Test",
+            [
+                "Pearson Correlation",
+                "Spearman Correlation"
+            ]
         )
+
+        if st.button(
+            "Run Analysis"
+        ):
+
+            result = run_analysis(
+                df=df,
+                test_name=correlation_type,
+                variable_1=variable_1,
+                variable_2=variable_2
+            )
+
+            st.dataframe(result)
+
+            report_text = (
+                generate_academic_report(
+                    correlation_type,
+                    result
+                )
+            )
+
+            st.write(
+                report_text
+            )
+
+    # =========================
+    # Categorical Association
+    # =========================
+
+    elif analysis_type == "Categorical Association":
+
+        variable_1 = st.selectbox(
+            "Variable 1",
+            report["categorical_columns"]
+        )
+
+        variable_2 = st.selectbox(
+            "Variable 2",
+            report["categorical_columns"]
+        )
+
+        test_name = st.selectbox(
+            "Association Test",
+            [
+                "Chi-Square Test",
+                "Fisher Exact Test"
+            ]
+        )
+
+        if st.button(
+            "Run Analysis"
+        ):
+
+            result = run_analysis(
+                df=df,
+                test_name=test_name,
+                variable_1=variable_1,
+                variable_2=variable_2
+            )
+
+            st.write(result)
+
+            report_text = (
+                generate_academic_report(
+                    test_name,
+                    result
+                )
+            )
+
+            st.write(
+                report_text
+            )
+
+    # =========================
+    # Regression Analysis
+    # =========================
+
+    elif analysis_type == "Regression Analysis":
+
+        from research_analytics.statsmodels_engine import (
+            run_linear_regression,
+            run_logistic_regression
+        )
+
+        regression_type = st.selectbox(
+            "Regression Type",
+            [
+                "Linear Regression",
+                "Logistic Regression"
+            ]
+        )
+
+        outcome_variable = st.selectbox(
+            "Outcome Variable",
+            report["numeric_columns"]
+        )
+
+        predictor_variables = st.multiselect(
+            "Predictor Variables",
+            [
+                col
+                for col in report["numeric_columns"]
+                if col != outcome_variable
+            ]
+        )
+
+        if st.button(
+            "Run Regression"
+        ):
+
+            if not predictor_variables:
+
+                st.warning(
+                    "Please select at least one predictor."
+                )
+
+            else:
+
+                if regression_type == "Linear Regression":
+
+                    result = run_linear_regression(
+                        df,
+                        outcome_variable,
+                        predictor_variables
+                    )
+
+                    st.metric(
+                        "R²",
+                        round(
+                            result["r_squared"],
+                            3
+                        )
+                    )
+
+                else:
+
+                    result = run_logistic_regression(
+                        df,
+                        outcome_variable,
+                        predictor_variables
+                    )
+
+                    st.metric(
+                        "Pseudo R²",
+                        round(
+                            result["pseudo_r_squared"],
+                            3
+                        )
+                    )
+
+                st.subheader(
+                    "Model Results"
+                )
+
+                st.dataframe(
+                    result["results"]
+                )
+
+                with st.expander(
+                    "Model Summary"
+                ):
+
+                    st.text(
+                        result["summary"]
+                    )
