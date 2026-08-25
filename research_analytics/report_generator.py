@@ -338,4 +338,35 @@ def generate_academic_report(
                     f"(Cohen's d = {d:.2f})."
                 )
 
+    # Kruskal-Wallis Test
+    elif test_name == "Kruskal-Wallis":
+
+        statistic = result_df[
+            "Statistic"
+        ]
+
+        p_value = result_df[
+            "P-value"
+        ]
+
+        report.append(
+            f"Kruskal-Wallis Statistic: {statistic:.3f}"
+        )
+
+        report.append(
+            f"P-value: {p_value:.4f}"
+        )
+
+        if p_value < 0.05:
+
+            report.append(
+                "A statistically significant difference was observed among the groups."
+            )
+
+        else:
+
+            report.append(
+                "No statistically significant difference was observed among the groups."
+            )
+
     return "\n\n".join(report)
