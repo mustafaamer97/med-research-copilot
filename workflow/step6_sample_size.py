@@ -1,5 +1,9 @@
+import plotly.express as px
 import streamlit as st
 
+from research_analytics.power_curve import (
+    build_power_curve
+)
 from research_analytics.sample_size_engine import (
     calculate_sample_size
 )
@@ -74,6 +78,24 @@ Required sample size per group: {n}
 
 Total sample size: {total_n}
 """
+            )
+
+            curve_df = build_power_curve(
+                effect_size,
+                alpha
+            )
+
+            fig = px.line(
+                curve_df,
+                x="Power",
+                y="Sample Size",
+                markers=True,
+                title="Power Curve"
+            )
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
             )
 
             st.session_state[
