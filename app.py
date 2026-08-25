@@ -26,6 +26,28 @@ from modules.protocol_builder import generate_protocol
 # إنشاء الجداول في قاعدة البيانات إن لم تكن موجودة
 Base.metadata.create_all(bind=engine)
 
+# قائمة التصاميم البحثية الشاملة
+STUDY_DESIGNS = [
+    "Randomized Controlled Trial (RCT)",
+    "Pragmatic Clinical Trial",
+    "Prospective Cohort Study",
+    "Retrospective Cohort Study",
+    "Case-Control Study",
+    "Nested Case-Control Study",
+    "Cross-Sectional Study",
+    "Diagnostic Accuracy Study",
+    "Prediction Model Study",
+    "Prognostic Study",
+    "Survey Study",
+    "Case Report",
+    "Case Series",
+    "Systematic Review",
+    "Meta-Analysis",
+    "Scoping Review",
+    "Umbrella Review",
+    "Network Meta-Analysis",
+]
+
 # تهيئة سياق البحث في session_state في حال لم يكن معرفاً من قبل
 if "research_context" not in st.session_state:
     st.session_state["research_context"] = {}
@@ -265,11 +287,9 @@ elif menu == "Step 2: Idea Generator & Validation":
 
 elif menu == "Step 3: Research Question Builder":
 
-    if not st.session_state.get("idea_completed", False):
-        st.warning(
-            "Please complete Step 2 first."
-        )
-        st.stop()
+    st.info(
+        "Workflow validation is temporarily disabled during development."
+    )
 
     st.header(
         "🧬 PICO Research Question Builder"
@@ -339,29 +359,9 @@ Description:
 
 elif menu == "Step 4: Literature Search & Analyzer":
 
-    st.subheader("DEBUG")
-
-    st.write(
-        "question_completed:",
-        st.session_state.get(
-            "question_completed"
-        )
+    st.info(
+        "Workflow validation is temporarily disabled during development."
     )
-
-    st.write(
-        st.session_state
-    )
-
-    if not st.session_state.get(
-        "question_completed",
-        False
-    ):
-
-        st.warning(
-            "Please complete Step 3 first."
-        )
-
-        st.stop()
 
     question_data = st.session_state.get(
         "research_question",
@@ -581,16 +581,9 @@ elif menu == "Step 4: Literature Search & Analyzer":
 
 elif menu == "Step 5: Protocol Builder":
 
-    if not st.session_state.get(
-        "literature_completed",
-        False
-    ):
-
-        st.warning(
-            "Please complete Step 4 first."
-        )
-
-        st.stop()
+    st.info(
+        "Workflow validation is temporarily disabled during development."
+    )
 
     st.header(
         "📋 Research Protocol Builder"
@@ -602,14 +595,7 @@ elif menu == "Step 5: Protocol Builder":
 
     study_type = st.selectbox(
         "Study Type",
-        [
-            "Clinical Trial",
-            "Cohort Study",
-            "Case-Control Study",
-            "Cross-Sectional Study",
-            "Systematic Review",
-            "Meta-analysis"
-        ]
+        STUDY_DESIGNS
     )
 
     if st.button("Generate Protocol"):
