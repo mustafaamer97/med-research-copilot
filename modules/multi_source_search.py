@@ -10,6 +10,10 @@ from modules.europe_pmc import (
     search_europe_pmc
 )
 
+from modules.openalex import (
+    search_openalex
+)
+
 
 def search_all_sources(query):
 
@@ -54,6 +58,27 @@ def search_all_sources(query):
 
         print(
             f"Europe PMC Error: {e}"
+        )
+
+    # OpenAlex
+
+    try:
+
+        openalex_papers = (
+            search_openalex(
+                query,
+                20
+            )
+        )
+
+        papers.extend(
+            openalex_papers
+        )
+
+    except Exception as e:
+
+        print(
+            f"OpenAlex Error: {e}"
         )
 
     # Deduplicate
