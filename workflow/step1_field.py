@@ -78,9 +78,10 @@ FIELD_KEYWORD_HINTS = {
     "Public Health": "prevalence, risk factors, screening",
 }
 
-def render_step1():
 
-    st.header("Step 1: Research Context & Scope")
+def render():
+
+    st.header("🧭 Research Context & Scope")
 
     st.write(
         "Define your research area before building the research question."
@@ -123,10 +124,6 @@ def render_step1():
     }
 
     st.session_state["research_context"] = context
-
-    # =========================
-    # Feasibility Assessment
-    # =========================
 
     validation = validate_research_idea(
         study_design,
@@ -177,13 +174,7 @@ Feasibility Level: LOW
 
             for note in validation["notes"]:
 
-                st.write(
-                    f"• {note}"
-                )
-
-    # =========================
-    # Research Context Summary
-    # =========================
+                st.write(f"• {note}")
 
     st.markdown("---")
 
@@ -205,14 +196,10 @@ Feasibility Level: LOW
 """
     )
 
-    # =========================
-    # Continue Button
-    # =========================
-
     if keywords.strip():
 
         if st.button(
-            "Save Context & Go to Idea Generator ➜",
+            "💾 Save Research Context",
             use_container_width=True,
             type="primary",
         ):
@@ -228,3 +215,13 @@ Feasibility Level: LOW
     else:
 
         st.warning(
+            "Please enter at least one keyword."
+        )
+
+    if st.session_state.get(
+        "context_completed"
+    ):
+
+        st.success(
+            "✅ Step 1 Completed"
+        )
