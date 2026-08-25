@@ -377,12 +377,35 @@ elif menu == "Step 4: Literature Search & Analyzer":
 
         st.stop()
 
+    question_data = st.session_state.get(
+        "research_question",
+        {}
+    )
+
+    st.subheader(
+        "Research Question"
+    )
+
+    st.info(
+        question_data.get(
+            "question",
+            "No research question found."
+        )
+    )
+
     st.header(
         "🔎 PubMed Literature Search"
     )
 
-    query = st.text_input(
-        "Enter medical topic"
+    default_keywords = question_data.get(
+        "keywords",
+        ""
+    )
+
+    query = st.text_area(
+        "PubMed Search Strategy",
+        value=default_keywords,
+        height=120
     )
 
     number = st.slider(
@@ -400,6 +423,14 @@ elif menu == "Step 4: Literature Search & Analyzer":
                 query,
                 number
             )
+
+        st.session_state[
+            "literature_search"
+        ] = papers
+
+        st.session_state[
+            "literature_completed"
+        ] = True
 
         if papers:
 
@@ -448,8 +479,26 @@ elif menu == "Step 4: Literature Search & Analyzer":
                 "No papers found"
             )
 
+    if st.session_state.get(
+        "literature_completed"
+    ):
+
+        st.success(
+            "✅ Step 4 Completed"
+        )
+
 
 elif menu == "Step 5: Protocol Builder":
+
+    if not st.session_state[
+        "literature_completed"
+    ]:
+
+        st.warning(
+            "Please complete Step 4 first."
+        )
+
+        st.stop()
 
     st.header(
         "📋 Research Protocol Builder"
