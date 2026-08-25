@@ -1,16 +1,23 @@
 import streamlit as st
-from modules.pico_builder import build_pico
+
+from modules.pico_builder import (
+    build_pico
+)
 
 
 def render():
 
-    st.info(
-        "Workflow validation is temporarily disabled during development."
+    st.header(
+        "🧬 Research Question Builder"
     )
 
-    st.header(
-        "🧬 PICO Research Question Builder"
+    st.info(
+        "Build a structured PICO research question."
     )
+
+    # =========================
+    # Display Selected Idea
+    # =========================
 
     idea_data = st.session_state.get(
         "selected_research_idea",
@@ -19,25 +26,57 @@ def render():
 
     if idea_data:
 
-        st.info(
-            f"""
-Selected Research Idea
+        with st.expander(
+            "Selected Research Idea",
+            expanded=True
+        ):
 
-Title:
-{idea_data.get('title', '')}
+            st.markdown(
+                f"""
+### {idea_data.get('title', '')}
 
-Description:
 {idea_data.get('description', '')}
 """
-        )
+            )
 
-    population = st.text_input("Population (P)")
-    intervention = st.text_input("Intervention (I)")
-    comparison = st.text_input("Comparison (C)")
-    outcome = st.text_input("Outcome (O)")
+    # =========================
+    # Defaults from Step 1
+    # =========================
+
+    context = st.session_state.get(
+        "research_context",
+        {}
+    )
+
+    default_population = context.get(
+        "population",
+        ""
+    )
+
+    population = st.text_input(
+        "Population (P)",
+        value=default_population
+    )
+
+    intervention = st.text_input(
+        "Intervention (I)"
+    )
+
+    comparison = st.text_input(
+        "Comparison (C)"
+    )
+
+    outcome = st.text_input(
+        "Outcome (O)"
+    )
+
+    # =========================
+    # Generate Question
+    # =========================
 
     if st.button(
-        "Generate Research Question"
+        "Generate Research Question",
+        use_container_width=True
     ):
 
         result = build_pico(
@@ -47,48 +86,86 @@ Description:
             outcome
         )
 
-        st.session_state[
-            "generated_question"
-        ] = result
+        if "error" in result:
 
-    if "generated_question" in st.session_state:
+            st.error(
+                result["error"]
+            )
 
-        result = st.session_state[
-            "generated_question"
-        ]
+        else:
+
+            st.session_state[
+                "generated_question"
+            ] = result
+
+    # =========================
+    # Display Result
+    # =========================
+
+    result = st.session_state.get(
+        "generated_question"
+    )
+
+    if result:
 
         st.subheader(
             "Research Question"
         )
 
-        st.write(
+        st.success(
             result["question"]
         )
 
         st.subheader(
-            "Search Strategy"
+            "PubMed Search Strategy"
         )
 
         st.code(
-            result["keywords"]
+            result["keywords"],
+            language="text"
         )
 
-        if st.button(
-            "Save Research Question",
-            use_container_width=True,
-            type="primary"
-        ):
+        col1, col2 = st.columns(2)
 
-            st.session_state[
-                "research_question"
-            ] = result
+        with col1:
 
-            st.session_state[
-                "question_completed"
-            ] = True
+            if st.button(
+                "💾 Save Research Question",
+                use_container_width=True,
+                type="primary"
+            ):
 
-            st.success(
-                "Research Question saved successfully."
+                st.session_state[
+                    "research_question"
+                ] = result
+
+                st.session_state[
+                    "question_completed"
+                ] = True
+
+                st.success(
+                    "Research Question saved successfully."
+                )
+
+                st.rerun()
+
+        with col2:
+
+            st.download_button(
+                "⬇️ Download Question",
+                data=result["question"],
+                file_name="research_question.txt",
+                use_container_width=True
             )
 
-            st.rerun()
+    # =========================
+    # Completion Status
+    # =========================
+
+    if st.session_state.get(
+        "question_completed"
+    ):
+
+        st.success(
+            "✅ Step 3 Completed"
+        )
