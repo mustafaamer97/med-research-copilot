@@ -86,9 +86,7 @@ WORKFLOW_STEPS = {
 }
 
 for key, value in WORKFLOW_STEPS.items():
-
     if key not in st.session_state:
-
         st.session_state[key] = value
 
 
@@ -111,7 +109,6 @@ st.sidebar.title("🧬 Research Workflow")
 menu = st.sidebar.radio(
     "Navigate",
     [
-
         "🏠 Dashboard",
 
         "──────── PHASE 1 ────────",
@@ -275,14 +272,10 @@ elif menu == "Step 2: Idea Generator & Validation":
 
 elif menu == "Step 3: Research Question Builder":
 
-    if not st.session_state[
-        "idea_completed"
-    ]:
-
+    if not st.session_state.get("idea_completed", False):
         st.warning(
             "Please complete Step 2 first."
         )
-
         st.stop()
 
     st.header(
@@ -295,7 +288,6 @@ elif menu == "Step 3: Research Question Builder":
     )
 
     if idea_data:
-
         st.info(
             f"""
 Selected Research Idea
@@ -308,21 +300,10 @@ Description:
 """
         )
 
-    population = st.text_input(
-        "Population (P)"
-    )
-
-    intervention = st.text_input(
-        "Intervention (I)"
-    )
-
-    comparison = st.text_input(
-        "Comparison (C)"
-    )
-
-    outcome = st.text_input(
-        "Outcome (O)"
-    )
+    population = st.text_input("Population (P)")
+    intervention = st.text_input("Intervention (I)")
+    comparison = st.text_input("Comparison (C)")
+    outcome = st.text_input("Outcome (O)")
 
     if st.button("Generate Research Question"):
 
@@ -335,21 +316,17 @@ Description:
             outcome
         )
 
-        st.subheader(
-            "Research Question"
-        )
+        st.session_state["generated_question"] = result
 
-        st.write(
-            result["question"]
-        )
+    if "generated_question" in st.session_state:
 
-        st.subheader(
-            "Search Strategy"
-        )
+        result = st.session_state["generated_question"]
 
-        st.code(
-            result["keywords"]
-        )
+        st.subheader("Research Question")
+        st.write(result["question"])
+
+        st.subheader("Search Strategy")
+        st.code(result["keywords"])
 
         if st.button(
             "Save Research Question",
@@ -365,10 +342,7 @@ Description:
                 "Research Question saved successfully."
             )
 
-            st.write(
-                "question_completed =",
-                st.session_state["question_completed"]
-            )
+            st.rerun()
 
 
 elif menu == "Step 4: Literature Search & Analyzer":
