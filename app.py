@@ -365,10 +365,26 @@ Description:
                 "Research Question saved successfully."
             )
 
-            st.rerun()
+            st.write(
+                "question_completed =",
+                st.session_state["question_completed"]
+            )
 
 
 elif menu == "Step 4: Literature Search & Analyzer":
+
+    st.subheader("DEBUG")
+
+    st.write(
+        "question_completed:",
+        st.session_state.get(
+            "question_completed"
+        )
+    )
+
+    st.write(
+        st.session_state
+    )
 
     if not st.session_state.get(
         "question_completed",
