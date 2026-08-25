@@ -341,17 +341,35 @@ Description:
         )
 
         st.subheader(
-            "PubMed Search Keywords"
+            "Search Strategy"
         )
 
         st.code(
             result["keywords"]
         )
 
+        if st.button(
+            "Save Research Question"
+        ):
+
+            st.session_state[
+                "research_question"
+            ] = result
+
+            st.session_state[
+                "question_completed"
+            ] = True
+
+            st.success(
+                "Research question saved."
+            )
+
 
 elif menu == "Step 4: Literature Search & Analyzer":
 
-    if not st.session_state["question_completed"]:
+    if not st.session_state[
+        "question_completed"
+    ]:
 
         st.warning(
             "Please complete Step 3 first."
