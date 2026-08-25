@@ -1,6 +1,9 @@
 from scipy.stats import fisher_exact, kruskal
 import pandas as pd
 import pingouin as pg
+from statsmodels.stats.multicomp import (
+    pairwise_tukeyhsd
+)
 
 
 def run_ttest(df, group_col, outcome_col):
@@ -80,6 +83,26 @@ def run_kruskal(
         "Statistic": statistic,
         "P-value": p_value
     }
+
+
+def run_tukey_posthoc(
+    df,
+    group_col,
+    outcome_col
+):
+
+    tukey = pairwise_tukeyhsd(
+        endog=df[outcome_col],
+        groups=df[group_col],
+        alpha=0.05
+    )
+
+    result_df = pd.DataFrame(
+        tukey.summary().data[1:],
+        columns=tukey.summary().data[0]
+    )
+
+    return result_df
 
 
 def run_pearson_correlation(
@@ -229,6 +252,14 @@ def run_analysis(
     if test_name == "Kruskal-Wallis":
 
         return run_kruskal(
+            df,
+            group_col,
+            outcome_col
+        )
+
+    if test_name == "Tukey HSD":
+
+        return run_tukey_posthoc(
             df,
             group_col,
             outcome_col
