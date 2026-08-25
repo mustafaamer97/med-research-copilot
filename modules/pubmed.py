@@ -1,11 +1,76 @@
 from Bio import Entrez
+import re
 
 from modules.evidence_classifier import (
     classify_evidence_level
 )
 
-Entrez.email = "your_email@example.com"
+Entrez.email = "mustafaamer97@gmail.com"
 
+
+# =====================================
+# Query Optimizer
+# =====================================
+
+def optimize_query(query):
+
+    query = query.lower()
+
+    stop_words = [
+        "adults",
+        "adult",
+        "children",
+        "patients",
+        "population",
+        "reduction",
+        "improve",
+        "improves",
+        "improved",
+        "compared",
+        "comparison",
+        "study",
+        "trial",
+        "effect",
+        "outcome",
+        "outcomes",
+        "with",
+        "and",
+        "the",
+        "of",
+        "in",
+        "on",
+        "does"
+    ]
+
+    words = re.findall(
+        r"[a-zA-Z0-9\-]+",
+        query
+    )
+
+    keywords = []
+
+    for word in words:
+
+        if len(word) < 3:
+            continue
+
+        if word in stop_words:
+            continue
+
+        keywords.append(word)
+
+    keywords = list(
+        dict.fromkeys(keywords)
+    )
+
+    return " AND ".join(
+        keywords[:8]
+    )
+
+
+# =====================================
+# Animal Filter
+# =====================================
 
 def is_animal_study(article):
 
@@ -24,9 +89,8 @@ def is_animal_study(article):
                 "rats",
                 "animals",
                 "cats",
-                "dogs",
+                "dogs"
             ]:
-
                 return True
 
     except:
@@ -34,6 +98,10 @@ def is_animal_study(article):
 
     return False
 
+
+# =====================================
+# Low Evidence Filter
+# =====================================
 
 def is_low_evidence_study(
     publication_type
@@ -49,7 +117,7 @@ def is_low_evidence_study(
         "comment",
         "news",
         "interview",
-        "biography",
+        "biography"
     ]
 
     for item in excluded_types:
@@ -60,37 +128,89 @@ def is_low_evidence_study(
     return False
 
 
+# =====================================
+# PubMed Search
+# =====================================
+
 def search_pubmed(
     query,
     max_results=10
 ):
 
-    handle = Entrez.esearch(
-        db="pubmed",
-        term=query,
-        retmax=max_results
+    optimized_query = optimize_query(
+        query
     )
 
-    results = Entrez.read(handle)
+    print(
+        "\nOriginal Query:",
+        query
+    )
 
-    ids = results["IdList"]
+    print(
+        "\nOptimized Query:",
+        optimized_query
+    )
 
-    if not ids:
+    try:
+
+        handle = Entrez.esearch(
+            db="pubmed",
+            term=optimized_query,
+            retmax=max_results,
+            sort="relevance"
+        )
+
+        results = Entrez.read(handle)
+
+        ids = results["IdList"]
+
+        print(
+            "PubMed IDs:",
+            ids
+        )
+
+        if not ids:
+            return []
+
+        return get_details(ids)
+
+    except Exception as e:
+
+        print(
+            "PubMed Search Error:",
+            e
+        )
+
         return []
 
-    return get_details(ids)
 
+# =====================================
+# Paper Details
+# =====================================
 
 def get_details(ids):
 
-    handle = Entrez.efetch(
-        db="pubmed",
-        id=",".join(ids),
-        rettype="medline",
-        retmode="xml"
-    )
+    try:
 
-    records = Entrez.read(handle)
+        handle = Entrez.efetch(
+            db="pubmed",
+            id=",".join(ids),
+            rettype="medline",
+            retmode="xml"
+        )
+
+        records = Entrez.read(
+            handle
+        )
+
+    except Exception as e:
+
+        print(
+            "PubMed Fetch Error:",
+            e
+        )
+
+        return []
 
     papers = []
 
@@ -98,14 +218,21 @@ def get_details(ids):
         "PubmedArticle"
     ]:
 
-        # استبعاد الدراسات الحيوانية
-
         if is_animal_study(article):
             continue
 
-        title = article[
-            "MedlineCitation"
-        ]["Article"]["ArticleTitle"]
+        title = ""
+
+        try:
+            title = str(
+                article[
+                    "MedlineCitation"
+                ]["Article"][
+                    "ArticleTitle"
+                ]
+            )
+        except:
+            pass
 
         abstract = ""
 
@@ -113,9 +240,9 @@ def get_details(ids):
 
             abstract_parts = article[
                 "MedlineCitation"
-            ]["Article"]["Abstract"][
-                "AbstractText"
-            ]
+            ]["Article"][
+                "Abstract"
+            ]["AbstractText"]
 
             abstract = " ".join(
                 [
@@ -128,9 +255,9 @@ def get_details(ids):
             pass
 
         pmid = str(
-            article["MedlineCitation"][
-                "PMID"
-            ]
+            article[
+                "MedlineCitation"
+            ]["PMID"]
         )
 
         pubmed_url = (
@@ -151,7 +278,6 @@ def get_details(ids):
                     )
                     == "doi"
                 ):
-
                     doi = str(item)
                     break
 
@@ -170,7 +296,7 @@ def get_details(ids):
 
             authors = ", ".join(
                 [
-                    f"{a.get('ForeName', '')} {a.get('LastName', '')}".strip()
+                    f"{a.get('ForeName','')} {a.get('LastName','')}".strip()
                     for a in author_list
                     if "LastName" in a
                 ]
@@ -211,108 +337,28 @@ def get_details(ids):
         except:
             pass
 
-        publication_date = ""
-
-        try:
-
-            pub_date = article[
-                "MedlineCitation"
-            ]["Article"][
-                "Journal"
-            ]["JournalIssue"][
-                "PubDate"
-            ]
-
-            publication_date = " ".join(
-                [
-                    str(v)
-                    for v in pub_date.values()
-                ]
-            )
-
-        except:
-            pass
-
         publication_type = ""
 
         try:
 
-            publication_types = article[
-                "MedlineCitation"
-            ]["Article"][
-                "PublicationTypeList"
-            ]
-
             publication_type = ", ".join(
                 [
                     str(p)
-                    for p in publication_types
+                    for p in article[
+                        "MedlineCitation"
+                    ]["Article"][
+                        "PublicationTypeList"
+                    ]
                 ]
             )
 
         except:
             pass
-
-        # استبعاد المقالات منخفضة القيمة
 
         if is_low_evidence_study(
             publication_type
         ):
             continue
-
-        mesh_terms = ""
-
-        try:
-
-            mesh_list = article[
-                "MedlineCitation"
-            ]["MeshHeadingList"]
-
-            mesh_terms = ", ".join(
-                [
-                    str(
-                        mesh[
-                            "DescriptorName"
-                        ]
-                    )
-                    for mesh in mesh_list
-                ]
-            )
-
-        except:
-            pass
-
-        language = ""
-
-        try:
-
-            language = ", ".join(
-                article[
-                    "MedlineCitation"
-                ]["Article"][
-                    "Language"
-                ]
-            )
-
-        except:
-            pass
-
-        country = ""
-
-        try:
-
-            country = str(
-                article[
-                    "MedlineCitation"
-                ][
-                    "MedlineJournalInfo"
-                ]["Country"]
-            )
-
-        except:
-            pass
-
-        # تصنيف قوة الدليل
 
         evidence_level = (
             classify_evidence_level(
@@ -323,19 +369,15 @@ def get_details(ids):
         papers.append(
             {
                 "pmid": pmid,
-                "title": str(title),
+                "title": title,
                 "authors": authors,
                 "journal": journal,
                 "year": year,
-                "publication_date": publication_date,
                 "doi": doi,
                 "url": pubmed_url,
                 "publication_type": publication_type,
                 "evidence_level": evidence_level,
-                "mesh_terms": mesh_terms,
-                "language": language,
-                "country": country,
-                "abstract": str(abstract),
+                "abstract": abstract
             }
         )
 
