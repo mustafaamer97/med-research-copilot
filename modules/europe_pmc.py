@@ -111,7 +111,22 @@ def search_europe_pmc(
                 item.get(
                     "abstractText",
                     ""
-                )
+                ),
+
+                "citation_count":
+                item.get(
+                    "citedByCount",
+                    0
+                ),
+
+                "is_open_access":
+                item.get(
+                    "isOpenAccess",
+                    "N"
+                ) == "Y",
+
+                "source":
+                "Europe PMC"
             }
         )
 
