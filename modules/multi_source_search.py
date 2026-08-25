@@ -6,15 +6,23 @@ from modules.evidence_ranker import (
     rank_evidence
 )
 
+from modules.europe_pmc import (
+    search_europe_pmc
+)
+
 
 def search_all_sources(query):
 
     papers = []
 
+    # PubMed
+
     try:
 
-        pubmed_papers = get_recent_evidence(
-            query
+        pubmed_papers = (
+            get_recent_evidence(
+                query
+            )
         )
 
         papers.extend(
@@ -24,16 +32,31 @@ def search_all_sources(query):
     except Exception as e:
 
         print(
-            f"PubMed error: {e}"
+            f"PubMed Error: {e}"
         )
 
     # Europe PMC
-    # سيتم إضافته هنا لاحقاً
 
-    # OpenAlex
-    # سيتم إضافته هنا لاحقاً
+    try:
 
-    # إزالة التكرار
+        epmc_papers = (
+            search_europe_pmc(
+                query,
+                20
+            )
+        )
+
+        papers.extend(
+            epmc_papers
+        )
+
+    except Exception as e:
+
+        print(
+            f"Europe PMC Error: {e}"
+        )
+
+    # Deduplicate
 
     unique = {}
 
@@ -46,6 +69,7 @@ def search_all_sources(query):
         )
 
         if key:
+
             unique[key] = paper
 
     papers = list(
