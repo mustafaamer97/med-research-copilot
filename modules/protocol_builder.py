@@ -1,158 +1,142 @@
 from ai.llm_engine import ask_ai
 
-from modules.protocol_context_builder import (
-    build_protocol_context
-)
-
 
 def generate_protocol(
-    research_idea="",
-    study_type="Clinical Trial"
+    research_idea,
+    study_type="Clinical Trial",
+    research_context=None,
+    research_question=None
 ):
 
-    protocol_context = (
-        build_protocol_context()
-    )
+    context_text = ""
 
-    research_context = (
-        protocol_context.get(
-            "context",
-            {}
-        )
-    )
+    if research_context:
 
-    idea = (
-        protocol_context.get(
-            "idea",
-            {}
-        )
-    )
-
-    question = (
-        protocol_context.get(
-            "question",
-            {}
-        )
-    )
-
-    evidence = (
-        protocol_context.get(
-            "evidence",
-            []
-        )
-    )
-
-    prompt = f"""
-You are a senior medical researcher,
-clinical epidemiologist,
-and biostatistician.
-
-Build a complete academic research protocol.
-
-=================================================
-RESEARCH CONTEXT
-=================================================
-
+        context_text = f"""
 Medical Field:
-{research_context.get("field","")}
+{research_context.get("field", "")}
 
 Target Population:
-{research_context.get("population","")}
-
-Study Design:
-{research_context.get("study_design","")}
+{research_context.get("population", "")}
 
 Data Source:
-{research_context.get("data_source","")}
+{research_context.get("data_source", "")}
 
 Keywords:
-{research_context.get("keywords","")}
+{research_context.get("keywords", "")}
+"""
 
-=================================================
-RESEARCH IDEA
-=================================================
+    question_text = ""
 
-Title:
-{idea.get("title","")}
+    if research_question:
 
-Description:
-{idea.get("description","")}
-
-=================================================
-PICO QUESTION
-=================================================
-
+        question_text = f"""
 Research Question:
-{question.get("question","")}
+{research_question.get("question", "")}
 
-Search Strategy:
-{question.get("keywords","")}
+Search Keywords:
+{research_question.get("keywords", "")}
+"""
 
-=================================================
-BEST AVAILABLE EVIDENCE
-=================================================
+    prompt = f"""
+You are a senior medical research methodologist.
 
-{chr(10).join(evidence)}
+Create a publication-ready research protocol.
 
-=================================================
-REQUEST
-=================================================
+===================================
+RESEARCH IDEA
+===================================
 
-Generate a professional research protocol.
+{research_idea}
 
-Include:
+===================================
+STUDY TYPE
+===================================
 
-1. Protocol Title
+{study_type}
+
+===================================
+RESEARCH CONTEXT
+===================================
+
+{context_text}
+
+===================================
+RESEARCH QUESTION
+===================================
+
+{question_text}
+
+===================================
+PROTOCOL REQUIREMENTS
+===================================
+
+Generate the protocol using the following sections:
+
+1. Title
 
 2. Background and Rationale
 
-3. Literature Gap
+3. Research Question
 
-4. Research Question
+4. Hypothesis
 
-5. Hypothesis
+5. Primary Objective
 
-6. Primary Objective
+6. Secondary Objectives
 
-7. Secondary Objectives
+7. Study Design
 
-8. Study Design
+8. Study Population
 
-9. Study Setting
+9. Inclusion Criteria
 
-10. Study Population
+10. Exclusion Criteria
 
-11. Inclusion Criteria
+11. Recruitment Strategy
 
-12. Exclusion Criteria
+12. Sample Size Considerations
 
-13. Sample Size Considerations
+13. Data Collection Methods
 
-14. Data Collection Plan
+14. Variables
 
-15. Variables
+15. Primary Outcome
 
-16. Primary Outcome
+16. Secondary Outcomes
 
-17. Secondary Outcomes
+17. Statistical Analysis Plan
 
-18. Statistical Analysis Plan
+18. Bias Minimization Strategy
 
-19. Bias Reduction Strategy
+19. Ethical Considerations
 
-20. Ethical Considerations
+20. Expected Impact
 
-21. Expected Impact
+21. Potential Limitations
 
-22. Future Research Directions
+22. Timeline
 
-Write using academic medical research style.
+Requirements:
 
-Use the provided evidence whenever possible.
-
-Avoid generic text.
+- Academic style
+- Evidence-based methodology
+- Suitable for IRB submission
+- Suitable for journal publication
+- Use markdown headings
 """
 
-    result = ask_ai(prompt)
+    try:
 
-    return result
+        return ask_ai(prompt)
+
+    except Exception as e:
+
+        return f"""
+# Protocol Generation Error
+
+Unable to generate protocol.
+
+Error:
+{str(e)}
+"""
