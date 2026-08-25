@@ -6,53 +6,30 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-# --- الاستيرادات المحدثة لسلسلة خطوات العمل ---
+# --- استيراد خطوات سير العمل (Workflow Steps 1–5) ---
 from workflow.step1_context import render as step1_render
 from workflow.step2_idea import render as step2_render
 from workflow.step3_question import render as step3_render
 from workflow.step4_literature import render as step4_render
 from workflow.step5_protocol import render as step5_render
 
+# --- استيراد خطوات سير العمل (Workflow Steps 6–10) ---
+from components.step6_sample_size import render_step6
+from components.step7_irb import render_step7
+from components.step8_data_collection import render_step8
+from components.step9_statistics import render_step9
+from components.step10_manuscript import render_step10
+
 # --- الاستيرادات الأخرى والأدوات ---
-from research_analytics.data_checker import analyze_dataset
 from database.db import engine
 from database.models import Base
-from modules.pubmed import search_pubmed
-from modules.library import (
-    save_paper,
-    get_papers,
-    search_papers
-)
+from modules.library import get_papers, search_papers
 from utils.pdf_tools import extract_text
 from modules.paper_analyzer import analyze_paper
 from modules.paper_reviewer import review_paper
-from modules.idea_generator import generate_research_ideas
-from modules.protocol_builder import generate_protocol
 
 # إنشاء الجداول في قاعدة البيانات إن لم تكن موجودة
 Base.metadata.create_all(bind=engine)
-
-# قائمة التصاميم البحثية الشاملة
-STUDY_DESIGNS = [
-    "Randomized Controlled Trial (RCT)",
-    "Pragmatic Clinical Trial",
-    "Prospective Cohort Study",
-    "Retrospective Cohort Study",
-    "Case-Control Study",
-    "Nested Case-Control Study",
-    "Cross-Sectional Study",
-    "Diagnostic Accuracy Study",
-    "Prediction Model Study",
-    "Prognostic Study",
-    "Survey Study",
-    "Case Report",
-    "Case Series",
-    "Systematic Review",
-    "Meta-Analysis",
-    "Scoping Review",
-    "Umbrella Review",
-    "Network Meta-Analysis",
-]
 
 # تهيئة سياق البحث في session_state في حال لم يكن معرفاً من قبل
 if "research_context" not in st.session_state:
@@ -164,7 +141,7 @@ menu = st.sidebar.radio(
     ]
 )
 
-# --- معالجة الشروط بناءً على القائمة المحدثة ---
+# --- التنقل وتنفيذ الدعم البرمجي لكل خطوة ---
 
 if menu == "🏠 Dashboard":
 
@@ -193,50 +170,19 @@ elif menu == "Step 5: Protocol Builder":
     step5_render()
 
 elif menu == "Step 6: Sample Size & Power":
-
-    st.header(
-        "Step 6: Sample Size & Power Calculator"
-    )
-
-    st.info(
-        "This module will be connected during Phase 3."
-    )
+    render_step6()
 
 elif menu == "Step 7: Ethics & IRB":
-
-    st.header(
-        "Step 7: IRB & Ethical Approval"
-    )
-
-    st.info(
-        "This module will be connected during Phase 3."
-    )
+    render_step7()
 
 elif menu == "Step 8: Data Collection":
-
-    st.header(
-        "Step 8: Data Collection Sheet Generator"
-    )
-
-    st.info(
-        "This module will be connected during Phase 4."
-    )
+    render_step8()
 
 elif menu == "Step 9: Statistical Analysis":
-
-    from pages.analytics_page import render
-
-    render()
+    render_step9()
 
 elif menu == "Step 10: Manuscript & Journal Finder":
-
-    st.header(
-        "Step 10: Manuscript Draft & Journal Finder"
-    )
-
-    st.info(
-        "This module will be connected during Phase 6."
-    )
+    render_step10()
 
 elif menu == "Research Library":
 
@@ -333,15 +279,12 @@ elif menu == "Research Library":
             ["All"] + years
         )
 
-        if (
-            selected_year != "All"
-        ):
+        if selected_year != "All":
 
             papers = [
                 p
                 for p in papers
-                if p.publication_year
-                == selected_year
+                if p.publication_year == selected_year
             ]
 
         if papers:
