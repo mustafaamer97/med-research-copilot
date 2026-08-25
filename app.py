@@ -80,64 +80,39 @@ st.subheader(
 )
 
 # --- القائمة الجانبية التنقلية ---
-st.sidebar.title("🧬 Med Research Copilot")
+st.sidebar.title("🧬 Research Workflow")
 
 menu = st.sidebar.radio(
-    "Research Workflow",
+    "Navigate",
     [
-
-        # =========================
-        # Dashboard
-        # =========================
 
         "🏠 Dashboard",
 
-        # =========================
-        # PHASE 1
-        # =========================
+        "──────── PHASE 1 ────────",
+        "Step 1: Context & Scope Builder",
+        "Step 2: Idea Generator & Validation",
+        "Step 3: Research Question Builder",
 
-        "PHASE 1 • Step 1: Context & Scope Builder",
-        "PHASE 1 • Step 2: Idea Generator & Validation",
-        "PHASE 1 • Step 3: Research Question Builder",
+        "──────── PHASE 2 ────────",
+        "Step 4: Literature Search & Analyzer",
+        "Step 5: Protocol Builder",
 
-        # =========================
-        # PHASE 2
-        # =========================
+        "──────── PHASE 3 ────────",
+        "Step 6: Sample Size & Power",
+        "Step 7: Ethics & IRB",
 
-        "PHASE 2 • Step 4: Literature Search",
-        "PHASE 2 • Step 5: Protocol Builder",
+        "──────── PHASE 4 ────────",
+        "Step 8: Data Collection",
 
-        # =========================
-        # PHASE 3
-        # =========================
+        "──────── PHASE 5 ────────",
+        "Step 9: Statistical Analysis",
 
-        "PHASE 3 • Step 6: Sample Size & Statistical Planning",
-        "PHASE 3 • Step 7: IRB & Ethics Package",
+        "──────── PHASE 6 ────────",
+        "Step 10: Manuscript & Journal Finder",
 
-        # =========================
-        # PHASE 4
-        # =========================
-
-        "PHASE 4 • Step 8: Data Collection",
-
-        # =========================
-        # PHASE 5
-        # =========================
-
-        "PHASE 5 • Step 9: Statistical Analysis",
-
-        # =========================
-        # PHASE 6
-        # =========================
-
-        "PHASE 6 • Step 10: Manuscript & Publication",
-
-        # =========================
-        # Tools
-        # =========================
-
-        "📚 Research Library",
-        "📄 Paper Analyzer"
+        "──────── TOOLS ────────",
+        "Research Library",
+        "Paper Analyzer"
     ]
 )
 
@@ -156,13 +131,13 @@ if menu == "🏠 Dashboard":
     )
 
 
-elif menu == "PHASE 1 • Step 1: Context & Scope Builder":
+elif menu == "Step 1: Context & Scope Builder":
 
     # تشغيل الخطوة الأولى المخصصة للباحث المبتدئ وتخزين البيانات داخل st.session_state["research_context"]
     render_step1()
 
 
-elif menu == "PHASE 1 • Step 2: Idea Generator & Validation":
+elif menu == "Step 2: Idea Generator & Validation":
 
     st.header(
         "💡 AI Research Idea Generator"
@@ -203,7 +178,7 @@ elif menu == "PHASE 1 • Step 2: Idea Generator & Validation":
             )
 
 
-elif menu == "PHASE 1 • Step 3: Research Question Builder":
+elif menu == "Step 3: Research Question Builder":
 
     st.header(
         "🧬 PICO Research Question Builder"
@@ -253,7 +228,7 @@ elif menu == "PHASE 1 • Step 3: Research Question Builder":
         )
 
 
-elif menu == "PHASE 2 • Step 4: Literature Search":
+elif menu == "Step 4: Literature Search & Analyzer":
 
     st.header(
         "🔎 PubMed Literature Search"
@@ -327,7 +302,7 @@ elif menu == "PHASE 2 • Step 4: Literature Search":
             )
 
 
-elif menu == "PHASE 2 • Step 5: Protocol Builder":
+elif menu == "Step 5: Protocol Builder":
 
     st.header(
         "📋 Research Protocol Builder"
@@ -363,7 +338,7 @@ elif menu == "PHASE 2 • Step 5: Protocol Builder":
         st.markdown(protocol)
 
 
-elif menu == "PHASE 3 • Step 6: Sample Size & Statistical Planning":
+elif menu == "Step 6: Sample Size & Power":
 
     from research_analytics.smart_selector import suggest_test
 
@@ -423,7 +398,7 @@ elif menu == "PHASE 3 • Step 6: Sample Size & Statistical Planning":
             )
 
 
-elif menu == "PHASE 3 • Step 7: IRB & Ethics Package":
+elif menu == "Step 7: Ethics & IRB":
 
     st.header(
         "📑 IRB & Ethics Package"
@@ -434,7 +409,7 @@ elif menu == "PHASE 3 • Step 7: IRB & Ethics Package":
     )
 
 
-elif menu == "PHASE 4 • Step 8: Data Collection":
+elif menu == "Step 8: Data Collection":
 
     st.header(
         "🗂 Data Collection"
@@ -445,14 +420,14 @@ elif menu == "PHASE 4 • Step 8: Data Collection":
     )
 
 
-elif menu == "PHASE 5 • Step 9: Statistical Analysis":
+elif menu == "Step 9: Statistical Analysis":
 
     from pages.analytics_page import render
 
     render()
 
 
-elif menu == "PHASE 6 • Step 10: Manuscript & Publication":
+elif menu == "Step 10: Manuscript & Journal Finder":
 
     st.header(
         "📝 Manuscript & Publication"
@@ -463,7 +438,7 @@ elif menu == "PHASE 6 • Step 10: Manuscript & Publication":
     )
 
 
-elif menu == "📚 Research Library":
+elif menu == "Research Library":
 
     st.header(
         "📚 Research Library"
@@ -620,7 +595,7 @@ elif menu == "📚 Research Library":
             )
 
 
-elif menu == "📄 Paper Analyzer":
+elif menu == "Paper Analyzer":
 
     st.header(
         "📄 Scientific Paper Analyzer"
