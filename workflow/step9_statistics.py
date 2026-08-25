@@ -1,5 +1,6 @@
-from pages.analytics_page import render
+from pages.analytics_page import render as analytics_render
 
 
-def render_step9():
-    render()
+def render():
+
+    analytics_render()
