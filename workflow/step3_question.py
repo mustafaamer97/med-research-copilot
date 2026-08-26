@@ -145,6 +145,78 @@ def render():
             outcome
         )
 
+        disease = idea_data.get(
+            "disease",
+            ""
+        )
+
+        location = idea_data.get(
+            "location",
+            ""
+        )
+
+        outcome_text = outcome
+
+        pubmed_query_parts = []
+
+        if disease:
+
+            pubmed_query_parts.append(
+                f'("{disease}"[Title/Abstract])'
+            )
+
+        if location:
+
+            pubmed_query_parts.append(
+                f'("{location}"[Title/Abstract])'
+            )
+
+        if outcome_text:
+
+            pubmed_query_parts.append(
+                f'("{outcome_text}"[Title/Abstract])'
+            )
+
+        pubmed_query = " AND ".join(
+            pubmed_query_parts
+        )
+
+        europe_pmc_query = " AND ".join(
+            [
+                x
+                for x in [
+                    disease,
+                    location,
+                    outcome_text
+                ]
+                if x
+            ]
+        )
+
+        openalex_query = " ".join(
+            [
+                x
+                for x in [
+                    disease,
+                    location,
+                    outcome_text
+                ]
+                if x
+            ]
+        )
+
+        result[
+            "pubmed_query"
+        ] = pubmed_query
+
+        result[
+            "europe_pmc_query"
+        ] = europe_pmc_query
+
+        result[
+            "openalex_query"
+        ] = openalex_query
+
         if "error" in result:
 
             st.error(
@@ -176,11 +248,33 @@ def render():
         )
 
         st.subheader(
-            "PubMed Search Strategy"
+            "Literature Search Strategy"
+        )
+
+        st.markdown(
+            "### PubMed Query"
         )
 
         st.code(
-            result["keywords"],
+            result["pubmed_query"],
+            language="text"
+        )
+
+        st.markdown(
+            "### Europe PMC Query"
+        )
+
+        st.code(
+            result["europe_pmc_query"],
+            language="text"
+        )
+
+        st.markdown(
+            "### OpenAlex Query"
+        )
+
+        st.code(
+            result["openalex_query"],
             language="text"
         )
 
