@@ -1,5 +1,4 @@
 from ai.llm_engine import ask_ai
-
 from modules.reference_generator import (
     generate_references
 )
@@ -168,9 +167,24 @@ Requirements:
 - Use markdown headings
 - Results section must describe the statistical findings when available
 - Discussion must interpret findings clinically
-- Use the supplied references
-- Do not invent references
-- Keep reference numbering exactly as provided
+
+IMPORTANT:
+
+- Use numbered in-text citations.
+- Cite references as [1], [2], [3] inside the manuscript.
+- Every major scientific claim should have a citation.
+- Use only the supplied references.
+- Do not invent references.
+- Keep reference numbering exactly as provided.
+- Include citations throughout Introduction, Discussion and Conclusion when appropriate.
+
+Example:
+
+Hypertension remains a major public health problem [1].
+
+Several randomized trials demonstrated improved outcomes [2,3].
+
+Recent systematic reviews confirmed these findings [4].
 
 Return markdown only.
 """
