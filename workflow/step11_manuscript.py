@@ -198,27 +198,24 @@ Supporting Papers:
             use_container_width=True
         )
 
-        if st.button(
-            "📄 Export Manuscript to Word"
-        ):
+        docx_file = export_to_docx(
+            manuscript,
+            "Research Manuscript",
+            "research_manuscript.docx"
+        )
 
-            output_file = export_to_docx(
-                manuscript,
-                "Research Manuscript",
-                "research_manuscript.docx"
+        with open(
+            docx_file,
+            "rb"
+        ) as file:
+
+            st.download_button(
+                "⬇️ Download Manuscript (.docx)",
+                data=file,
+                file_name="research_manuscript.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True
             )
-
-            with open(
-                output_file,
-                "rb"
-            ) as f:
-
-                st.download_button(
-                    "⬇️ Download DOCX",
-                    data=f,
-                    file_name="research_manuscript.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
 
     # ==================================
     # Display Review Report
