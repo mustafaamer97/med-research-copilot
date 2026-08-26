@@ -45,10 +45,50 @@ def render():
         ""
     )
 
+    statistics_results = st.session_state.get(
+        "statistics_results"
+    )
+
+    statistics_test = st.session_state.get(
+        "statistics_test",
+        ""
+    )
+
+    statistics_report = st.session_state.get(
+        "statistics_report",
+        ""
+    )
+
     field = research_context.get(
         "field",
         ""
     )
+
+    # ==================================
+    # Statistics Status
+    # ==================================
+
+    st.subheader(
+        "Statistical Analysis Status"
+    )
+
+    if statistics_results is not None:
+
+        st.success(
+            f"Statistics available ({statistics_test})"
+        )
+
+    else:
+
+        st.warning(
+            "No statistical analysis found. "
+            "The manuscript can still be generated, "
+            "but Results section will be limited."
+        )
+
+    # ==================================
+    # Journal Recommendations
+    # ==================================
 
     if literature:
 
@@ -64,8 +104,18 @@ def render():
         for item in journals:
 
             st.info(
-                f"{item['journal']} ({item['supporting_papers']} papers)"
+                f"""
+Journal:
+{item['journal']}
+
+Supporting Papers:
+{item['supporting_papers']}
+"""
             )
+
+    # ==================================
+    # Generate Manuscript
+    # ==================================
 
     if st.button(
         "📄 Generate Full Manuscript",
@@ -83,7 +133,8 @@ def render():
                 selected_idea=selected_idea,
                 protocol=protocol,
                 proposal=proposal,
-                literature=literature
+                literature=literature,
+                statistics_results=statistics_report
             )
 
         st.session_state[
@@ -95,6 +146,10 @@ def render():
         ] = True
 
         st.rerun()
+
+    # ==================================
+    # Display Manuscript
+    # ==================================
 
     manuscript = st.session_state.get(
         "research_manuscript"
@@ -116,6 +171,10 @@ def render():
             file_name="research_manuscript.md",
             use_container_width=True
         )
+
+    # ==================================
+    # Completion
+    # ==================================
 
     if st.session_state.get(
         "manuscript_completed"
