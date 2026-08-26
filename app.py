@@ -84,6 +84,7 @@ WORKFLOW_STEPS = {
     "analysis_completed": False,
     "proposal_completed": False,
     "manuscript_completed": False,
+    "google_form_ready": False,
 }
 
 for key, value in WORKFLOW_STEPS.items():
