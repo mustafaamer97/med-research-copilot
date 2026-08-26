@@ -1,4 +1,7 @@
-def generate_references(literature):
+def generate_references(
+    literature,
+    style="Vancouver"
+):
 
     references = []
 
@@ -37,25 +40,49 @@ def generate_references(literature):
             ""
         )
 
-        reference = (
-            f"[{i}] "
-            f"{authors}. "
-            f"{title}. "
-            f"{journal}. "
-            f"{year}."
-        )
+        if style == "Vancouver":
 
-        if doi:
-
-            reference += (
-                f" DOI: {doi}."
+            reference = (
+                f"[{i}] "
+                f"{authors}. "
+                f"{title}. "
+                f"{journal}. "
+                f"{year}."
             )
 
-        elif pmid:
+            if doi:
 
-            reference += (
-                f" PMID: {pmid}."
+                reference += (
+                    f" DOI: {doi}."
+                )
+
+            elif pmid:
+
+                reference += (
+                    f" PMID: {pmid}."
+                )
+
+        else:
+
+            reference = (
+                f"[{i}] "
+                f"{authors}. "
+                f"{title}. "
+                f"{journal}. "
+                f"{year}."
             )
+
+            if doi:
+
+                reference += (
+                    f" DOI: {doi}."
+                )
+
+            elif pmid:
+
+                reference += (
+                    f" PMID: {pmid}."
+                )
 
         references.append(
             reference
