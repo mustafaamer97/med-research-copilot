@@ -1,11 +1,13 @@
 import streamlit as st
 
-from modules.manuscript_writer import (
-    generate_manuscript
+from modules.docx_exporter import (
+    export_to_docx
 )
-
 from modules.journal_recommender import (
     recommend_journals
+)
+from modules.manuscript_writer import (
+    generate_manuscript
 )
 
 
@@ -171,6 +173,28 @@ Supporting Papers:
             file_name="research_manuscript.md",
             use_container_width=True
         )
+
+        if st.button(
+            "📄 Export Manuscript to Word"
+        ):
+
+            output_file = export_to_docx(
+                manuscript,
+                "Research Manuscript",
+                "research_manuscript.docx"
+            )
+
+            with open(
+                output_file,
+                "rb"
+            ) as f:
+
+                st.download_button(
+                    "⬇️ Download DOCX",
+                    data=f,
+                    file_name="research_manuscript.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
 
     # ==================================
     # Completion
