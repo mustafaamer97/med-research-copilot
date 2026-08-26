@@ -326,6 +326,49 @@ Description:
                 "Generated Protocol"
             )
 
+            # ==================================
+            # Protocol Structure
+            # ==================================
+
+            st.subheader(
+                "Protocol Structure"
+            )
+
+            sections = [
+
+                "Background",
+
+                "Objectives",
+
+                "Methods",
+
+                "Population",
+
+                "Outcomes",
+
+                "Variables",
+
+                "Statistics",
+
+                "Ethics",
+
+                "Expected Impact"
+            ]
+
+            cols = st.columns(3)
+
+            for idx, section in enumerate(
+                sections
+            ):
+
+                with cols[idx % 3]:
+
+                    st.success(
+                        f"✓ {section}"
+                    )
+
+            st.divider()
+
             st.markdown(
                 protocol
             )
