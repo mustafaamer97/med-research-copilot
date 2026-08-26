@@ -247,6 +247,34 @@ def render():
         ]
 
     # ==========================================
+    # Source Filter
+    # ==========================================
+
+    source_filter = st.selectbox(
+        "Source Filter",
+        [
+            "All",
+            "PubMed",
+            "Europe PMC",
+            "OpenAlex"
+        ]
+    )
+
+    if source_filter != "All":
+
+        filtered_papers = [
+
+            paper
+
+            for paper in filtered_papers
+
+            if paper.get(
+                "source",
+                ""
+            ) == source_filter
+        ]
+
+    # ==========================================
     # Dashboard
     # ==========================================
 
@@ -291,7 +319,7 @@ def render():
     )
 
     st.success(
-        f"Found {len(filtered_papers)} papers"
+        f"Found {len(filtered_papers)} papers after filtering"
     )
 
     c1, c2, c3, c4, c5 = st.columns(5)
@@ -322,6 +350,35 @@ def render():
     )
 
     st.divider()
+
+    # ==========================================
+    # Save All Papers
+    # ==========================================
+
+    if st.button(
+        "💾 Save All Results",
+        use_container_width=True
+    ):
+
+        saved_count = 0
+
+        for paper in filtered_papers:
+
+            result = save_paper(
+                project_id=1,
+                paper=paper
+            )
+
+            if result.get(
+                "saved",
+                False
+            ):
+
+                saved_count += 1
+
+        st.success(
+            f"{saved_count} papers saved successfully."
+        )
 
     # ==========================================
     # Papers
