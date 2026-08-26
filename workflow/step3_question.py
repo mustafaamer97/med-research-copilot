@@ -12,16 +12,36 @@ def render():
     )
 
     st.info(
-        "Build a structured research question based on your selected idea."
+        "Build a structured PICO research question."
     )
 
-    # ==================================
-    # Selected Idea
-    # ==================================
+    # =========================
+    # Display Selected Idea
+    # =========================
 
     idea_data = st.session_state.get(
         "selected_research_idea",
         {}
+    )
+
+    default_disease = idea_data.get(
+        "disease",
+        ""
+    )
+
+    default_location = idea_data.get(
+        "location",
+        ""
+    )
+
+    default_outcome = idea_data.get(
+        "outcome",
+        ""
+    )
+
+    default_period = idea_data.get(
+        "period",
+        ""
     )
 
     if idea_data:
@@ -39,31 +59,9 @@ def render():
 """
             )
 
-            col1, col2 = st.columns(2)
-
-            with col1:
-
-                st.write(
-                    f"**Disease:** {idea_data.get('disease', 'Not specified')}"
-                )
-
-                st.write(
-                    f"**Location:** {idea_data.get('location', 'Not specified')}"
-                )
-
-            with col2:
-
-                st.write(
-                    f"**Outcome:** {idea_data.get('outcome', 'Not specified')}"
-                )
-
-                st.write(
-                    f"**Period:** {idea_data.get('period', 'Not specified')}"
-                )
-
-    # ==================================
-    # Defaults From Previous Steps
-    # ==================================
+    # =========================
+    # Defaults from Step 1
+    # =========================
 
     context = st.session_state.get(
         "research_context",
@@ -75,26 +73,21 @@ def render():
         ""
     )
 
-    default_outcome = idea_data.get(
-        "outcome",
-        ""
-    )
+    population_default = default_population
 
-    # ==================================
-    # PICO Builder
-    # ==================================
+    if default_disease:
 
-    st.subheader(
-        "PICO Framework"
-    )
+        population_default = (
+            f"{default_population} with {default_disease}"
+        )
 
     population = st.text_input(
         "Population (P)",
-        value=default_population
+        value=population_default
     )
 
     intervention = st.text_input(
-        "Intervention / Exposure (I)"
+        "Intervention (I)"
     )
 
     comparison = st.text_input(
@@ -106,36 +99,43 @@ def render():
         value=default_outcome
     )
 
-    # ==================================
-    # Preview
-    # ==================================
+    # =========================
+    # Study Context
+    # =========================
 
-    st.markdown("### Research Components")
+    st.subheader(
+        "Study Context"
+    )
 
-    preview_text = f"""
-Population:
-{population}
+    c1, c2 = st.columns(2)
 
-Intervention / Exposure:
-{intervention}
+    with c1:
 
-Comparison:
-{comparison}
+        st.write(
+            f"**Disease:** {default_disease}"
+        )
 
-Outcome:
-{outcome}
-"""
+        st.write(
+            f"**Location:** {default_location}"
+        )
 
-    st.info(preview_text)
+    with c2:
 
-    # ==================================
+        st.write(
+            f"**Outcome:** {default_outcome}"
+        )
+
+        st.write(
+            f"**Period:** {default_period}"
+        )
+
+    # =========================
     # Generate Question
-    # ==================================
+    # =========================
 
     if st.button(
         "Generate Research Question",
-        use_container_width=True,
-        type="primary"
+        use_container_width=True
     ):
 
         result = build_pico(
@@ -153,48 +153,13 @@ Outcome:
 
         else:
 
-            result[
-                "disease"
-            ] = idea_data.get(
-                "disease",
-                ""
-            )
-
-            result[
-                "location"
-            ] = idea_data.get(
-                "location",
-                ""
-            )
-
-            result[
-                "period"
-            ] = idea_data.get(
-                "period",
-                ""
-            )
-
-            result[
-                "study_design"
-            ] = context.get(
-                "study_design",
-                ""
-            )
-
-            result[
-                "field"
-            ] = context.get(
-                "field",
-                ""
-            )
-
             st.session_state[
                 "generated_question"
             ] = result
 
-    # ==================================
+    # =========================
     # Display Result
-    # ==================================
+    # =========================
 
     result = st.session_state.get(
         "generated_question"
@@ -203,7 +168,7 @@ Outcome:
     if result:
 
         st.subheader(
-            "Generated Research Question"
+            "Research Question"
         )
 
         st.success(
@@ -211,16 +176,12 @@ Outcome:
         )
 
         st.subheader(
-            "Literature Search Strategy"
+            "PubMed Search Strategy"
         )
 
         st.code(
             result["keywords"],
             language="text"
-        )
-
-        st.caption(
-            "This search strategy will be used in Step 4 across PubMed, Europe PMC and OpenAlex."
         )
 
         col1, col2 = st.columns(2)
@@ -256,9 +217,9 @@ Outcome:
                 use_container_width=True
             )
 
-    # ==================================
+    # =========================
     # Completion Status
-    # ==================================
+    # =========================
 
     if st.session_state.get(
         "question_completed"
