@@ -60,7 +60,10 @@ def render():
 
         st.metric("Duplicates", report["duplicates"])
 
-        st.metric("Numeric Variables", len(report["numeric_columns"]))
+        st.metric(
+            "Numeric Variables",
+            len(report["numeric_columns"])
+        )
 
     st.divider()
 
@@ -84,19 +87,34 @@ def render():
 
     if analysis_type == "Group Comparison":
 
-        group_col = st.selectbox("Grouping Variable", df.columns)
+        group_col = st.selectbox(
+            "Grouping Variable",
+            df.columns
+        )
 
-        outcome_col = st.selectbox("Outcome Variable", report["numeric_columns"])
+        outcome_col = st.selectbox(
+            "Outcome Variable",
+            report["numeric_columns"]
+        )
 
         if st.button("Run Analysis"):
 
-            recommendation = auto_select_group_comparison_test(
-                df, report, group_col, outcome_col
+            recommendation = (
+                auto_select_group_comparison_test(
+                    df,
+                    report,
+                    group_col,
+                    outcome_col
+                )
             )
 
-            st.success(recommendation["test"])
+            st.success(
+                recommendation["test"]
+            )
 
-            st.write(recommendation["reason"])
+            st.write(
+                recommendation["reason"]
+            )
 
             result = run_analysis(
                 df=df,
@@ -105,11 +123,28 @@ def render():
                 outcome_col=outcome_col,
             )
 
+            # =====================================
+            # Save Results for Step 11 Manuscript
+            # =====================================
+
+            st.session_state[
+                "statistics_results"
+            ] = result
+
+            st.session_state[
+                "statistics_test"
+            ] = recommendation["test"]
+
+            st.session_state[
+                "analysis_completed"
+            ] = True
+
             st.dataframe(result)
 
             # ==========================================
             # Post-hoc Analysis (Tukey HSD) for ANOVA
             # ==========================================
+
             if (
                 recommendation["test"] == "ANOVA"
                 and not result.empty
@@ -142,12 +177,21 @@ def render():
                     pass
 
             report_text = generate_academic_report(
-                recommendation["test"], result
+                recommendation["test"],
+                result
             )
 
-            st.subheader("Academic Report")
+            st.session_state[
+                "statistics_report"
+            ] = report_text
 
-            st.write(report_text)
+            st.subheader(
+                "Academic Report"
+            )
+
+            st.write(
+                report_text
+            )
 
     # =========================
     # Correlation Analysis
@@ -155,13 +199,22 @@ def render():
 
     elif analysis_type == "Correlation Analysis":
 
-        variable_1 = st.selectbox("Variable 1", report["numeric_columns"])
+        variable_1 = st.selectbox(
+            "Variable 1",
+            report["numeric_columns"]
+        )
 
-        variable_2 = st.selectbox("Variable 2", report["numeric_columns"])
+        variable_2 = st.selectbox(
+            "Variable 2",
+            report["numeric_columns"]
+        )
 
         correlation_type = st.selectbox(
             "Correlation Test",
-            ["Pearson Correlation", "Spearman Correlation"],
+            [
+                "Pearson Correlation",
+                "Spearman Correlation",
+            ],
         )
 
         if st.button("Run Analysis"):
@@ -173,11 +226,32 @@ def render():
                 variable_2=variable_2,
             )
 
+            st.session_state[
+                "statistics_results"
+            ] = result
+
+            st.session_state[
+                "statistics_test"
+            ] = correlation_type
+
+            st.session_state[
+                "analysis_completed"
+            ] = True
+
             st.dataframe(result)
 
-            report_text = generate_academic_report(correlation_type, result)
+            report_text = generate_academic_report(
+                correlation_type,
+                result
+            )
 
-            st.write(report_text)
+            st.session_state[
+                "statistics_report"
+            ] = report_text
+
+            st.write(
+                report_text
+            )
 
     # =========================
     # Categorical Association
@@ -185,12 +259,22 @@ def render():
 
     elif analysis_type == "Categorical Association":
 
-        variable_1 = st.selectbox("Variable 1", report["categorical_columns"])
+        variable_1 = st.selectbox(
+            "Variable 1",
+            report["categorical_columns"]
+        )
 
-        variable_2 = st.selectbox("Variable 2", report["categorical_columns"])
+        variable_2 = st.selectbox(
+            "Variable 2",
+            report["categorical_columns"]
+        )
 
         test_name = st.selectbox(
-            "Association Test", ["Chi-Square Test", "Fisher Exact Test"]
+            "Association Test",
+            [
+                "Chi-Square Test",
+                "Fisher Exact Test"
+            ]
         )
 
         if st.button("Run Analysis"):
@@ -202,11 +286,32 @@ def render():
                 variable_2=variable_2,
             )
 
+            st.session_state[
+                "statistics_results"
+            ] = result
+
+            st.session_state[
+                "statistics_test"
+            ] = test_name
+
+            st.session_state[
+                "analysis_completed"
+            ] = True
+
             st.write(result)
 
-            report_text = generate_academic_report(test_name, result)
+            report_text = generate_academic_report(
+                test_name,
+                result
+            )
 
-            st.write(report_text)
+            st.session_state[
+                "statistics_report"
+            ] = report_text
+
+            st.write(
+                report_text
+            )
 
     # =========================
     # Regression Analysis
@@ -220,11 +325,16 @@ def render():
         )
 
         regression_type = st.selectbox(
-            "Regression Type", ["Linear Regression", "Logistic Regression"]
+            "Regression Type",
+            [
+                "Linear Regression",
+                "Logistic Regression"
+            ]
         )
 
         outcome_variable = st.selectbox(
-            "Outcome Variable", report["numeric_columns"]
+            "Outcome Variable",
+            report["numeric_columns"]
         )
 
         predictor_variables = st.multiselect(
@@ -240,38 +350,87 @@ def render():
 
             if not predictor_variables:
 
-                st.warning("Please select at least one predictor.")
+                st.warning(
+                    "Please select at least one predictor."
+                )
 
             else:
 
                 if regression_type == "Linear Regression":
 
                     result = run_linear_regression(
-                        df, outcome_variable, predictor_variables
+                        df,
+                        outcome_variable,
+                        predictor_variables
                     )
 
-                    st.metric("R²", round(result["r_squared"], 3))
+                    st.metric(
+                        "R²",
+                        round(
+                            result["r_squared"],
+                            3
+                        )
+                    )
 
                 else:
 
                     result = run_logistic_regression(
-                        df, outcome_variable, predictor_variables
+                        df,
+                        outcome_variable,
+                        predictor_variables
                     )
 
                     st.metric(
-                        "Pseudo R²", round(result["pseudo_r_squared"], 3)
+                        "Pseudo R²",
+                        round(
+                            result["pseudo_r_squared"],
+                            3
+                        )
                     )
 
-                st.subheader("Model Results")
+                st.session_state[
+                    "statistics_results"
+                ] = result
 
-                st.dataframe(result["results"])
+                st.session_state[
+                    "statistics_test"
+                ] = regression_type
 
-                report_text = generate_academic_report(regression_type, result)
+                st.session_state[
+                    "analysis_completed"
+                ] = True
 
-                st.subheader("Academic Report")
+                st.subheader(
+                    "Model Results"
+                )
 
-                st.write(report_text)
+                st.dataframe(
+                    result["results"]
+                )
 
-                with st.expander("Model Summary"):
+                report_text = (
+                    generate_academic_report(
+                        regression_type,
+                        result
+                    )
+                )
 
-                    st.text(result["summary"])
+                st.session_state[
+                    "statistics_report"
+                ] = report_text
+
+                st.subheader(
+                    "Academic Report"
+                )
+
+                st.write(
+                    report_text
+                )
+
+                with st.expander(
+                    "Model Summary"
+                ):
+
+                    st.text(
+                        result["summary"]
+                    )
