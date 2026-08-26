@@ -70,11 +70,142 @@ Hospital Admission
         value=6
     )
 
+    sample_plan = st.session_state.get(
+        "sample_size_plan",
+        {}
+    )
+
+    default_sample_size = sample_plan.get(
+        "total_sample",
+        100
+    )
+
     expected_sample_size = st.number_input(
         "Expected Sample Size",
         min_value=1,
-        value=100
+        value=int(default_sample_size)
     )
+
+    # ==================================
+    # Variable Classification
+    # ==================================
+
+    st.subheader(
+        "Variable Classification"
+    )
+
+    variable_list = [
+        v.strip()
+        for v in variables.split("\n")
+        if v.strip()
+    ]
+
+    demographics = []
+    outcomes = []
+    exposures = []
+    confounders = []
+
+    for var in variable_list:
+
+        lower = var.lower()
+
+        if lower in [
+            "age",
+            "sex",
+            "gender"
+        ]:
+
+            demographics.append(var)
+
+        elif any(
+            x in lower
+            for x in [
+                "mortality",
+                "death",
+                "admission",
+                "outcome"
+            ]
+        ):
+
+            outcomes.append(var)
+
+        elif any(
+            x in lower
+            for x in [
+                "bmi",
+                "smoking",
+                "treatment",
+                "exposure"
+            ]
+        ):
+
+            exposures.append(var)
+
+        else:
+
+            confounders.append(var)
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+
+        st.write("### Demographics")
+        st.write(demographics)
+
+        st.write("### Exposure Variables")
+        st.write(exposures)
+
+    with c2:
+
+        st.write("### Outcome Variables")
+        st.write(outcomes)
+
+        st.write("### Confounders")
+        st.write(confounders)
+
+    # ==================================
+    # Feasibility Score
+    # ==================================
+
+    score = 100
+
+    if len(variable_list) > 20:
+
+        score -= 20
+
+    if expected_sample_size > 1000:
+
+        score -= 30
+
+    if estimated_duration > 24:
+
+        score -= 20
+
+    st.subheader(
+        "Data Collection Feasibility"
+    )
+
+    st.progress(
+        score / 100
+    )
+
+    if score >= 80:
+
+        st.success(
+            "Easy Study"
+        )
+
+    elif score >= 50:
+
+        st.warning(
+            "Moderate Complexity"
+        )
+
+    else:
+
+        st.error(
+            "Complex Study"
+        )
 
     st.markdown("---")
 
@@ -87,11 +218,59 @@ Hospital Admission
         st.session_state[
             "data_collection_plan"
         ] = {
-            "variables": variables,
-            "method": collection_method,
-            "duration_months": estimated_duration,
-            "expected_sample_size": expected_sample_size,
+
+            "variables":
+            variables,
+
+            "method":
+            collection_method,
+
+            "duration_months":
+            estimated_duration,
+
+            "expected_sample_size":
+            expected_sample_size,
+
+            "demographics":
+            demographics,
+
+            "outcomes":
+            outcomes,
+
+            "exposures":
+            exposures,
+
+            "confounders":
+            confounders,
+
+            "feasibility_score":
+            score
         }
+
+        # ==================================
+        # Data Dictionary
+        # ==================================
+
+        dictionary = []
+
+        for variable in variable_list:
+
+            dictionary.append(
+                {
+                    "Variable":
+                    variable,
+
+                    "Type":
+                    "Numeric",
+
+                    "Required":
+                    "Yes"
+                }
+            )
+
+        st.session_state[
+            "data_dictionary"
+        ] = dictionary
 
         st.session_state[
             "data_collection_completed"
@@ -179,6 +358,25 @@ this questionnaire will be converted
 into a Google Form automatically.
 """
             )
+
+    # ==================================
+    # Data Dictionary
+    # ==================================
+
+    if st.session_state.get(
+        "data_dictionary"
+    ):
+
+        st.subheader(
+            "Data Dictionary"
+        )
+
+        st.dataframe(
+            st.session_state[
+                "data_dictionary"
+            ],
+            use_container_width=True
+        )
 
     # ==================================
     # Current Plan Display
