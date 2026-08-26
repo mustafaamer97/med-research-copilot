@@ -1,5 +1,8 @@
 import streamlit as st
 
+from modules.docx_exporter import (
+    export_to_docx
+)
 from modules.proposal_builder import (
     generate_proposal
 )
@@ -91,6 +94,28 @@ def render():
             file_name="research_proposal.md",
             use_container_width=True
         )
+
+        if st.button(
+            "📄 Export Proposal to Word"
+        ):
+
+            output_file = export_to_docx(
+                proposal,
+                "Research Proposal",
+                "research_proposal.docx"
+            )
+
+            with open(
+                output_file,
+                "rb"
+            ) as f:
+
+                st.download_button(
+                    "⬇️ Download DOCX",
+                    data=f,
+                    file_name="research_proposal.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
 
     if st.session_state.get(
         "proposal_completed"
