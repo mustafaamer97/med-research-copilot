@@ -129,6 +129,33 @@ def render():
             f"**Period:** {default_period}"
         )
 
+    missing_context = []
+
+    if not default_disease:
+
+        missing_context.append(
+            "Disease"
+        )
+
+    if not default_location:
+
+        missing_context.append(
+            "Location"
+        )
+
+    if not default_period:
+
+        missing_context.append(
+            "Period"
+        )
+
+    if missing_context:
+
+        st.warning(
+            "Missing context: "
+            + ", ".join(missing_context)
+        )
+
     # =========================
     # Generate Question
     # =========================
@@ -137,6 +164,22 @@ def render():
         "Generate Research Question",
         use_container_width=True
     ):
+
+        if not population.strip():
+
+            st.warning(
+                "Population is required."
+            )
+
+            return
+
+        if not outcome.strip():
+
+            st.warning(
+                "Outcome is required."
+            )
+
+            return
 
         result = build_pico(
             population,
@@ -255,6 +298,14 @@ def render():
                 ]
             )
 
+            if not pubmed_query:
+
+                st.error(
+                    "Unable to generate search query."
+                )
+
+                return
+
             result[
                 "pubmed_query"
             ] = pubmed_query
@@ -334,6 +385,18 @@ def render():
                 ),
                 language="text"
             )
+
+        st.markdown(
+            "### Master Search Query"
+        )
+
+        st.code(
+            result.get(
+                "master_query",
+                ""
+            ),
+            language="text"
+        )
 
         col1, col2 = st.columns(2)
 
