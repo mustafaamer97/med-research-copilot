@@ -1,4 +1,6 @@
-from ai.llm_engine import ask_ai
+from ai.llm_engine import (
+    ask_ai
+)
 from modules.reference_generator import (
     generate_references
 )
@@ -191,7 +193,20 @@ Return markdown only.
 
     try:
 
-        return ask_ai(prompt)
+        manuscript = ask_ai(
+            prompt
+        )
+
+        if references_text:
+
+            if "# References" not in manuscript:
+
+                manuscript += (
+                    "\n\n# References\n\n"
+                    + references_text
+                )
+
+        return manuscript
 
     except Exception as e:
 
