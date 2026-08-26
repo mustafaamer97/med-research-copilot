@@ -22,6 +22,34 @@ before starting the study.
 """
     )
 
+    # ==================================
+    # Auto Fill Study Design
+    # ==================================
+
+    research_context = st.session_state.get(
+        "research_context",
+        {}
+    )
+
+    default_study = research_context.get(
+        "study_design",
+        "RCT"
+    )
+
+    default_index = 0
+
+    if "Cohort" in default_study:
+
+        default_index = 1
+
+    elif "Case-Control" in default_study:
+
+        default_index = 2
+
+    elif "Cross-Sectional" in default_study:
+
+        default_index = 3
+
     study_type = st.selectbox(
         "Study Type",
         [
@@ -29,7 +57,59 @@ before starting the study.
             "Cohort",
             "Case-Control",
             "Cross-Sectional"
-        ]
+        ],
+        index=default_index
+    )
+
+    # ==================================
+    # Suggested Analysis
+    # ==================================
+
+    st.subheader(
+        "Suggested Statistical Analysis"
+    )
+
+    if study_type == "RCT":
+
+        st.write("• Intention-To-Treat Analysis")
+        st.write("• T-Test")
+        st.write("• ANOVA")
+        st.write("• Effect Size")
+
+    elif study_type == "Cohort":
+
+        st.write("• Kaplan-Meier Analysis")
+        st.write("• Cox Regression")
+        st.write("• Hazard Ratios")
+
+    elif study_type == "Case-Control":
+
+        st.write("• Odds Ratios")
+        st.write("• Chi-Square Test")
+        st.write("• Logistic Regression")
+
+    elif study_type == "Cross-Sectional":
+
+        st.write("• Descriptive Statistics")
+        st.write("• Chi-Square Test")
+        st.write("• Logistic Regression")
+
+    # ==================================
+    # Effect Size Guide
+    # ==================================
+
+    st.subheader(
+        "Effect Size Guide"
+    )
+
+    st.info(
+        """
+Small Effect = 0.2
+
+Medium Effect = 0.5
+
+Large Effect = 0.8
+"""
     )
 
     effect_size = st.number_input(
@@ -79,6 +159,28 @@ Required sample size per group: {n}
 Total sample size: {total_n}
 """
             )
+
+            # ==================================
+            # Interpretation
+            # ==================================
+
+            if total_n < 100:
+
+                st.warning(
+                    "Small sample study"
+                )
+
+            elif total_n < 500:
+
+                st.success(
+                    "Moderate sample study"
+                )
+
+            else:
+
+                st.info(
+                    "Large sample study"
+                )
 
             curve_df = build_power_curve(
                 effect_size,
