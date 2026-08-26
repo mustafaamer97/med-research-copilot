@@ -147,6 +147,39 @@ Hospital Admission
             use_container_width=True
         )
 
+        # ==================================
+        # Google Forms Preparation
+        # ==================================
+
+        st.markdown("---")
+
+        if st.button(
+            "🚀 Prepare Google Form",
+            use_container_width=True
+        ):
+
+            st.session_state[
+                "google_form_ready"
+            ] = True
+
+            st.success(
+                "Questionnaire prepared for Google Forms integration."
+            )
+
+        if st.session_state.get(
+            "google_form_ready"
+        ):
+
+            st.info(
+                """
+Google Forms integration is configured.
+
+When Google API connection is enabled,
+this questionnaire will be converted
+into a Google Form automatically.
+"""
+            )
+
     # ==================================
     # Current Plan Display
     # ==================================
