@@ -6,6 +6,9 @@ from modules.docx_exporter import (
 from modules.journal_recommender import (
     recommend_journals
 )
+from modules.manuscript_reviewer import (
+    review_manuscript
+)
 from modules.manuscript_writer import (
     generate_manuscript
 )
@@ -167,6 +170,27 @@ Supporting Papers:
             manuscript
         )
 
+        st.divider()
+
+        if st.button(
+            "🔍 Review Manuscript",
+            use_container_width=True
+        ):
+
+            with st.spinner(
+                "Reviewing manuscript..."
+            ):
+
+                review = review_manuscript(
+                    manuscript
+                )
+
+            st.session_state[
+                "manuscript_review"
+            ] = review
+
+            st.rerun()
+
         st.download_button(
             "⬇️ Download Manuscript",
             data=manuscript,
@@ -195,6 +219,31 @@ Supporting Papers:
                     file_name="research_manuscript.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
+
+    # ==================================
+    # Display Review Report
+    # ==================================
+
+    review = st.session_state.get(
+        "manuscript_review"
+    )
+
+    if review:
+
+        st.subheader(
+            "📋 Peer Review Report"
+        )
+
+        st.markdown(
+            review
+        )
+
+        st.download_button(
+            "⬇️ Download Review",
+            data=review,
+            file_name="peer_review_report.md",
+            use_container_width=True
+        )
 
     # ==================================
     # Completion
