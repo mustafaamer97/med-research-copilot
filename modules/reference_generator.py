@@ -2,7 +2,10 @@ def generate_references(literature):
 
     references = []
 
-    for i, paper in enumerate(literature, start=1):
+    for i, paper in enumerate(
+        literature,
+        start=1
+    ):
 
         authors = paper.get(
             "authors",
@@ -35,7 +38,7 @@ def generate_references(literature):
         )
 
         reference = (
-            f"{i}. "
+            f"[{i}] "
             f"{authors}. "
             f"{title}. "
             f"{journal}. "
