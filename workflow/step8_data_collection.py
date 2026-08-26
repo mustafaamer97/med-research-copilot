@@ -1,6 +1,6 @@
 import streamlit as st
 
-from modules.questionnaire_generator import (
+from modules.questionnaire_builder import (
     generate_questionnaire
 )
 
