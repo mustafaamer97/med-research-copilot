@@ -25,19 +25,26 @@ def render():
 
     if idea_mode == "Generate New Research Idea":
 
-        default_field = (
-            st.session_state.get(
-                "research_context",
-                {}
-            ).get(
-                "field",
-                ""
-            )
+        context = st.session_state.get(
+            "research_context",
+            {}
         )
 
-        field = st.text_input(
-            "Medical Field",
-            value=default_field
+        field = context.get(
+            "field",
+            ""
+        )
+
+        st.info(
+            f"""
+Field: {context.get('field','')}
+
+Population: {context.get('population','')}
+
+Study Design: {context.get('study_design','')}
+
+Data Source: {context.get('data_source','')}
+"""
         )
 
         if st.button(
@@ -78,6 +85,10 @@ def render():
                 ]
             )
 
+            st.caption(
+                "Generated from PubMed / Europe PMC / OpenAlex evidence and research gap analysis."
+            )
+
             if st.button(
                 "Use Generated Ideas"
             ):
@@ -110,16 +121,60 @@ def render():
     else:
 
         st.info(
-            "Enter your existing research idea."
+            "Describe your research idea in a structured format."
         )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            disease = st.text_input(
+                "Disease / Condition"
+            )
+
+            location = st.text_input(
+                "Location / Setting"
+            )
+
+        with col2:
+
+            outcome = st.text_input(
+                "Main Outcome"
+            )
+
+            period = st.text_input(
+                "Study Period"
+            )
 
         idea_title = st.text_input(
             "Research Idea Title"
         )
 
         idea_description = st.text_area(
-            "Research Idea Description"
+            "Research Idea Description",
+            height=150
         )
+
+        st.markdown("### Research Idea Preview")
+
+        preview = f"""
+Disease / Condition:
+{disease}
+
+Location:
+{location}
+
+Outcome:
+{outcome}
+
+Study Period:
+{period}
+
+Description:
+{idea_description}
+"""
+
+        st.info(preview)
 
         if st.button(
             "Save Research Idea"
@@ -128,9 +183,27 @@ def render():
             st.session_state[
                 "selected_research_idea"
             ] = {
-                "title": idea_title,
-                "description": idea_description,
-                "source": "manual"
+
+                "title":
+                idea_title,
+
+                "description":
+                idea_description,
+
+                "source":
+                "manual",
+
+                "disease":
+                disease,
+
+                "location":
+                location,
+
+                "outcome":
+                outcome,
+
+                "period":
+                period
             }
 
             st.session_state[
