@@ -1,5 +1,8 @@
 import streamlit as st
 
+from modules.questionnaire_generator import (
+    generate_questionnaire
+)
 
 COLLECTION_METHODS = [
     "Survey",
@@ -24,6 +27,21 @@ def render():
 Define how study data will be collected
 before starting recruitment.
 """
+    )
+
+    research_context = st.session_state.get(
+        "research_context",
+        {}
+    )
+
+    research_question = st.session_state.get(
+        "research_question",
+        {}
+    )
+
+    protocol = st.session_state.get(
+        "research_protocol",
+        ""
     )
 
     variables = st.text_area(
@@ -82,6 +100,56 @@ Hospital Admission
         st.success(
             "Data collection plan saved successfully."
         )
+
+    # ==================================
+    # Generate Questionnaire
+    # ==================================
+
+    if st.button(
+        "📝 Generate Questionnaire",
+        use_container_width=True
+    ):
+
+        with st.spinner(
+            "Generating questionnaire..."
+        ):
+
+            questionnaire = generate_questionnaire(
+                research_context,
+                research_question,
+                protocol
+            )
+
+        st.session_state[
+            "research_questionnaire"
+        ] = questionnaire
+
+        st.rerun()
+
+    questionnaire = st.session_state.get(
+        "research_questionnaire"
+    )
+
+    if questionnaire:
+
+        st.subheader(
+            "Generated Questionnaire"
+        )
+
+        st.markdown(
+            questionnaire
+        )
+
+        st.download_button(
+            "⬇️ Download Questionnaire",
+            data=questionnaire,
+            file_name="research_questionnaire.md",
+            use_container_width=True
+        )
+
+    # ==================================
+    # Current Plan Display
+    # ==================================
 
     if st.session_state.get(
         "data_collection_plan"
