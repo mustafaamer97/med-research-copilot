@@ -4,6 +4,67 @@ from modules.idea_validator import (
     validate_research_idea
 )
 
+
+def recommend_study_design(
+    data_source,
+    outcome,
+    default_design="Cross-Sectional Study"
+):
+
+    outcome = outcome.lower()
+
+    if data_source == "Registry Database":
+
+        if any(
+            x in outcome
+            for x in [
+                "trend",
+                "incidence",
+                "prevalence",
+                "distribution"
+            ]
+        ):
+
+            return (
+                "Retrospective Registry-Based Study",
+                [
+                    "Cross-Sectional Study",
+                    "Retrospective Cohort Study"
+                ]
+            )
+
+        return (
+            "Retrospective Cohort Study",
+            [
+                "Cross-Sectional Study"
+            ]
+        )
+
+    if data_source == "Hospital Records":
+
+        return (
+            "Retrospective Cohort Study",
+            [
+                "Case-Control Study",
+                "Cross-Sectional Study"
+            ]
+        )
+
+    if data_source == "Literature Only":
+
+        return (
+            "Systematic Review",
+            [
+                "Meta-Analysis"
+            ]
+        )
+
+    return (
+        default_design,
+        []
+    )
+
+
 MEDICAL_FIELDS = [
     "Cardiology",
     "Neurology",
@@ -54,6 +115,24 @@ DATA_SOURCES = [
     "Registry Database",
     "Literature Only",
 ]
+
+VALID_DESIGNS = {
+    "Registry Database": [
+        "Cross-Sectional Study",
+        "Case-Control Study",
+        "Cohort Study",
+    ],
+    "Hospital Records": [
+        "Cross-Sectional Study",
+        "Case-Control Study",
+        "Cohort Study",
+        "Case Series",
+    ],
+    "Literature Only": [
+        "Systematic Review",
+        "Meta-Analysis",
+    ],
+}
 
 FIELD_KEYWORD_HINTS = {
     "Cardiology": "heart failure, NT-proBNP, ejection fraction, mortality",
@@ -107,6 +186,30 @@ def render():
         DATA_SOURCES
     )
 
+    # ==================================
+    # Study Design Validation
+    # ==================================
+
+    allowed_designs = VALID_DESIGNS.get(
+        data_source,
+        STUDY_DESIGNS
+    )
+
+    if study_design not in allowed_designs:
+
+        st.error(
+            f"""
+❌ Selected study design is not compatible
+with the chosen data source.
+
+Data Source:
+{data_source}
+
+Allowed Designs:
+{", ".join(allowed_designs)}
+"""
+        )
+
     disease = st.text_input(
         "Disease / Research Topic",
         placeholder="Cancer, Diabetes, Stroke..."
@@ -122,6 +225,19 @@ def render():
         placeholder="Incidence, Mortality, Survival, Risk Factors..."
     )
 
+    recommended_design = None
+    alternative_designs = []
+
+    if outcome:
+
+        recommended_design, alternative_designs = (
+            recommend_study_design(
+                data_source,
+                outcome,
+                default_design=study_design
+            )
+        )
+
     study_period = st.text_input(
         "Study Period",
         placeholder="2015-2025"
@@ -135,6 +251,64 @@ def render():
         ),
     )
 
+    # ==================================
+    # Auto Research Title
+    # ==================================
+
+    if all([
+        disease,
+        location,
+        outcome,
+        study_period
+    ]):
+
+        generated_title = (
+            f"{outcome} of {disease} in "
+            f"{location} ({study_period})"
+        )
+
+        st.markdown("### Suggested Research Title")
+
+        st.success(
+            generated_title
+        )
+
+        st.session_state[
+            "generated_title"
+        ] = generated_title
+
+    # ==================================
+    # Draft Research Question
+    # ==================================
+
+    if all([
+        disease,
+        location,
+        outcome,
+        study_period
+    ]):
+
+        draft_question = (
+            f"What are the patterns of "
+            f"{outcome.lower()} among "
+            f"{population.lower()} with "
+            f"{disease.lower()} in "
+            f"{location} during "
+            f"{study_period}?"
+        )
+
+        st.markdown(
+            "### Draft Research Question"
+        )
+
+        st.info(
+            draft_question
+        )
+
+        st.session_state[
+            "draft_research_question"
+        ] = draft_question
+
     context = {
         "field": field,
         "population": population,
@@ -145,6 +319,14 @@ def render():
         "outcome": outcome,
         "study_period": study_period,
         "keywords": keywords,
+        "generated_title": st.session_state.get(
+            "generated_title",
+            ""
+        ),
+        "draft_research_question": st.session_state.get(
+            "draft_research_question",
+            ""
+        ),
     }
 
     st.session_state["research_context"] = context
@@ -153,6 +335,50 @@ def render():
         study_design,
         data_source
     )
+
+    if recommended_design:
+
+        st.markdown("---")
+
+        st.subheader(
+            "📚 Methodology Recommendation"
+        )
+
+        st.success(
+            f"""
+Recommended Design:
+
+{recommended_design}
+"""
+        )
+
+        if alternative_designs:
+
+            st.info(
+                "Alternative Designs:\n\n• "
+                + "\n• ".join(
+                    alternative_designs
+                )
+            )
+
+    if (
+        recommended_design
+        and study_design
+        and study_design != recommended_design
+    ):
+
+        st.warning(
+            f"""
+The selected study design differs
+from the recommended methodology.
+
+Recommended:
+{recommended_design}
+
+Selected:
+{study_design}
+"""
+        )
 
     st.markdown("---")
 
@@ -227,24 +453,6 @@ Feasibility Level: LOW
 **Keywords:** {keywords if keywords else 'Not specified'}
 """
     )
-
-    if all([
-        disease,
-        location,
-        outcome,
-        study_period
-    ]):
-
-        st.markdown("### Draft Research Question")
-
-        st.info(
-            f"""
-In {population.lower()} in {location},
-what are the patterns of {outcome.lower()}
-related to {disease.lower()}
-during {study_period}?
-"""
-        )
 
     required_fields = [
         disease,
