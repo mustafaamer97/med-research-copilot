@@ -1,0 +1,2 @@
+VANCOUVER = "Vancouver"
+APA = "APA"
