@@ -1,6 +1,9 @@
 from ai.llm_engine import (
     ask_ai
 )
+from modules.citation_formatter import (
+    insert_vancouver_citations
+)
 from modules.reference_generator import (
     generate_references
 )
@@ -196,6 +199,15 @@ Return markdown only.
         manuscript = ask_ai(
             prompt
         )
+
+        if literature:
+
+            manuscript = (
+                insert_vancouver_citations(
+                    manuscript,
+                    literature
+                )
+            )
 
         if references_text:
 
