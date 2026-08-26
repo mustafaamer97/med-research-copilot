@@ -1,5 +1,9 @@
 from ai.llm_engine import ask_ai
 
+from modules.reference_generator import (
+    generate_references
+)
+
 
 def generate_manuscript(
     research_context=None,
@@ -52,6 +56,8 @@ Description:
 
     evidence_summary = ""
 
+    references_text = ""
+
     if literature:
 
         evidence_summary = "\n".join(
@@ -59,6 +65,10 @@ Description:
                 f"- {paper.get('title','')} ({paper.get('year','')})"
                 for paper in literature[:30]
             ]
+        )
+
+        references_text = generate_references(
+            literature
         )
 
     prompt = f"""
@@ -109,6 +119,12 @@ STATISTICAL RESULTS
 {statistics_results}
 
 =================================
+REFERENCES
+=================================
+
+{references_text}
+
+=================================
 REQUIREMENTS
 =================================
 
@@ -117,6 +133,7 @@ Generate:
 # Title
 
 # Abstract
+
 Structured:
 - Background
 - Methods
@@ -141,7 +158,7 @@ Structured:
 
 # Future Research
 
-# References Placeholder
+# References
 
 Requirements:
 
@@ -151,6 +168,9 @@ Requirements:
 - Use markdown headings
 - Results section must describe the statistical findings when available
 - Discussion must interpret findings clinically
+- Use the supplied references
+- Do not invent references
+- Keep reference numbering exactly as provided
 
 Return markdown only.
 """
