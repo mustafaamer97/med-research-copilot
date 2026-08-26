@@ -13,3 +13,4 @@ scipy
 pingouin
 plotly
 statsmodels
+python-docx
