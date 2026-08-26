@@ -39,9 +39,113 @@ def render():
         )
     )
 
+    # ==================================
+    # Study Summary Dashboard
+    # ==================================
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+
+        st.metric(
+            "Study Type",
+            study_type
+        )
+
+    with c2:
+
+        st.metric(
+            "Research Question",
+            "Available"
+            if research_question
+            else "Missing"
+        )
+
+    with c3:
+
+        st.metric(
+            "Protocol",
+            "Available"
+            if protocol
+            else "Missing"
+        )
+
+    # ==================================
+    # Risk Recommendation
+    # ==================================
+
+    recommended_risk = "Moderate Risk"
+
+    if any(
+        x in study_type.lower()
+        for x in [
+            "cross",
+            "survey",
+            "case report",
+            "case series"
+        ]
+    ):
+
+        recommended_risk = "Minimal Risk"
+
+    elif any(
+        x in study_type.lower()
+        for x in [
+            "cohort",
+            "case-control"
+        ]
+    ):
+
+        recommended_risk = "Moderate Risk"
+
+    elif any(
+        x in study_type.lower()
+        for x in [
+            "trial",
+            "randomized",
+            "clinical"
+        ]
+    ):
+
+        recommended_risk = "High Risk"
+
+    st.info(
+        f"Recommended Risk Level: {recommended_risk}"
+    )
+
     st.subheader(
         "IRB Settings"
     )
+
+    # ==================================
+    # IRB Documents Checklist
+    # ==================================
+
+    st.subheader(
+        "Required IRB Documents"
+    )
+
+    st.checkbox(
+        "Research Protocol",
+        value=bool(protocol),
+        disabled=True
+    )
+
+    st.checkbox(
+        "Research Question",
+        value=bool(research_question),
+        disabled=True
+    )
+
+    consent_form_ready = st.checkbox(
+        "Consent Form Prepared"
+    )
+
+    data_sheet_ready = st.checkbox(
+        "Data Collection Sheet Prepared"
+    )
+
+    st.divider()
 
     study_risk = st.selectbox(
         "Risk Level",
@@ -59,6 +163,39 @@ def render():
 
     vulnerable_population = st.checkbox(
         "Includes Vulnerable Population"
+    )
+
+    # ==================================
+    # IRB Readiness Score
+    # ==================================
+
+    score = 0
+
+    if protocol:
+        score += 40
+
+    if research_question:
+        score += 20
+
+    if consent_form_ready:
+        score += 20
+
+    if data_sheet_ready:
+        score += 10
+
+    if not vulnerable_population:
+        score += 10
+
+    st.subheader(
+        "IRB Readiness"
+    )
+
+    st.progress(
+        score / 100
+    )
+
+    st.caption(
+        f"IRB Readiness Score: {score}%"
     )
 
     st.divider()
@@ -98,6 +235,7 @@ def render():
         st.session_state[
             "irb_package"
         ] = {
+
             "risk":
             study_risk,
 
@@ -105,7 +243,36 @@ def render():
             informed_consent,
 
             "vulnerable":
-            vulnerable_population
+            vulnerable_population,
+
+            "recommended_risk":
+            recommended_risk,
+
+            "irb_readiness":
+            score
+        }
+
+        st.session_state[
+            "ethics_summary"
+        ] = {
+
+            "study_type":
+            study_type,
+
+            "risk":
+            study_risk,
+
+            "recommended_risk":
+            recommended_risk,
+
+            "consent":
+            informed_consent,
+
+            "vulnerable_population":
+            vulnerable_population,
+
+            "irb_readiness":
+            score
         }
 
         st.session_state[
