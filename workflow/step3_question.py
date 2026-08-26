@@ -145,78 +145,6 @@ def render():
             outcome
         )
 
-        disease = idea_data.get(
-            "disease",
-            ""
-        )
-
-        location = idea_data.get(
-            "location",
-            ""
-        )
-
-        outcome_text = outcome
-
-        pubmed_query_parts = []
-
-        if disease:
-
-            pubmed_query_parts.append(
-                f'("{disease}"[Title/Abstract])'
-            )
-
-        if location:
-
-            pubmed_query_parts.append(
-                f'("{location}"[Title/Abstract])'
-            )
-
-        if outcome_text:
-
-            pubmed_query_parts.append(
-                f'("{outcome_text}"[Title/Abstract])'
-            )
-
-        pubmed_query = " AND ".join(
-            pubmed_query_parts
-        )
-
-        europe_pmc_query = " AND ".join(
-            [
-                x
-                for x in [
-                    disease,
-                    location,
-                    outcome_text
-                ]
-                if x
-            ]
-        )
-
-        openalex_query = " ".join(
-            [
-                x
-                for x in [
-                    disease,
-                    location,
-                    outcome_text
-                ]
-                if x
-            ]
-        )
-
-        result[
-            "pubmed_query"
-        ] = pubmed_query
-
-        result[
-            "europe_pmc_query"
-        ] = europe_pmc_query
-
-        result[
-            "openalex_query"
-        ] = openalex_query
-
         if "error" in result:
 
             st.error(
@@ -224,6 +152,124 @@ def render():
             )
 
         else:
+
+            disease = idea_data.get(
+                "disease",
+                ""
+            )
+
+            location = idea_data.get(
+                "location",
+                ""
+            )
+
+            period = idea_data.get(
+                "period",
+                ""
+            )
+
+            outcome_text = outcome
+
+            # =========================
+            # PubMed Query
+            # =========================
+
+            pubmed_query_parts = []
+
+            if disease:
+
+                pubmed_query_parts.append(
+                    f'("{disease}"[Title/Abstract])'
+                )
+
+            if location:
+
+                pubmed_query_parts.append(
+                    f'("{location}"[Title/Abstract])'
+                )
+
+            if outcome_text:
+
+                pubmed_query_parts.append(
+                    f'("{outcome_text}"[Title/Abstract])'
+                )
+
+            if period:
+
+                pubmed_query_parts.append(
+                    f'("{period}"[Title/Abstract])'
+                )
+
+            pubmed_query = " AND ".join(
+                pubmed_query_parts
+            )
+
+            # =========================
+            # Europe PMC Query
+            # =========================
+
+            europe_pmc_query = " AND ".join(
+                [
+                    x
+                    for x in [
+                        disease,
+                        location,
+                        outcome_text,
+                        period
+                    ]
+                    if x
+                ]
+            )
+
+            # =========================
+            # OpenAlex Query
+            # =========================
+
+            openalex_query = " ".join(
+                [
+                    x
+                    for x in [
+                        disease,
+                        location,
+                        outcome_text,
+                        period
+                    ]
+                    if x
+                ]
+            )
+
+            # =========================
+            # Master Query
+            # =========================
+
+            master_query = " ".join(
+                [
+                    x
+                    for x in [
+                        disease,
+                        location,
+                        outcome_text,
+                        period
+                    ]
+                    if x
+                ]
+            )
+
+            result[
+                "pubmed_query"
+            ] = pubmed_query
+
+            result[
+                "europe_pmc_query"
+            ] = europe_pmc_query
+
+            result[
+                "openalex_query"
+            ] = openalex_query
+
+            result[
+                "master_query"
+            ] = master_query
 
             st.session_state[
                 "generated_question"
@@ -251,32 +297,43 @@ def render():
             "Literature Search Strategy"
         )
 
-        st.markdown(
-            "### PubMed Query"
+        tab1, tab2, tab3 = st.tabs(
+            [
+                "PubMed",
+                "Europe PMC",
+                "OpenAlex"
+            ]
         )
 
-        st.code(
-            result["pubmed_query"],
-            language="text"
-        )
+        with tab1:
 
-        st.markdown(
-            "### Europe PMC Query"
-        )
+            st.code(
+                result.get(
+                    "pubmed_query",
+                    ""
+                ),
+                language="text"
+            )
 
-        st.code(
-            result["europe_pmc_query"],
-            language="text"
-        )
+        with tab2:
 
-        st.markdown(
-            "### OpenAlex Query"
-        )
+            st.code(
+                result.get(
+                    "europe_pmc_query",
+                    ""
+                ),
+                language="text"
+            )
 
-        st.code(
-            result["openalex_query"],
-            language="text"
-        )
+        with tab3:
+
+            st.code(
+                result.get(
+                    "openalex_query",
+                    ""
+                ),
+                language="text"
+            )
 
         col1, col2 = st.columns(2)
 
