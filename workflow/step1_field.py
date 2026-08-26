@@ -107,6 +107,26 @@ def render():
         DATA_SOURCES
     )
 
+    disease = st.text_input(
+        "Disease / Research Topic",
+        placeholder="Cancer, Diabetes, Stroke..."
+    )
+
+    location = st.text_input(
+        "Study Location",
+        placeholder="Sana'a, Yemen"
+    )
+
+    outcome = st.text_input(
+        "Primary Outcome",
+        placeholder="Incidence, Mortality, Survival, Risk Factors..."
+    )
+
+    study_period = st.text_input(
+        "Study Period",
+        placeholder="2015-2025"
+    )
+
     keywords = st.text_area(
         "Initial Keywords",
         placeholder=FIELD_KEYWORD_HINTS.get(
@@ -120,6 +140,10 @@ def render():
         "population": population,
         "study_design": study_design,
         "data_source": data_source,
+        "disease": disease,
+        "location": location,
+        "outcome": outcome,
+        "study_period": study_period,
         "keywords": keywords,
     }
 
@@ -192,11 +216,45 @@ Feasibility Level: LOW
 
 **Data Source:** {data_source}
 
+**Disease / Topic:** {disease if disease else 'Not specified'}
+
+**Study Location:** {location if location else 'Not specified'}
+
+**Primary Outcome:** {outcome if outcome else 'Not specified'}
+
+**Study Period:** {study_period if study_period else 'Not specified'}
+
 **Keywords:** {keywords if keywords else 'Not specified'}
 """
     )
 
-    if keywords.strip():
+    if all([
+        disease,
+        location,
+        outcome,
+        study_period
+    ]):
+
+        st.markdown("### Draft Research Question")
+
+        st.info(
+            f"""
+In {population.lower()} in {location},
+what are the patterns of {outcome.lower()}
+related to {disease.lower()}
+during {study_period}?
+"""
+        )
+
+    required_fields = [
+        disease,
+        location,
+        outcome,
+        study_period,
+        keywords
+    ]
+
+    if all(str(x).strip() for x in required_fields):
 
         if st.button(
             "💾 Save Research Context",
@@ -215,7 +273,7 @@ Feasibility Level: LOW
     else:
 
         st.warning(
-            "Please enter at least one keyword."
+            "Please complete Disease, Location, Outcome, Study Period and Keywords."
         )
 
     if st.session_state.get(
