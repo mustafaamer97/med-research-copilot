@@ -24,9 +24,12 @@ def render():
         {}
     )
 
-    default_disease = idea_data.get(
-        "disease",
-        ""
+    # 1. Extracted Data from Step 2 (Flexible context fallback)
+    default_topic = (
+        idea_data.get("disease")
+        or idea_data.get("topic")
+        or idea_data.get("research_goal")
+        or ""
     )
 
     default_location = idea_data.get(
@@ -60,7 +63,7 @@ def render():
             )
 
     # =========================
-    # Defaults from Step 1
+    # Defaults from Step 1 & Step 2
     # =========================
 
     context = st.session_state.get(
@@ -73,21 +76,29 @@ def render():
         ""
     )
 
+    # 2. Population default without hardcoded disease prefix
     population_default = default_population
-
-    if default_disease:
-
-        population_default = (
-            f"{default_population} with {default_disease}"
-        )
 
     population = st.text_input(
         "Population (P)",
         value=population_default
     )
 
+    # 3. Auto-fill Intervention from Step 2
+    if idea_data:
+
+        intervention_default = idea_data.get(
+            "intervention",
+            ""
+        )
+
+    else:
+
+        intervention_default = ""
+
     intervention = st.text_input(
-        "Intervention (I)"
+        "Intervention (I)",
+        value=intervention_default
     )
 
     comparison = st.text_input(
@@ -111,8 +122,9 @@ def render():
 
     with c1:
 
+        # 4. Display Topic instead of hardcoded Disease
         st.write(
-            f"**Disease:** {default_disease}"
+            f"**Research Topic:** {default_topic}"
         )
 
         st.write(
@@ -131,10 +143,10 @@ def render():
 
     missing_context = []
 
-    if not default_disease:
+    if not default_topic:
 
         missing_context.append(
-            "Disease"
+            "Topic"
         )
 
     if not default_location:
@@ -196,11 +208,6 @@ def render():
 
         else:
 
-            disease = idea_data.get(
-                "disease",
-                ""
-            )
-
             location = idea_data.get(
                 "location",
                 ""
@@ -214,15 +221,15 @@ def render():
             outcome_text = outcome
 
             # =========================
-            # PubMed Query
+            # PubMed Query (5. Uses default_topic)
             # =========================
 
             pubmed_query_parts = []
 
-            if disease:
+            if default_topic:
 
                 pubmed_query_parts.append(
-                    f'("{disease}"[Title/Abstract])'
+                    f'("{default_topic}"[Title/Abstract])'
                 )
 
             if location:
@@ -255,7 +262,7 @@ def render():
                 [
                     x
                     for x in [
-                        disease,
+                        default_topic,
                         location,
                         outcome_text,
                         period
@@ -272,7 +279,7 @@ def render():
                 [
                     x
                     for x in [
-                        disease,
+                        default_topic,
                         location,
                         outcome_text,
                         period
@@ -282,17 +289,19 @@ def render():
             )
 
             # =========================
-            # Master Query
+            # Master Query (6. Incorporates full PICO elements)
             # =========================
 
             master_query = " ".join(
                 [
                     x
                     for x in [
-                        disease,
+                        default_topic,
                         location,
+                        intervention,
+                        comparison,
                         outcome_text,
-                        period
+                        population
                     ]
                     if x
                 ]
@@ -408,9 +417,18 @@ def render():
                 type="primary"
             ):
 
+                # 7. Complete PICO structure saved to session state
                 st.session_state[
                     "research_question"
-                ] = result
+                ] = {
+                    **result,
+                    "pico": {
+                        "population": population,
+                        "intervention": intervention,
+                        "comparison": comparison,
+                        "outcome": outcome
+                    }
+                }
 
                 st.session_state[
                     "question_completed"
