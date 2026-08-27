@@ -19,26 +19,32 @@ from workflow.step3_question import (
 from workflow.step4_literature import (
     render as step4_render
 )
-from workflow.step5_protocol import (
-    render as step5_protocol_render
+from workflow.step5_screening import (
+    render as step5_screening_render
 )
-from workflow.step6_sample_size import (
-    render as step6_render
+from workflow.step6_evidence_extraction import (
+    render as step6_evidence_render
 )
-from workflow.step7_irb import (
-    render as step7_render
+from workflow.step7_protocol import (
+    render as step7_protocol_render
 )
-from workflow.step8_data_collection import (
+from workflow.step8_sample_size import (
     render as step8_render
 )
-from workflow.step9_statistics import (
+from workflow.step9_irb import (
     render as step9_render
 )
-from workflow.step10_proposal import (
+from workflow.step10_data_collection import (
     render as step10_render
 )
-from workflow.step11_manuscript import (
+from workflow.step11_statistics import (
     render as step11_render
+)
+from workflow.step12_proposal import (
+    render as step12_render
+)
+from workflow.step13_manuscript import (
+    render as step13_render
 )
 
 # --- الأدوات وقاعدة البيانات ---
@@ -77,6 +83,8 @@ WORKFLOW_STEPS = {
     "idea_completed": False,
     "question_completed": False,
     "literature_completed": False,
+    "screening_completed": False,
+    "evidence_extraction_completed": False,
     "protocol_completed": False,
     "sample_size_completed": False,
     "irb_completed": False,
@@ -120,22 +128,24 @@ menu = st.sidebar.radio(
         "Step 3: Research Question Builder",
 
         "──────── PHASE 2 ────────",
-        "Step 4: Literature Search & Analyzer",
-        "Step 5: Protocol Builder",
+        "Step 4: Literature Search & Evidence Review",
+        "Step 5: Article Screening",
+        "Step 6: Evidence Extraction",
+        "Step 7: Research Protocol Builder",
 
         "──────── PHASE 3 ────────",
-        "Step 6: Sample Size & Power",
-        "Step 7: Ethics & IRB",
+        "Step 8: Sample Size & Power",
+        "Step 9: Ethics & IRB",
 
         "──────── PHASE 4 ────────",
-        "Step 8: Data Collection",
+        "Step 10: Data Collection",
 
         "──────── PHASE 5 ────────",
-        "Step 9: Statistical Analysis",
+        "Step 11: Statistical Analysis",
 
         "──────── PHASE 6 ────────",
-        "Step 10: Proposal Builder",
-        "Step 11: Manuscript Writer",
+        "Step 12: Proposal Builder",
+        "Step 13: Manuscript Writer",
 
         "──────── TOOLS ────────",
         "Research Library",
@@ -153,17 +163,19 @@ Welcome to Med Research Copilot.
 
 Workflow:
 
-1. Research Context
-2. Research Idea
-3. Research Question
-4. Literature Review
-5. Protocol Development
-6. Sample Size Calculation
-7. Ethics & IRB
-8. Data Collection
-9. Statistical Analysis
-10. Research Proposal
-11. Manuscript Writing & Journal Selection
+1. Context & Scope Builder
+2. Idea Generator & Validation
+3. Research Question Builder
+4. Literature Search & Evidence Review
+5. Article Screening
+6. Evidence Extraction
+7. Research Protocol Builder
+8. Sample Size & Power
+9. Ethics & IRB
+10. Data Collection
+11. Statistical Analysis
+12. Proposal Builder
+13. Manuscript Writer
 """
     )
 
@@ -179,37 +191,45 @@ elif menu == "Step 3: Research Question Builder":
 
     step3_render()
 
-elif menu == "Step 4: Literature Search & Analyzer":
+elif menu == "Step 4: Literature Search & Evidence Review":
 
     step4_render()
 
-elif menu == "Step 5: Protocol Builder":
+elif menu == "Step 5: Article Screening":
 
-    step5_protocol_render()
+    step5_screening_render()
 
-elif menu == "Step 6: Sample Size & Power":
+elif menu == "Step 6: Evidence Extraction":
 
-    step6_render()
+    step6_evidence_render()
 
-elif menu == "Step 7: Ethics & IRB":
+elif menu == "Step 7: Research Protocol Builder":
 
-    step7_render()
+    step7_protocol_render()
 
-elif menu == "Step 8: Data Collection":
+elif menu == "Step 8: Sample Size & Power":
 
     step8_render()
 
-elif menu == "Step 9: Statistical Analysis":
+elif menu == "Step 9: Ethics & IRB":
 
     step9_render()
 
-elif menu == "Step 10: Proposal Builder":
+elif menu == "Step 10: Data Collection":
 
     step10_render()
 
-elif menu == "Step 11: Manuscript Writer":
+elif menu == "Step 11: Statistical Analysis":
 
     step11_render()
+
+elif menu == "Step 12: Proposal Builder":
+
+    step12_render()
+
+elif menu == "Step 13: Manuscript Writer":
+
+    step13_render()
 
 elif menu == "Research Library":
 
