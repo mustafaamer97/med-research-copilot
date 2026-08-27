@@ -52,8 +52,11 @@ def render():
     )
 
     literature = st.session_state.get(
-        "literature_search",
-        []
+        "included_articles",
+        st.session_state.get(
+            "literature_search",
+            []
+        )
     )
 
     gap_analysis = st.session_state.get(
@@ -152,12 +155,12 @@ Description:
         )
 
         st.metric(
-            "Retrieved Papers",
+            "Retrieved / Available Papers",
             len(literature)
         )
 
         st.metric(
-            "Evidence Used",
+            "Included Screened Evidence Used",
             len(literature)
         )
 
@@ -426,5 +429,5 @@ Description:
     ):
 
         st.success(
-            "✅ Step 5 Completed"
+            "✅ Step 7 Completed"
         )
