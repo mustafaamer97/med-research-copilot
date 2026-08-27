@@ -105,7 +105,12 @@ def generate_research_ideas(
 
     if not papers:
 
-        return []
+        return {
+            "status": "no_evidence",
+            "ideas": [],
+            "message":
+            "No sufficient evidence found. Try broader keywords or modify the research topic."
+        }
 
 
     # =========================
@@ -239,6 +244,12 @@ Rules:
 - Do not invent sample size.
 - Do not invent statistical results.
 - Prefer realistic studies based on available resources.
+- Consider feasibility according to:
+  - Available healthcare resources
+  - Study location
+  - Available data sources
+  - Realistic recruitment possibilities
+- Avoid suggesting studies that require unavailable technology or resources.
 
 
 Return structured ideas.
@@ -270,4 +281,14 @@ Return structured ideas.
     )
 
 
-    return response
+    return {
+        "status": "success",
+
+        "ideas": response,
+
+        "context": research_context,
+
+        "evidence_count": len(papers),
+
+        "gap_analysis": gap_report
+    }
