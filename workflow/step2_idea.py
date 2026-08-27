@@ -94,7 +94,7 @@ Location:
             st.write(
                 st.session_state[
                     "generated_ideas"
-                ]
+                ]["ideas"]
             )
 
             st.caption(
@@ -103,7 +103,7 @@ Location:
 
             validation = validate_idea_quality(
                 context,
-                st.session_state["generated_ideas"]
+                st.session_state["generated_ideas"]["ideas"]
             )
 
             st.subheader(
@@ -156,7 +156,7 @@ Location:
                     "description":
                     st.session_state[
                         "generated_ideas"
-                    ],
+                    ]["ideas"],
 
                     "source":
                     "AI",
@@ -168,6 +168,22 @@ Location:
                     context.get(
                         "research_goal",
                         ""
+                    ),
+
+                    "evidence_count":
+                    st.session_state[
+                        "generated_ideas"
+                    ].get(
+                        "evidence_count",
+                        0
+                    ),
+
+                    "gap_analysis":
+                    st.session_state[
+                        "generated_ideas"
+                    ].get(
+                        "gap_analysis",
+                        {}
                     ),
 
                     "context":
