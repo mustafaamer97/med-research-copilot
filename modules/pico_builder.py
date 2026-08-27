@@ -1,6 +1,5 @@
 import re
 
-
 def extract_search_terms(text):
 
     if not text:
@@ -66,13 +65,13 @@ def extract_search_terms(text):
         dict.fromkeys(keywords)
     )
 
-
 def build_pico(
     population,
     intervention,
     comparison,
     outcome,
-    study_design=""
+    study_design="",
+    research_goal=""
 ):
 
     missing = []
@@ -83,7 +82,6 @@ def build_pico(
     if not outcome:
         missing.append("Outcome")
 
-
     if missing:
 
         return {
@@ -91,23 +89,28 @@ def build_pico(
             f"Missing: {', '.join(missing)}"
         }
 
-
     # =========================
     # Adaptive Question
     # =========================
 
     if (
-        "Cohort" in study_design
-        or
-        "Case-Control" in study_design
-        or
-        "Cross-Sectional" in study_design
+        any(
+            x in study_design
+            for x in [
+                "Cohort",
+                "Case-Control",
+                "Cross-Sectional",
+                "Observational",
+                "Diagnostic",
+                "Prognostic"
+            ]
+        )
     ):
 
         question = (
             f"Among {population}, "
-            f"is {intervention} "
-            f"associated with {outcome}"
+            f"what is the relationship between "
+            f"{intervention} and {outcome}"
         )
 
         if comparison:
@@ -117,7 +120,6 @@ def build_pico(
             )
 
         question += "?"
-
 
     else:
 
@@ -136,13 +138,11 @@ def build_pico(
             f" improve {outcome}?"
         )
 
-
     # =========================
     # Search Terms
     # =========================
 
     search_terms = []
-
 
     for item in [
         population,
@@ -155,18 +155,15 @@ def build_pico(
             extract_search_terms(item)
         )
 
-
     search_terms = list(
         dict.fromkeys(
             search_terms
         )
     )
 
-
     keywords = " AND ".join(
         search_terms[:10]
     )
-
 
     return {
 
@@ -192,6 +189,9 @@ def build_pico(
         },
 
         "study_design":
-        study_design
+        study_design,
+
+        "research_goal":
+        research_goal
 
     }
