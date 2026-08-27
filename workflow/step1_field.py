@@ -1,14 +1,8 @@
 import streamlit as st
 
-from modules.idea_validator import (
-    validate_research_idea
-)
-from modules.medical_knowledge_engine import (
-    analyze_research_topic
-)
-from modules.study_design_classifier import (
-    recommend_study_design
-)
+from modules.idea_validator import validate_research_idea
+from modules.medical_knowledge_engine import analyze_research_topic
+from modules.study_design_classifier import recommend_study_design
 
 MEDICAL_FIELDS = [
     "Cardiology",
@@ -117,31 +111,21 @@ VALID_DESIGNS = {
     "Mixed Sources": STUDY_DESIGNS,
 }
 
+
 def render():
 
     st.header("🧭 Research Context & Scope")
 
-    st.write(
-        "Define your research area before building the research question."
-    )
+    st.write("Define your research area before building the research question.")
 
-    st.subheader(
-        "Research Basics"
-    )
+    st.subheader("Research Basics")
 
-    disease = st.text_input(
-        "Disease / Research Topic",
-        placeholder="Cancer, Diabetes, Stroke..."
-    )
+    disease = st.text_input("Disease / Research Topic", placeholder="Cancer, Diabetes, Stroke...")
 
-    location = st.text_input(
-        "Study Location",
-        placeholder="Sana'a, Yemen"
-    )
+    location = st.text_input("Study Location", placeholder="Sana'a, Yemen")
 
     outcome = st.text_input(
-        "Primary Outcome",
-        placeholder="Incidence, Mortality, Survival, Risk Factors..."
+        "Primary Outcome", placeholder="Incidence, Mortality, Survival, Risk Factors..."
     )
 
     research_goal = st.selectbox(
@@ -156,22 +140,16 @@ def render():
             "Diagnostic Accuracy",
             "Prediction Model",
             "Systematic Review",
-        ]
+        ],
     )
 
-    study_design = st.selectbox(
-        "Study Design",
-        STUDY_DESIGNS
-    )
+    study_design = st.selectbox("Study Design", STUDY_DESIGNS)
 
-    data_source = st.selectbox(
-        "Available Data Source",
-        DATA_SOURCES
-    )
+    data_source = st.selectbox("Available Data Source", DATA_SOURCES)
 
     analysis = None
 
-    # تنظيف المُدخلات النصية من الفراغات الزائدة
+    # تنظيف المُدخلات النصية مباشرة باستخدام .strip()
     clean_disease = disease.strip()
     clean_location = location.strip()
     clean_outcome = outcome.strip()
@@ -187,25 +165,23 @@ def render():
             analysis = None
 
         if analysis:
-            st.markdown(
-                "### 🤖 Research Detection"
-            )
+            st.markdown("### 🤖 Research Detection")
 
             st.success(
                 f"""
 Field:
-{analysis['field']}
+{analysis.get('field', '')}
 
 Population:
-{analysis['population']}
+{analysis.get('population', '')}
 
 Recommended Design:
-{analysis['recommended_design']}
+{analysis.get('recommended_design', '')}
 """
             )
 
     if study_design == "Auto Detect" and analysis:
-        auto_detected_design = analysis["recommended_design"]
+        auto_detected_design = analysis.get("recommended_design", "")
 
         st.info(
             f"""
@@ -219,10 +195,7 @@ Recommended Design:
     # Study Design Validation
     # ==================================
 
-    allowed_designs = VALID_DESIGNS.get(
-        data_source,
-        STUDY_DESIGNS
-    )
+    allowed_designs = VALID_DESIGNS.get(data_source, STUDY_DESIGNS)
 
     if study_design not in allowed_designs:
         st.error(
@@ -238,29 +211,22 @@ Allowed Designs:
 """
         )
 
-    study_period = st.text_input(
-        "Study Period",
-        placeholder="2015-2025"
-    )
+    study_period = st.text_input("Study Period", placeholder="2015-2025")
     clean_study_period = study_period.strip()
 
     keywords = st.text_area(
         "Keywords",
-        value=", ".join(
-            analysis["keywords"]
-        )
-        if analysis
-        else "",
+        value=", ".join(analysis["keywords"]) if analysis and "keywords" in analysis else "",
         height=120,
     )
     clean_keywords = keywords.strip()
 
     # ==================================
-    # Initial Context Assembly
+    # Initial Context Assembly (cleaned)
     # ==================================
     context = {
-        "field": analysis["field"] if analysis else "",
-        "population": analysis["population"] if analysis else "",
+        "field": analysis.get("field", "") if analysis else "",
+        "population": analysis.get("population", "") if analysis else "",
         "research_goal": research_goal,
         "study_design": study_design,
         "data_source": data_source,
@@ -268,7 +234,7 @@ Allowed Designs:
         "location": clean_location,
         "outcome": clean_outcome,
         "period": clean_study_period,
-        "study_period": clean_study_period,
+        "study_period": clean_study_period,  # إضافة المسميين معاً
         "keywords": clean_keywords,
     }
 
@@ -277,32 +243,17 @@ Allowed Designs:
     # ==================================
     design_result = recommend_study_design(context)
 
-    context["recommended_design"] = design_result.get(
-        "recommended_design",
-        ""
-    )
+    context["recommended_design"] = design_result.get("recommended_design", "")
 
-    # لا تستبدل اختيار المستخدم إلا إذا كان Auto Detect
+    # عدم استبدال اختيار المستخدم إلا إذا كان "Auto Detect"
     if study_design == "Auto Detect":
-        context["study_design"] = design_result.get(
-            "recommended_design",
-            study_design
-        )
+        context["study_design"] = design_result.get("recommended_design", study_design)
     else:
         context["study_design"] = study_design
 
-    context["study_design_confidence"] = design_result.get(
-        "confidence",
-        "Medium"
-    )
-    context["study_design_reasons"] = design_result.get(
-        "reasons",
-        []
-    )
-    context["study_design_warnings"] = design_result.get(
-        "warnings",
-        []
-    )
+    context["study_design_confidence"] = design_result.get("confidence", "Medium")
+    context["study_design_reasons"] = design_result.get("reasons", [])
+    context["study_design_warnings"] = design_result.get("warnings", [])
 
     # ==================================
     # Save Context to Session State
@@ -345,18 +296,18 @@ Allowed Designs:
     st.markdown("---")
     st.subheader("Research Feasibility Assessment")
 
-    if validation["feasibility"] == "High":
+    if validation.get("feasibility") == "High":
         st.success(
             f"""
-Feasibility Score: {validation['score']}/100
+Feasibility Score: {validation.get('score', 0)}/100
 
 Feasibility Level: HIGH
 """
         )
-    elif validation["feasibility"] == "Moderate":
+    elif validation.get("feasibility") == "Moderate":
         st.warning(
             f"""
-Feasibility Score: {validation['score']}/100
+Feasibility Score: {validation.get('score', 0)}/100
 
 Feasibility Level: MODERATE
 """
@@ -364,13 +315,13 @@ Feasibility Level: MODERATE
     else:
         st.error(
             f"""
-Feasibility Score: {validation['score']}/100
+Feasibility Score: {validation.get('score', 0)}/100
 
 Feasibility Level: LOW
 """
         )
 
-    if validation["notes"]:
+    if validation.get("notes"):
         with st.expander("Why was this score assigned?"):
             for note in validation["notes"]:
                 st.write(f"• {note}")
@@ -405,7 +356,7 @@ Feasibility Level: LOW
         clean_location,
         clean_outcome,
         clean_study_period,
-        clean_keywords
+        clean_keywords,
     ]
 
     if clean_disease and data_source:
@@ -421,13 +372,13 @@ Feasibility Level: LOW
         elif "stroke" in disease_lower:
             st.info("Detected possible Neurology project.")
 
-    if all(str(x).strip() for x in required_fields):
+    if all(x for x in required_fields):
         if st.button(
             "💾 Save Research Context",
             use_container_width=True,
             type="primary",
         ):
-            if validation["score"] < 50:
+            if validation.get("score", 0) < 50:
                 st.error(
                     "Research context quality is too low. Please improve the study design or data source."
                 )
