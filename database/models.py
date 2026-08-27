@@ -109,3 +109,29 @@ class ResearchQuestion(Base):
         "ResearchProject",
         back_populates="questions"
     )
+class EvidenceExtraction(Base):
+    __tablename__ = "evidence_extractions"
+
+    id = Column(Integer, primary_key=True)
+
+    article_id = Column(String)
+
+    doi = Column(String)
+
+    pmid = Column(String)
+
+    population = Column(Text)
+
+    intervention = Column(Text)
+
+    comparator = Column(Text)
+
+    outcome = Column(Text)
+
+    study_design = Column(String)
+
+    risk_of_bias = Column(String)
+
+    notes = Column(Text)
+
+    updated_at = Column(String)
