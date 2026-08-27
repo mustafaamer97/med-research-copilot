@@ -1,5 +1,6 @@
 import re
 
+
 def extract_search_terms(text):
 
     if not text:
@@ -65,6 +66,7 @@ def extract_search_terms(text):
         dict.fromkeys(keywords)
     )
 
+
 def build_pico(
     population,
     intervention,
@@ -74,12 +76,16 @@ def build_pico(
     research_goal=""
 ):
 
+    # =====================================
+    # Validation
+    # =====================================
+
     missing = []
 
-    if not population:
+    if not population.strip():
         missing.append("Population")
 
-    if not outcome:
+    if not outcome.strip():
         missing.append("Outcome")
 
     if missing:
@@ -89,37 +95,116 @@ def build_pico(
             f"Missing: {', '.join(missing)}"
         }
 
-    # =========================
-    # Adaptive Question
-    # =========================
+    study_design = (
+        study_design or ""
+    ).lower()
+
+    research_goal = (
+        research_goal or ""
+    ).lower()
+
+    # =====================================
+    # Adaptive Medical Question Builder
+    # =====================================
+
+    observational_designs = [
+        "cohort",
+        "case-control",
+        "cross-sectional",
+        "observational",
+        "diagnostic",
+        "prognostic"
+    ]
+
+    is_observational = any(
+        x in study_design
+        for x in observational_designs
+    )
+
+    # =====================================
+    # Survival Analysis
+    # =====================================
 
     if (
-        any(
-            x in study_design
-            for x in [
-                "Cohort",
-                "Case-Control",
-                "Cross-Sectional",
-                "Observational",
-                "Diagnostic",
-                "Prognostic"
-            ]
-        )
+        "survival" in research_goal
+        or outcome.lower() == "survival"
     ):
 
         question = (
-            f"Among {population}, "
-            f"what is the relationship between "
-            f"{intervention} and {outcome}"
+            f"What factors are associated with "
+            f"survival among {population}?"
         )
 
-        if comparison:
+    # =====================================
+    # Risk Factors
+    # =====================================
 
-            question += (
-                f" compared with {comparison}"
+    elif (
+        "risk" in research_goal
+        or "risk factor" in research_goal
+    ):
+
+        question = (
+            f"What are the risk factors among "
+            f"{population}?"
+        )
+
+    # =====================================
+    # Incidence
+    # =====================================
+
+    elif "incidence" in research_goal:
+
+        question = (
+            f"What is the incidence among "
+            f"{population}?"
+        )
+
+    # =====================================
+    # Prevalence
+    # =====================================
+
+    elif "prevalence" in research_goal:
+
+        question = (
+            f"What is the prevalence among "
+            f"{population}?"
+        )
+
+    # =====================================
+    # Observational Designs
+    # =====================================
+
+    elif is_observational:
+
+        if not intervention.strip():
+
+            question = (
+                f"What factors are associated with "
+                f"{outcome} among {population}?"
             )
 
-        question += "?"
+        else:
+
+            question = (
+                f"Among {population}, "
+                f"what is the relationship between "
+                f"{intervention}"
+            )
+
+            if comparison.strip():
+
+                question += (
+                    f" compared with {comparison}"
+                )
+
+            question += (
+                f" and {outcome}?"
+            )
+
+    # =====================================
+    # Interventional Designs
+    # =====================================
 
     else:
 
@@ -128,7 +213,7 @@ def build_pico(
             f"does {intervention}"
         )
 
-        if comparison:
+        if comparison.strip():
 
             question += (
                 f" compared with {comparison}"
@@ -138,9 +223,9 @@ def build_pico(
             f" improve {outcome}?"
         )
 
-    # =========================
-    # Search Terms
-    # =========================
+    # =====================================
+    # Search Terms Extraction
+    # =====================================
 
     search_terms = []
 
@@ -162,8 +247,12 @@ def build_pico(
     )
 
     keywords = " AND ".join(
-        search_terms[:10]
+        search_terms[:15]
     )
+
+    # =====================================
+    # Return
+    # =====================================
 
     return {
 
@@ -193,5 +282,4 @@ def build_pico(
 
         "research_goal":
         research_goal
-
     }
