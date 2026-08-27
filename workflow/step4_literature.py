@@ -24,6 +24,31 @@ def render():
         {}
     )
 
+    pico_data = question_data.get(
+        "pico",
+        {}
+    )
+
+    population = pico_data.get(
+        "population",
+        ""
+    )
+
+    intervention = pico_data.get(
+        "intervention",
+        ""
+    )
+
+    comparison = pico_data.get(
+        "comparison",
+        ""
+    )
+
+    outcome = pico_data.get(
+        "outcome",
+        ""
+    )
+
     if not question_data:
 
         st.warning(
@@ -48,6 +73,18 @@ def render():
     )
 
     # ==========================================
+    # PICO Framework
+    # ==========================================
+
+    st.subheader(
+        "PICO Framework"
+    )
+
+    st.json(
+        pico_data
+    )
+
+    # ==========================================
     # Search Queries
     # ==========================================
 
@@ -69,6 +106,19 @@ def render():
     master_query = question_data.get(
         "master_query",
         ""
+    )
+
+    pico_query = " ".join(
+        [
+            x
+            for x in [
+                population,
+                intervention,
+                comparison,
+                outcome
+            ]
+            if x
+        ]
     )
 
     st.markdown(
@@ -167,23 +217,44 @@ def render():
             "Searching PubMed, Europe PMC and OpenAlex..."
         ):
 
+            search_query = master_query
+
             if search_mode == "Auto (Recommended)":
 
-                papers = search_all_sources(
-                    master_query,
-                    max_results=number
+                search_query = (
+                    f"{master_query} "
+                    f"{pico_query}"
                 )
 
-            else:
-
-                papers = search_all_sources(
-                    master_query,
-                    max_results=number
-                )
+            papers = search_all_sources(
+                search_query,
+                max_results=number
+            )
 
         st.session_state[
             "literature_search"
         ] = papers
+
+        st.session_state[
+            "search_metadata"
+        ] = {
+
+            "query":
+            search_query,
+
+            "pico":
+            pico_data,
+
+            "number_results":
+            len(papers),
+
+            "sources":
+            [
+                "PubMed",
+                "Europe PMC",
+                "OpenAlex"
+            ]
+        }
 
         st.session_state[
             "literature_completed"
@@ -208,13 +279,19 @@ def render():
     # Research Gap Analysis
     # ==========================================
 
-    analysis = detect_research_gaps(
-        papers
+    analysis = st.session_state.get(
+        "research_gap_analysis"
     )
 
-    st.session_state[
-        "research_gap_analysis"
-    ] = analysis
+    if not analysis:
+
+        analysis = detect_research_gaps(
+            papers
+        )
+
+        st.session_state[
+            "research_gap_analysis"
+        ] = analysis
 
     st.subheader(
         "🎯 Research Gaps"
