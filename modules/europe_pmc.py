@@ -93,6 +93,11 @@ def search_europe_pmc(
                     )
                 ),
 
+                "publication_date": item.get(
+                    "firstPublicationDate",
+                    ""
+                ),
+
                 "doi": item.get(
                     "doi",
                     ""
