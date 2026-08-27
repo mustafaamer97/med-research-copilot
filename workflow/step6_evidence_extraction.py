@@ -19,8 +19,20 @@ This information will be used for synthesis and protocol development.
     )
 
     # ==================================
-    # Load Included Articles
+    # Verification & Load Included Articles
     # ==================================
+
+    if not st.session_state.get(
+        "screening_completed",
+        False
+    ):
+
+        st.warning(
+            "Please complete Step 5 screening first."
+        )
+
+        return
+
 
     articles = st.session_state.get(
         "included_articles",
