@@ -6,66 +6,9 @@ from modules.idea_validator import (
 from modules.medical_knowledge_engine import (
     analyze_research_topic
 )
-
-def recommend_study_design(
-    data_source,
-    outcome,
-    default_design="Cross-Sectional Study"
-):
-
-    outcome = outcome.lower()
-
-    if data_source == "Registry Database":
-
-        if any(
-            x in outcome
-            for x in [
-                "trend",
-                "incidence",
-                "prevalence",
-                "distribution"
-            ]
-        ):
-
-            return (
-                "Retrospective Registry-Based Study",
-                [
-                    "Cross-Sectional Study",
-                    "Retrospective Cohort Study"
-                ]
-            )
-
-        return (
-            "Retrospective Cohort Study",
-            [
-                "Cross-Sectional Study"
-            ]
-        )
-
-    if data_source == "Hospital Records":
-
-        return (
-            "Retrospective Cohort Study",
-            [
-                "Case-Control Study",
-                "Cross-Sectional Study"
-            ]
-        )
-
-    # تعديل (6): تم تصحيح المطابقة لتكون "Published Literature"
-    if data_source == "Published Literature":
-
-        return (
-            "Systematic Review",
-            [
-                "Meta-Analysis"
-            ]
-        )
-
-    return (
-        default_design,
-        []
-    )
+from modules.study_design_classifier import (
+    recommend_study_design
+)
 
 MEDICAL_FIELDS = [
     "Cardiology",
@@ -90,47 +33,35 @@ MEDICAL_FIELDS = [
     "Public Health",
 ]
 
-# تعديل (2): تم حذف القوائم غير المستخدمة FIELD_KEYWORD_HINTS و TARGET_POPULATIONS
-
 STUDY_DESIGNS = [
-
     "Auto Detect",
-
     "Cross-Sectional Study",
     "Case-Control Study",
     "Prospective Cohort Study",
     "Retrospective Cohort Study",
     "Nested Case-Control Study",
     "Case-Cohort Study",
-
     "Randomized Controlled Trial (RCT)",
     "Cluster Randomized Trial",
     "Pragmatic Clinical Trial",
     "Adaptive Clinical Trial",
-
     "Diagnostic Accuracy Study",
     "Prediction Model Study",
     "Prognostic Study",
-
     "Survey Study",
     "Ecological Study",
     "Registry-Based Study",
-
     "Interrupted Time Series",
     "Before-After Study",
-
     "Case Report",
     "Case Series",
-
     "Systematic Review",
     "Meta-Analysis",
     "Network Meta-Analysis",
     "Scoping Review",
     "Umbrella Review",
-
     "Qualitative Study",
     "Mixed Methods Study",
-
     "Health Services Research",
     "Implementation Study",
     "Quality Improvement Study",
@@ -148,7 +79,6 @@ DATA_SOURCES = [
 ]
 
 VALID_DESIGNS = {
-
     "Registry Database": [
         "Auto Detect",
         "Registry-Based Study",
@@ -158,7 +88,6 @@ VALID_DESIGNS = {
         "Retrospective Cohort Study",
         "Interrupted Time Series",
     ],
-
     "Hospital Records": [
         "Auto Detect",
         "Cross-Sectional Study",
@@ -166,21 +95,18 @@ VALID_DESIGNS = {
         "Retrospective Cohort Study",
         "Case Series",
     ],
-
     "Electronic Health Records (EHR)": [
         "Auto Detect",
         "Retrospective Cohort Study",
         "Prediction Model Study",
         "Diagnostic Accuracy Study",
     ],
-
     "Survey / Questionnaire": [
         "Auto Detect",
         "Survey Study",
         "Cross-Sectional Study",
         "Mixed Methods Study",
     ],
-
     "Published Literature": [
         "Auto Detect",
         "Systematic Review",
@@ -188,9 +114,7 @@ VALID_DESIGNS = {
         "Network Meta-Analysis",
         "Scoping Review",
     ],
-
     "Mixed Sources": STUDY_DESIGNS,
-
 }
 
 def render():
@@ -247,11 +171,15 @@ def render():
 
     analysis = None
 
-    if disease:
-        # تعديل (3): حماية التطبيق من الانهيار في حال فشل تحليل الـ AI
+    # تنظيف المُدخلات النصية من الفراغات الزائدة
+    clean_disease = disease.strip()
+    clean_location = location.strip()
+    clean_outcome = outcome.strip()
+
+    if clean_disease:
         try:
             analysis = analyze_research_topic(
-                topic=disease,
+                topic=clean_disease,
                 goal=research_goal,
                 data_source=data_source,
             )
@@ -277,14 +205,13 @@ Recommended Design:
             )
 
     if study_design == "Auto Detect" and analysis:
-
-        study_design = analysis["recommended_design"]
+        auto_detected_design = analysis["recommended_design"]
 
         st.info(
             f"""
 🤖 Auto detected study design:
 
-{study_design}
+{auto_detected_design}
 """
         )
 
@@ -298,7 +225,6 @@ Recommended Design:
     )
 
     if study_design not in allowed_designs:
-
         st.error(
             f"""
 ❌ Selected study design is not compatible
@@ -312,35 +238,11 @@ Allowed Designs:
 """
         )
 
-    recommended_design = None
-    alternative_designs = []
-
-    if outcome:
-
-        recommended_design, alternative_designs = (
-            recommend_study_design(
-                data_source,
-                outcome,
-                default_design=analysis["recommended_design"]
-                if analysis
-                else study_design
-            )
-        )
-
     study_period = st.text_input(
         "Study Period",
         placeholder="2015-2025"
     )
-
-    auto_keywords = []
-
-    for item in [
-        disease,
-        outcome,
-        research_goal,
-    ]:
-        if item:
-            auto_keywords.append(item)
+    clean_study_period = study_period.strip()
 
     keywords = st.text_area(
         "Keywords",
@@ -351,117 +253,99 @@ Allowed Designs:
         else "",
         height=120,
     )
+    clean_keywords = keywords.strip()
 
+    # ==================================
+    # Initial Context Assembly
+    # ==================================
     context = {
-
-        "field": analysis["field"]
-        if analysis
-        else "",
-
-        "population": analysis["population"]
-        if analysis
-        else "",
-
+        "field": analysis["field"] if analysis else "",
+        "population": analysis["population"] if analysis else "",
         "research_goal": research_goal,
-
         "study_design": study_design,
-
-        "recommended_design":
-        analysis["recommended_design"]
-        if analysis
-        else "",
-
         "data_source": data_source,
-
-        "disease": disease,
-
-        "location": location,
-
-        "outcome": outcome,
-
-        "study_period": study_period,
-
-        "keywords": keywords,
-
+        "disease": clean_disease,
+        "location": clean_location,
+        "outcome": clean_outcome,
+        "period": clean_study_period,
+        "study_period": clean_study_period,
+        "keywords": clean_keywords,
     }
 
-    # تعديل (4): توسيع نطاق الـ Session State لدعم الخطوات القادمة
-    st.session_state["research_context"] = context
-    st.session_state["research_field"] = context.get(
-        "field",
+    # ==================================
+    # Study Design Classification Engine
+    # ==================================
+    design_result = recommend_study_design(context)
+
+    context["recommended_design"] = design_result.get(
+        "recommended_design",
         ""
     )
-    st.session_state["research_population"] = context.get(
-        "population",
-        ""
-    )
-    st.session_state["research_goal"] = research_goal
-    st.session_state["research_outcome"] = outcome
-    st.session_state["research_disease"] = disease
 
-    # تعديل (1): التمرير الصحيح للمُدخلات لدالة التقييم
-    validation = validate_research_idea(
-        disease,
-        context
-    )
-
-    # تعديل (8): حفظ نتائج الـ Validation لاستخدامها في بقية الخطوات
-    st.session_state[
-        "context_validation"
-    ] = validation
-
-    if recommended_design:
-
-        st.markdown("---")
-
-        st.subheader(
-            "📚 Methodology Recommendation"
+    # لا تستبدل اختيار المستخدم إلا إذا كان Auto Detect
+    if study_design == "Auto Detect":
+        context["study_design"] = design_result.get(
+            "recommended_design",
+            study_design
         )
+    else:
+        context["study_design"] = study_design
+
+    context["study_design_confidence"] = design_result.get(
+        "confidence",
+        "Medium"
+    )
+    context["study_design_reasons"] = design_result.get(
+        "reasons",
+        []
+    )
+    context["study_design_warnings"] = design_result.get(
+        "warnings",
+        []
+    )
+
+    # ==================================
+    # Save Context to Session State
+    # ==================================
+    st.session_state["research_context"] = context
+
+    # ==================================
+    # Additional Session State Updates
+    # ==================================
+    st.session_state["research_field"] = context.get("field", "")
+    st.session_state["research_population"] = context.get("population", "")
+    st.session_state["research_goal"] = research_goal
+    st.session_state["research_outcome"] = clean_outcome
+    st.session_state["research_disease"] = clean_disease
+
+    validation = validate_research_idea(clean_disease, context)
+    st.session_state["context_validation"] = validation
+
+    # ==================================
+    # Recommendations UI Display
+    # ==================================
+    if context.get("recommended_design"):
+        st.markdown("---")
+        st.subheader("📚 Methodology Recommendation")
 
         st.success(
-            f"""
-Recommended Design:
-
-{recommended_design}
-"""
+            f"**Recommended Design:** {context['recommended_design']}\n\n"
+            f"**Confidence Level:** {context['study_design_confidence']}"
         )
 
-        if alternative_designs:
+        if context.get("study_design_reasons"):
+            with st.expander("Why was this design recommended?"):
+                for reason in context["study_design_reasons"]:
+                    st.write(f"• {reason}")
 
-            st.info(
-                "Alternative Designs:\n\n• "
-                + "\n• ".join(
-                    alternative_designs
-                )
-            )
-
-    if (
-        recommended_design
-        and study_design
-        and study_design != recommended_design
-    ):
-
-        st.warning(
-            f"""
-The selected study design differs
-from the recommended methodology.
-
-Recommended:
-{recommended_design}
-
-Selected:
-{study_design}
-"""
-        )
+        if context.get("study_design_warnings"):
+            for warning in context["study_design_warnings"]:
+                st.warning(f"⚠️ {warning}")
 
     st.markdown("---")
-
-    st.subheader(
-        "Research Feasibility Assessment"
-    )
+    st.subheader("Research Feasibility Assessment")
 
     if validation["feasibility"] == "High":
-
         st.success(
             f"""
 Feasibility Score: {validation['score']}/100
@@ -469,9 +353,7 @@ Feasibility Score: {validation['score']}/100
 Feasibility Level: HIGH
 """
         )
-
     elif validation["feasibility"] == "Moderate":
-
         st.warning(
             f"""
 Feasibility Score: {validation['score']}/100
@@ -479,9 +361,7 @@ Feasibility Score: {validation['score']}/100
 Feasibility Level: MODERATE
 """
         )
-
     else:
-
         st.error(
             f"""
 Feasibility Score: {validation['score']}/100
@@ -491,110 +371,76 @@ Feasibility Level: LOW
         )
 
     if validation["notes"]:
-
-        with st.expander(
-            "Why was this score assigned?"
-        ):
-
+        with st.expander("Why was this score assigned?"):
             for note in validation["notes"]:
-
                 st.write(f"• {note}")
 
     st.markdown("---")
-
-    st.subheader(
-        "Research Context Summary"
-    )
+    st.subheader("Research Context Summary")
 
     st.info(
         f"""
 **Research Goal:** {research_goal}
 
-**Study Design:** {study_design}
+**Selected Study Design:** {context['study_design']}
+
+**Recommended Study Design:** {context['recommended_design']}
 
 **Data Source:** {data_source}
 
-**Disease / Topic:** {disease if disease else 'Not specified'}
+**Disease / Topic:** {clean_disease if clean_disease else 'Not specified'}
 
-**Study Location:** {location if location else 'Not specified'}
+**Study Location:** {clean_location if clean_location else 'Not specified'}
 
-**Primary Outcome:** {outcome if outcome else 'Not specified'}
+**Primary Outcome:** {clean_outcome if clean_outcome else 'Not specified'}
 
-**Study Period:** {study_period if study_period else 'Not specified'}
+**Study Period:** {clean_study_period if clean_study_period else 'Not specified'}
 
-**Keywords:** {keywords if keywords else 'Not specified'}
+**Keywords:** {clean_keywords if clean_keywords else 'Not specified'}
 """
     )
 
     required_fields = [
-        disease,
-        location,
-        outcome,
-        study_period,
-        keywords
+        clean_disease,
+        clean_location,
+        clean_outcome,
+        clean_study_period,
+        clean_keywords
     ]
 
-    if disease and data_source:
-
+    if clean_disease and data_source:
+        disease_lower = clean_disease.lower()
         if (
-            "cancer" in disease.lower()
-            or "tumor" in disease.lower()
-            or "neoplasm" in disease.lower()
+            "cancer" in disease_lower
+            or "tumor" in disease_lower
+            or "neoplasm" in disease_lower
         ):
-
-            st.info(
-                "Detected possible Oncology project."
-            )
-
-        elif "diabetes" in disease.lower():
-
-            st.info(
-                "Detected possible Endocrinology project."
-            )
-
-        elif "stroke" in disease.lower():
-
-            st.info(
-                "Detected possible Neurology project."
-            )
+            st.info("Detected possible Oncology project.")
+        elif "diabetes" in disease_lower:
+            st.info("Detected possible Endocrinology project.")
+        elif "stroke" in disease_lower:
+            st.info("Detected possible Neurology project.")
 
     if all(str(x).strip() for x in required_fields):
-
         if st.button(
             "💾 Save Research Context",
             use_container_width=True,
             type="primary",
         ):
-
-            # تعديل (7): فحص جودة السياق البحثي قبل الحفظ لمنع الاستمرار بحالة ضعيفة
             if validation["score"] < 50:
                 st.error(
                     "Research context quality is too low. Please improve the study design or data source."
                 )
                 st.stop()
 
-            # تعديل (5): تحديث حالة الخطوة ورقم الخطوة الحالية لنظام 13 خطوة
-            st.session_state[
-                "context_completed"
-            ] = True
-            st.session_state[
-                "current_step"
-            ] = 1
+            st.session_state["context_completed"] = True
+            st.session_state["current_step"] = 1
 
-            st.success(
-                "Research context saved successfully."
-            )
-
+            st.success("Research context saved successfully.")
     else:
-
         st.warning(
             "Please complete Disease, Location, Outcome, Study Period and Keywords to continue."
         )
 
-    if st.session_state.get(
-        "context_completed"
-    ):
-
-        st.success(
-            "✅ Step 1 Completed"
-        )
+    if st.session_state.get("context_completed"):
+        st.success("✅ Step 1 Completed")
