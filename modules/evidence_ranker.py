@@ -12,6 +12,43 @@ def calculate_evidence_score(paper):
         "Unknown"
     )
 
+    publication_type = (
+        paper.get(
+            "publication_type",
+            ""
+        ).lower()
+    )
+
+    if level == "Unknown":
+
+        if (
+            "meta-analysis" in publication_type
+            or
+            "systematic review" in publication_type
+        ):
+            level = "Level 1"
+
+        elif (
+            "randomized" in publication_type
+            or
+            "clinical trial" in publication_type
+        ):
+            level = "Level 2"
+
+        elif (
+            "cohort" in publication_type
+            or
+            "case-control" in publication_type
+        ):
+            level = "Level 3"
+
+        elif (
+            "cross-sectional" in publication_type
+        ):
+            level = "Level 4"
+
+    paper["evidence_level"] = level
+
 
     evidence_scores = {
 
