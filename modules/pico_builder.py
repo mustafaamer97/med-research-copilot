@@ -95,11 +95,11 @@ def build_pico(
             f"Missing: {', '.join(missing)}"
         }
 
-    study_design = (
+    study_design_str = (
         study_design or ""
     ).lower()
 
-    research_goal = (
+    research_goal_str = (
         research_goal or ""
     ).lower()
 
@@ -107,18 +107,17 @@ def build_pico(
     # Adaptive Medical Question Builder
     # =====================================
 
-    observational_designs = [
-        "cohort",
-        "case-control",
-        "cross-sectional",
-        "observational",
-        "diagnostic",
-        "prognostic"
-    ]
-
-    is_observational = any(
-        x in study_design
-        for x in observational_designs
+    # فحص الدراسات الرصدية مع التعامل المباشر مع حالات غياب الـ Intervention
+    observational_study = any(
+        x.lower() in study_design_str
+        for x in [
+            "cohort",
+            "case-control",
+            "cross-sectional",
+            "observational",
+            "diagnostic",
+            "prognostic"
+        ]
     )
 
     # =====================================
@@ -126,7 +125,7 @@ def build_pico(
     # =====================================
 
     if (
-        "survival" in research_goal
+        "survival" in research_goal_str
         or outcome.lower() == "survival"
     ):
 
@@ -140,8 +139,8 @@ def build_pico(
     # =====================================
 
     elif (
-        "risk" in research_goal
-        or "risk factor" in research_goal
+        "risk" in research_goal_str
+        or "risk factor" in research_goal_str
     ):
 
         question = (
@@ -153,7 +152,7 @@ def build_pico(
     # Incidence
     # =====================================
 
-    elif "incidence" in research_goal:
+    elif "incidence" in research_goal_str:
 
         question = (
             f"What is the incidence among "
@@ -164,7 +163,7 @@ def build_pico(
     # Prevalence
     # =====================================
 
-    elif "prevalence" in research_goal:
+    elif "prevalence" in research_goal_str:
 
         question = (
             f"What is the prevalence among "
@@ -172,24 +171,17 @@ def build_pico(
         )
 
     # =====================================
-    # Observational Designs
+    # Observational Designs (Updated Logic)
     # =====================================
 
-    elif is_observational:
+    elif observational_study:
 
-        if not intervention.strip():
-
-            question = (
-                f"What factors are associated with "
-                f"{outcome} among {population}?"
-            )
-
-        else:
+        if intervention.strip():
 
             question = (
                 f"Among {population}, "
                 f"what is the relationship between "
-                f"{intervention}"
+                f"{intervention} and {outcome}"
             )
 
             if comparison.strip():
@@ -198,8 +190,14 @@ def build_pico(
                     f" compared with {comparison}"
                 )
 
-            question += (
-                f" and {outcome}?"
+            question += "?"
+
+        else:
+
+            question = (
+                f"What factors are associated with "
+                f"{outcome.lower()} among "
+                f"{population}?"
             )
 
     # =====================================
