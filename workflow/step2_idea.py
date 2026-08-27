@@ -67,6 +67,64 @@ Location:
 """
         )
 
+        # Extraction of study design data from context
+        design = context.get(
+            "recommended_design",
+            ""
+        )
+
+        confidence = context.get(
+            "study_design_confidence",
+            0
+        )
+
+        reasons = context.get(
+            "study_design_reasons",
+            []
+        )
+
+        warnings = context.get(
+            "study_design_warnings",
+            []
+        )
+
+        st.subheader(
+            "🧪 Recommended Study Design"
+        )
+
+        if design:
+
+            st.success(
+                f"**{design}**"
+            )
+
+            st.metric(
+                "Classifier Confidence",
+                f"{confidence}%"
+            )
+
+            with st.expander(
+                "Why was this design recommended?"
+            ):
+
+                for reason in reasons:
+
+                    st.write(
+                        "• " + reason
+                    )
+
+            if warnings:
+
+                with st.expander(
+                    "⚠️ Methodological Warnings"
+                ):
+
+                    for warning in warnings:
+
+                        st.warning(
+                            warning
+                        )
+
         if st.button(
             "Generate Ideas"
         ):
