@@ -26,20 +26,22 @@ def render():
 
     # 1. Extracted Data from Step 2 (Flexible context fallback)
     default_topic = (
-        idea_data.get("disease")
+        idea_data.get("context", {}).get("disease")
+        or idea_data.get("disease")
         or idea_data.get("topic")
-        or idea_data.get("research_goal")
         or ""
     )
 
-    default_location = idea_data.get(
-        "location",
-        ""
+    default_location = (
+        idea_data.get("location")
+        or idea_data.get("context", {}).get("location")
+        or ""
     )
 
-    default_outcome = idea_data.get(
-        "outcome",
-        ""
+    default_outcome = (
+        idea_data.get("outcome")
+        or idea_data.get("context", {}).get("outcome")
+        or ""
     )
 
     default_period = idea_data.get(
@@ -193,7 +195,7 @@ def render():
 
             return
 
-        # Passing study_design to support adaptive question building
+        # Passing study_design with fallback to recommended_design
         result = build_pico(
             population,
             intervention,
@@ -201,7 +203,10 @@ def render():
             outcome,
             context.get(
                 "study_design",
-                ""
+                context.get(
+                    "recommended_design",
+                    ""
+                )
             )
         )
 
@@ -231,7 +236,7 @@ def render():
 
             pubmed_query_parts = []
 
-            if default_topic:
+            if default_topic.strip():
 
                 pubmed_query_parts.append(
                     f'("{default_topic}"[Title/Abstract])'
@@ -430,8 +435,16 @@ def render():
                         "population": population,
                         "intervention": intervention,
                         "comparison": comparison,
-                        "outcome": outcome
-                    }
+                        "outcome": outcome,
+                        "study_design": context.get(
+                            "study_design",
+                            context.get(
+                                "recommended_design",
+                                ""
+                            )
+                        )
+                    },
+                    "context": context
                 }
 
                 st.session_state[
