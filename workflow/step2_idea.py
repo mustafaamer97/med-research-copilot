@@ -3,9 +3,9 @@ import streamlit as st
 from modules.idea_generator import (
     generate_research_ideas
 )
-
 from modules.idea_validator import (
-    validate_research_idea
+    validate_idea_quality,
+    validate_manual_idea
 )
 
 
@@ -101,38 +101,46 @@ Location:
                 "Generated using evidence retrieval, research gap analysis, and medical research methodology rules."
             )
 
+            validation = validate_idea_quality(
+                context,
+                st.session_state["generated_ideas"]
+            )
+
             st.subheader(
-                "🔬 Automatic Research Idea Validation"
+                "🔬 Automated Idea Validation"
             )
 
-            validation = validate_research_idea(
-                context
+            st.metric(
+                "Feasibility",
+                validation["feasibility"]
             )
 
-            st.success(
-                f"""
-Feasibility Score:
-{validation['score']}/100
-
-Level:
-{validation['feasibility']}
-"""
+            st.metric(
+                "Novelty",
+                validation["novelty"]
             )
 
-            if validation.get("notes"):
+            st.metric(
+                "Clinical Importance",
+                validation["clinical_importance"]
+            )
 
-                with st.expander(
-                    "Validation Explanation"
-                ):
+            st.metric(
+                "Overall Score",
+                validation["overall_score"]
+            )
 
-                    for note in validation["notes"]:
+            with st.expander(
+                "Validation Explanation"
+            ):
 
-                        st.write(
-                            f"• {note}"
-                        )
+                for item in validation["notes"]:
+                    st.write(
+                        "• " + item
+                    )
 
             if st.button(
-                "Use Generated Ideas"
+                "Select Best Research Idea"
             ):
 
                 st.session_state[
@@ -140,7 +148,10 @@ Level:
                 ] = {
 
                     "title":
-                    "Generated Research Idea",
+                    st.session_state.get(
+                        "generated_title",
+                        "AI Generated Research Idea"
+                    ),
 
                     "description":
                     st.session_state[
@@ -150,7 +161,14 @@ Level:
                     "source":
                     "AI",
 
-                    "validation": validation,
+                    "validation":
+                    validation,
+
+                    "research_goal":
+                    context.get(
+                        "research_goal",
+                        ""
+                    ),
 
                     "context":
                     context
@@ -159,6 +177,10 @@ Level:
                 st.session_state[
                     "idea_completed"
                 ] = True
+
+                st.session_state[
+                    "current_step"
+                ] = 3
 
                 st.success(
                     "Research idea saved successfully."
@@ -243,6 +265,30 @@ Description:
                 "Please add title and description."
             )
 
+        manual_validation = validate_manual_idea(
+            disease=disease,
+            outcome=outcome,
+            description=idea_description
+        )
+
+        st.subheader(
+            "Idea Quality Check"
+        )
+
+        st.metric(
+            "Overall Score",
+            manual_validation["overall_score"]
+        )
+
+        with st.expander(
+            "Validation Notes"
+        ):
+
+            for note in manual_validation["notes"]:
+                st.write(
+                    "• " + note
+                )
+
         if st.button(
             "Save Research Idea"
         ):
@@ -272,6 +318,9 @@ Description:
                 "period":
                 period,
 
+                "validation":
+                manual_validation,
+
                 "research_goal":
                 research_goal,
 
@@ -285,6 +334,10 @@ Description:
             st.session_state[
                 "idea_completed"
             ] = True
+
+            st.session_state[
+                "current_step"
+            ] = 3
 
             st.success(
                 "Research idea saved successfully."
