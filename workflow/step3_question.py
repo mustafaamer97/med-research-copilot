@@ -193,11 +193,16 @@ def render():
 
             return
 
+        # Passing study_design to support adaptive question building
         result = build_pico(
             population,
             intervention,
             comparison,
-            outcome
+            outcome,
+            context.get(
+                "study_design",
+                ""
+            )
         )
 
         if "error" in result:
@@ -221,7 +226,7 @@ def render():
             outcome_text = outcome
 
             # =========================
-            # PubMed Query (5. Uses default_topic)
+            # PubMed Query
             # =========================
 
             pubmed_query_parts = []
@@ -289,7 +294,7 @@ def render():
             )
 
             # =========================
-            # Master Query (6. Incorporates full PICO elements)
+            # Master Query
             # =========================
 
             master_query = " ".join(
@@ -417,7 +422,6 @@ def render():
                 type="primary"
             ):
 
-                # 7. Complete PICO structure saved to session state
                 st.session_state[
                     "research_question"
                 ] = {
