@@ -14,7 +14,7 @@ def render():
         "💡 Idea Generator & Validation"
     )
 
-    # قراءة الـ Context المخزّن في الخطوة الأولى مقدماً لتغذي الاستخدام في كلا الوضعين
+    # قراءة الـ Context المخزّن في الخطوة الأولى
     context = st.session_state.get(
         "research_context",
         {}
@@ -133,11 +133,11 @@ Location:
             with st.expander(
                 "Validation Explanation"
             ):
-
-                for item in validation["notes"]:
-                    st.write(
-                        "• " + item
-                    )
+                if validation.get("notes"):
+                    for item in validation["notes"]:
+                        st.write("• " + item)
+                else:
+                    st.success("No methodological concerns detected.")
 
             if st.button(
                 "Select Best Research Idea"
@@ -320,64 +320,74 @@ Description:
             "Validation Notes"
         ):
 
-            for note in manual_validation["notes"]:
-                st.write(
-                    "• " + note
+            # التحقق من وجود ملاحظات أو إظهار رسالة النجاح
+            if manual_validation.get("notes"):
+                for note in manual_validation["notes"]:
+                    st.write("• " + note)
+            else:
+                st.success(
+                    "No methodological concerns detected."
                 )
 
         if st.button(
             "Save Research Idea"
         ):
 
-            st.session_state[
-                "selected_research_idea"
-            ] = {
+            # التحقق الإجباري من عنوان الفكرة
+            if not idea_title.strip():
+                st.error(
+                    "Research Idea Title is required before saving."
+                )
+            else:
+                st.session_state[
+                    "selected_research_idea"
+                ] = {
 
-                "title":
-                idea_title,
+                    "title":
+                    idea_title,
 
-                "description":
-                idea_description,
+                    "description":
+                    idea_description,
 
-                "source":
-                "manual",
+                    "source":
+                    "manual",
 
-                "disease":
-                disease,
+                    "disease":
+                    disease,
 
-                "location":
-                location,
+                    "location":
+                    location,
 
-                "outcome":
-                outcome,
+                    "outcome":
+                    outcome,
 
-                "period":
-                period,
+                    "period":
+                    period,
 
-                "validation":
-                manual_validation,
+                    "validation":
+                    manual_validation,
 
-                "research_goal":
-                research_goal,
+                    "research_goal":
+                    research_goal,
 
-                "context":
-                context
-            }
+                    "context":
+                    context
+                }
 
-            st.session_state[
-                "idea_completed"
-            ] = True
+                st.session_state[
+                    "idea_completed"
+                ] = True
 
-            st.session_state[
-                "current_step"
-            ] = 3
+                st.session_state[
+                    "current_step"
+                ] = 3
 
-            st.success(
-                "Research idea saved successfully."
-            )
+                st.success(
+                    "Research idea saved successfully."
+                )
 
     # ==================================
-    # Completion Status & Preview
+    # Completion Status & Formatted Display
     # ==================================
 
     if st.session_state.get(
@@ -388,11 +398,24 @@ Description:
             "✅ Step 2 Completed"
         )
 
+        # عرض التفاصيل بشكل واجهة منظمة بدلاً من JSON
+        idea = st.session_state["selected_research_idea"]
+
         with st.expander(
-            "Selected Research Idea"
+            "Selected Research Idea Details",
+            expanded=True
         ):
-            st.json(
-                st.session_state[
-                    "selected_research_idea"
-                ]
+            st.subheader(idea.get("title", "Untitled Research Idea"))
+
+            st.success(
+                f"""
+**Disease / Condition:** {idea.get('disease', 'N/A')}  
+**Location:** {idea.get('location', 'N/A')}  
+**Main Outcome:** {idea.get('outcome', 'N/A')}  
+**Research Goal:** {idea.get('research_goal', 'N/A')}  
+**Source:** {idea.get('source', 'N/A').upper()}
+"""
             )
+
+            st.markdown("### Description")
+            st.write(idea.get("description", "No description provided."))
