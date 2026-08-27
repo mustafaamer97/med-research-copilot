@@ -1,214 +1,273 @@
 import streamlit as st
 
 from ai.llm_engine import ask_ai
-from ai.prompts import RESEARCH_IDEA_PROMPT
 
-from modules.evidence_search import get_recent_evidence
-from modules.research_gap_detector import detect_research_gaps
+from modules.evidence_search import (
+    get_recent_evidence
+)
+
+from modules.research_gap_detector import (
+    detect_research_gaps
+)
 
 
-def generate_research_ideas(field):
+def generate_research_ideas(
+    research_context
+):
 
     # =========================
-    # Fetch Evidence
+    # Extract Research Context
     # =========================
 
-    papers = get_recent_evidence(field)
+    topic = research_context.get(
+        "research_topic",
+        research_context.get(
+            "disease",
+            ""
+        )
+    )
+
+    field = research_context.get(
+        "field",
+        research_context.get(
+            "medical_field",
+            ""
+        )
+    )
+
+    research_goal = research_context.get(
+        "research_goal",
+        ""
+    )
+
+    population = research_context.get(
+        "population",
+        ""
+    )
+
+    location = research_context.get(
+        "location",
+        ""
+    )
+
+    outcome = research_context.get(
+        "outcome",
+        ""
+    )
+
+    data_source = research_context.get(
+        "data_source",
+        ""
+    )
+
+    study_design = research_context.get(
+        "study_design",
+        ""
+    )
+
+    keywords = research_context.get(
+        "keywords",
+        ""
+    )
+
+
+    # =========================
+    # Dynamic Evidence Search
+    # =========================
+
+    query = f"""
+
+    Topic:
+    {topic}
+
+    Field:
+    {field}
+
+    Goal:
+    {research_goal}
+
+    Outcome:
+    {outcome}
+
+    Population:
+    {population}
+
+    Keywords:
+    {keywords}
+
+    """
+
+
+    papers = get_recent_evidence(
+        query
+    )
+
 
     if not papers:
 
-        return """
-FACTS
-No PubMed evidence was retrieved.
+        return []
 
-ASSUMPTIONS
-None.
-
-LIMITATIONS
-Unable to generate evidence-based ideas.
-"""
 
     # =========================
-    # Gap Analysis
+    # Gap Detection
     # =========================
 
     gap_report = detect_research_gaps(
         papers
     )
 
-    # =========================
-    # Evidence Context
-    # =========================
 
     evidence_text = ""
 
-    for paper in papers:
+
+    for paper in papers[:20]:
 
         evidence_text += f"""
 
 Title:
-{paper.get("title", "")}
-
-Journal:
-{paper.get("journal", "")}
-
-Publication Type:
-{paper.get("publication_type", "")}
-
-Evidence Level:
-{paper.get("evidence_level", "Unknown")}
-
-Publication Date:
-{paper.get("publication_date", "")}
+{paper.get('title','')}
 
 Year:
-{paper.get("year", "")}
+{paper.get('year','')}
 
-PMID:
-{paper.get("pmid", "")}
+Study Type:
+{paper.get('publication_type','')}
 
-DOI:
-{paper.get("doi", "")}
-
-Country:
-{paper.get("country", "")}
-
-Language:
-{paper.get("language", "")}
-
-MeSH Terms:
-{paper.get("mesh_terms", "")}
+Evidence Level:
+{paper.get('evidence_level','')}
 
 Abstract:
-{paper.get("abstract", "")}
+{paper.get('abstract','')}
 
---------------------------------------------------
+----------------------------
 
 """
 
-    # =========================
-    # Gap Report
-    # =========================
 
     gap_text = f"""
 
-Research Gap Analysis
+Total Studies:
+{gap_report.get('total_papers',0)}
 
-Total Papers:
-{gap_report.get("total_papers", 0)}
+Top Keywords:
+{gap_report.get('top_keywords',[])}
 
-Most Common Topics:
-{gap_report.get("top_keywords", [])}
+Study Types:
+{gap_report.get('study_types',[])}
 
-Most Common Study Types:
-{gap_report.get("study_types", [])}
-
-Most Common Journals:
-{gap_report.get("top_journals", [])}
-
-Most Common Countries:
-{gap_report.get("top_countries", [])}
-
-Most Common MeSH Terms:
-{gap_report.get("top_mesh_terms", [])}
+Research Gaps:
+{gap_report.get('research_gaps',[])}
 
 """
 
+
     # =========================
-    # Build Prompt
+    # Research AI Prompt
     # =========================
 
-    prompt = RESEARCH_IDEA_PROMPT.format(
-        field=field
-    )
+    prompt = f"""
 
-    final_prompt = f"""
+You are an expert medical research methodology advisor.
 
-Evidence Context
+Your task is to generate feasible research ideas.
+
+Research Context:
+
+Topic:
+{topic}
+
+Medical Field:
+{field}
+
+Research Goal:
+{research_goal}
+
+Population:
+{population}
+
+Location:
+{location}
+
+Outcome:
+{outcome}
+
+Data Source:
+{data_source}
+
+Possible Study Design:
+{study_design}
+
+
+
+Available Literature Evidence:
 
 {evidence_text}
 
-==================================================
+
+
+Research Gap Analysis:
 
 {gap_text}
 
-==================================================
 
-Instructions
 
-You are a medical research advisor.
-
-Use ONLY the evidence provided above.
-
-Prioritize findings coming from:
-
-- Level 1 Evidence
-- Level 2 Evidence
-
-Before using lower-level evidence.
-
-Identify:
-
-1. Knowledge Gaps
-2. Under-studied Populations
-3. Under-studied Outcomes
-4. Missing Methodologies
-5. Future Research Opportunities
-
-Generate 5 high-quality research ideas.
+Generate 5 research ideas.
 
 For each idea provide:
 
-- Title
-- Rationale
-- Potential Study Design
-- Suggested Population
-- Expected Clinical Impact
+1. Title
 
-Do NOT invent:
+2. Rationale
 
-- References
-- DOI
-- PMID
-- Statistical Results
-- Sample Sizes
-- Study Findings not present in the evidence
+3. Research Gap Addressed
 
-Base your suggestions ONLY on the supplied evidence.
+4. Suggested Study Design
 
-{prompt}
+5. Target Population
+
+6. Main Outcome
+
+7. Expected Clinical/Public Health Impact
+
+
+Rules:
+
+- Adapt to any medical field.
+- Do not assume oncology.
+- Do not invent references.
+- Do not invent PMID or DOI.
+- Do not invent sample size.
+- Do not invent statistical results.
+- Prefer realistic studies based on available resources.
+
+
+Return structured ideas.
 
 """
 
-    # =========================
-    # Debug Console
-    # =========================
 
-    print("========== EVIDENCE ==========")
-    print(evidence_text)
+    with st.expander(
+        "Evidence Used"
+    ):
 
-    print("========== GAP ANALYSIS ==========")
-    print(gap_text)
+        st.text(
+            evidence_text
+        )
 
-    print("========== END ==========")
 
-    # =========================
-    # Streamlit Debug View
-    # =========================
+    with st.expander(
+        "Research Gap Analysis"
+    ):
 
-    with st.expander("PubMed Evidence"):
+        st.text(
+            gap_text
+        )
 
-        st.text(evidence_text)
 
-    with st.expander("Research Gap Analysis"):
-
-        st.text(gap_text)
-
-    # =========================
-    # Generate Ideas
-    # =========================
-
-    return ask_ai(
-        final_prompt,
-        user_input=field
+    response = ask_ai(
+        prompt,
+        user_input=topic
     )
+
+
+    return response
