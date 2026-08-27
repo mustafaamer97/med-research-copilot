@@ -1,149 +1,169 @@
-from modules.pubmed import search_pubmed
+def calculate_evidence_score(paper):
+
+    score = 0
 
 
-PRIORITY_FILTERS = [
+    # =========================
+    # Evidence Level Priority
+    # =========================
 
-    "systematic review",
-
-    "meta-analysis",
-
-    "randomized controlled trial",
-
-    "clinical trial",
-
-    "cohort study",
-
-    "observational study"
-
-]
-
-
-
-def get_recent_evidence(
-    topic,
-    max_results=20
-):
-
-    all_papers = []
-
-
-    # ==================================
-    # Search Multiple Evidence Types
-    # ==================================
-
-    per_filter_limit = max(
-        5,
-        max_results // len(PRIORITY_FILTERS)
+    level = paper.get(
+        "evidence_level",
+        "Unknown"
     )
 
 
-    for study_type in PRIORITY_FILTERS:
+    evidence_scores = {
 
+        "Level 1": 100,
 
-        query = (
-            f"{topic} AND {study_type}"
-        )
+        "Level 2": 90,
 
+        "Level 3": 75,
 
-        try:
+        "Level 4": 60,
 
-            papers = search_pubmed(
-                query,
-                max_results=per_filter_limit
-            )
+        "Level 5": 40,
 
-
-            all_papers.extend(
-                papers
-            )
-
-
-        except Exception as e:
-
-
-            print(
-                f"Evidence search error ({study_type}): {e}"
-            )
-
-
-
-    # ==================================
-    # Remove Duplicate Papers
-    # ==================================
-
-    unique_papers = {}
-
-
-
-    for paper in all_papers:
-
-
-        key = (
-
-            paper.get("pmid")
-
-            or
-
-            paper.get("doi")
-
-            or
-
-            paper.get("title")
-
-        )
-
-
-        if key:
-
-            unique_papers[key] = paper
-
-
-
-    papers = list(
-        unique_papers.values()
-    )
-
-
-
-    # ==================================
-    # Evidence Ranking
-    # ==================================
-
-    ranking = {
-
-        "Level 1": 1,
-
-        "Level 2": 2,
-
-        "Level 3": 3,
-
-        "Level 4": 4,
-
-        "Level 5": 5,
-
-        "Unknown": 99
+        "Unknown": 20
 
     }
 
 
-
-    papers.sort(
-
-        key=lambda paper:
-
-        ranking.get(
-
-            paper.get(
-                "evidence_level",
-                "Unknown"
-            ),
-
-            99
-
-        )
-
+    score += evidence_scores.get(
+        level,
+        20
     )
 
 
+    # =========================
+    # Publication Type Bonus
+    # =========================
 
-    return papers[:max_results]
+    publication_type = (
+        paper.get(
+            "publication_type",
+            ""
+        )
+        .lower()
+    )
+
+
+    if "meta-analysis" in publication_type:
+
+        score += 20
+
+
+    elif "systematic review" in publication_type:
+
+        score += 15
+
+
+    elif (
+        "randomized" in publication_type
+        or
+        "clinical trial" in publication_type
+    ):
+
+        score += 10
+
+
+
+    # =========================
+    # Recent Evidence Bonus
+    # =========================
+
+    try:
+
+        year = int(
+            paper.get(
+                "year",
+                0
+            )
+        )
+
+        if year >= 2024:
+
+            score += 15
+
+        elif year >= 2020:
+
+            score += 10
+
+        elif year >= 2015:
+
+            score += 5
+
+
+    except:
+
+        pass
+
+
+
+    # =========================
+    # Citation Impact
+    # =========================
+
+    try:
+
+        citations = int(
+            paper.get(
+                "citation_count",
+                0
+            )
+        )
+
+
+        if citations >= 200:
+
+            score += 15
+
+
+        elif citations >= 50:
+
+            score += 10
+
+
+        elif citations >= 10:
+
+            score += 5
+
+
+    except:
+
+        pass
+
+
+
+    return score
+
+
+
+# ==================================
+# Rank Evidence
+# ==================================
+
+def rank_evidence(papers):
+
+
+    for paper in papers:
+
+        paper[
+            "evidence_score"
+        ] = calculate_evidence_score(
+            paper
+        )
+
+
+    papers.sort(
+        key=lambda x:
+        x.get(
+            "evidence_score",
+            0
+        ),
+        reverse=True
+    )
+
+
+    return papers
