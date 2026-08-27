@@ -4,6 +4,10 @@ from modules.idea_generator import (
     generate_research_ideas
 )
 
+from modules.idea_validator import (
+    validate_research_idea
+)
+
 
 def render():
 
@@ -72,7 +76,7 @@ Location:
             ):
 
                 ideas = generate_research_ideas(
-                    context
+                    research_context=context
                 )
 
             st.session_state[
@@ -94,52 +98,38 @@ Location:
             )
 
             st.caption(
-                "Generated from PubMed / Europe PMC / OpenAlex evidence and research gap analysis."
+                "Generated using evidence retrieval, research gap analysis, and medical research methodology rules."
             )
 
             st.subheader(
-                "🔬 Idea Validation"
+                "🔬 Automatic Research Idea Validation"
             )
 
-            validation_score = st.slider(
-                "Feasibility Score",
-                0,
-                100,
-                70
-            )
-
-            novelty_score = st.slider(
-                "Novelty Score",
-                0,
-                100,
-                70
-            )
-
-            clinical_score = st.slider(
-                "Clinical Importance",
-                0,
-                100,
-                70
-            )
-
-            overall_score = int(
-                (
-                    validation_score
-                    +
-                    novelty_score
-                    +
-                    clinical_score
-                )
-                /
-                3
+            validation = validate_research_idea(
+                context
             )
 
             st.success(
                 f"""
-Overall Research Idea Score:
-{overall_score}/100
+Feasibility Score:
+{validation['score']}/100
+
+Level:
+{validation['feasibility']}
 """
             )
+
+            if validation.get("notes"):
+
+                with st.expander(
+                    "Validation Explanation"
+                ):
+
+                    for note in validation["notes"]:
+
+                        st.write(
+                            f"• {note}"
+                        )
 
             if st.button(
                 "Use Generated Ideas"
@@ -160,20 +150,7 @@ Overall Research Idea Score:
                     "source":
                     "AI",
 
-                    "validation": {
-
-                        "feasibility":
-                        validation_score,
-
-                        "novelty":
-                        novelty_score,
-
-                        "clinical_importance":
-                        clinical_score,
-
-                        "overall":
-                        overall_score
-                    },
+                    "validation": validation,
 
                     "context":
                     context
@@ -226,6 +203,11 @@ Overall Research Idea Score:
         idea_description = st.text_area(
             "Research Idea Description",
             height=150
+        )
+
+        research_goal = st.text_input(
+            "Research Goal",
+            placeholder="Incidence, Risk factors, Treatment outcome..."
         )
 
         st.markdown("### Research Idea Preview")
@@ -288,7 +270,16 @@ Description:
                 outcome,
 
                 "period":
-                period
+                period,
+
+                "research_goal":
+                research_goal,
+
+                "context":
+                st.session_state.get(
+                    "research_context",
+                    {}
+                )
             }
 
             st.session_state[
