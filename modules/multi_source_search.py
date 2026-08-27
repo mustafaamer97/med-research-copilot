@@ -16,80 +16,6 @@ from modules.openalex import (
 
 
 
-def normalize_paper(
-    paper,
-    source
-):
-
-    return {
-
-        "title":
-        paper.get(
-            "title",
-            ""
-        ),
-
-        "authors":
-        paper.get(
-            "authors",
-            ""
-        ),
-
-        "year":
-        paper.get(
-            "year",
-            ""
-        ),
-
-        "doi":
-        paper.get(
-            "doi",
-            ""
-        ),
-
-        "pmid":
-        paper.get(
-            "pmid",
-            ""
-        ),
-
-        "abstract":
-        paper.get(
-            "abstract",
-            ""
-        ),
-
-        "url":
-        paper.get(
-            "url",
-            ""
-        ),
-
-        "publication_type":
-        paper.get(
-            "publication_type",
-            ""
-        ),
-
-        "evidence_level":
-        paper.get(
-            "evidence_level",
-            "Unknown"
-        ),
-
-        "source":
-        source,
-
-        "citation_count":
-        paper.get(
-            "citation_count",
-            0
-        )
-
-    }
-
-
-
 def search_all_sources(
     query,
     max_results=20
@@ -104,18 +30,17 @@ def search_all_sources(
 
     try:
 
-        pubmed = get_recent_evidence(
+        pubmed_papers = get_recent_evidence(
             query
         )
 
-        for paper in pubmed:
+        for paper in pubmed_papers:
 
-            papers.append(
-                normalize_paper(
-                    paper,
-                    "PubMed"
-                )
-            )
+            paper["source"] = "PubMed"
+
+        papers.extend(
+            pubmed_papers[:max_results]
+        )
 
 
     except Exception as e:
@@ -132,19 +57,20 @@ def search_all_sources(
 
     try:
 
-        epmc = search_europe_pmc(
+        epmc_papers = search_europe_pmc(
             query,
             max_results
         )
 
-        for paper in epmc:
 
-            papers.append(
-                normalize_paper(
-                    paper,
-                    "Europe PMC"
-                )
-            )
+        for paper in epmc_papers:
+
+            paper["source"] = "Europe PMC"
+
+
+        papers.extend(
+            epmc_papers
+        )
 
 
     except Exception as e:
@@ -161,19 +87,20 @@ def search_all_sources(
 
     try:
 
-        openalex = search_openalex(
+        openalex_papers = search_openalex(
             query,
             max_results
         )
 
-        for paper in openalex:
 
-            papers.append(
-                normalize_paper(
-                    paper,
-                    "OpenAlex"
-                )
-            )
+        for paper in openalex_papers:
+
+            paper["source"] = "OpenAlex"
+
+
+        papers.extend(
+            openalex_papers
+        )
 
 
     except Exception as e:
@@ -185,7 +112,7 @@ def search_all_sources(
 
 
     # =========================
-    # Deduplicate
+    # Remove Duplicates
     # =========================
 
     unique = {}
@@ -199,6 +126,7 @@ def search_all_sources(
             or paper.get("title")
         )
 
+
         if key:
 
             unique[key] = paper
@@ -208,6 +136,7 @@ def search_all_sources(
     papers = list(
         unique.values()
     )
+
 
 
     # =========================
