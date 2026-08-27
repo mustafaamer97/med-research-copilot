@@ -1,149 +1,149 @@
-def calculate_evidence_score(
-    paper
+from modules.pubmed import search_pubmed
+
+
+PRIORITY_FILTERS = [
+
+    "systematic review",
+
+    "meta-analysis",
+
+    "randomized controlled trial",
+
+    "clinical trial",
+
+    "cohort study",
+
+    "observational study"
+
+]
+
+
+
+def get_recent_evidence(
+    topic,
+    max_results=20
 ):
 
-    publication_type = (
-        paper.get(
-            "publication_type",
-            ""
-        )
-        .lower()
+    all_papers = []
+
+
+    # ==================================
+    # Search Multiple Evidence Types
+    # ==================================
+
+    per_filter_limit = max(
+        5,
+        max_results // len(PRIORITY_FILTERS)
     )
 
 
-    score = 0
+    for study_type in PRIORITY_FILTERS:
 
 
-
-    # =========================
-    # Evidence Level
-    # =========================
-
-    if (
-        "meta-analysis"
-        in publication_type
-    ):
-
-        score += 100
+        query = (
+            f"{topic} AND {study_type}"
+        )
 
 
-    elif (
-        "systematic review"
-        in publication_type
-    ):
+        try:
 
-        score += 95
-
-
-    elif (
-        "randomized"
-        in publication_type
-        or
-        "clinical trial"
-        in publication_type
-    ):
-
-        score += 90
-
-
-    elif (
-        "cohort"
-        in publication_type
-    ):
-
-        score += 70
-
-
-    elif (
-        "case-control"
-        in publication_type
-    ):
-
-        score += 60
-
-
-    elif (
-        "cross-sectional"
-        in publication_type
-    ):
-
-        score += 50
-
-
-    elif (
-        "case series"
-        in publication_type
-    ):
-
-        score += 30
-
-
-    elif (
-        "case report"
-        in publication_type
-    ):
-
-        score += 20
-
-
-
-    # =========================
-    # Recent Evidence Bonus
-    # =========================
-
-    try:
-
-        year = int(
-            paper.get(
-                "year",
-                0
+            papers = search_pubmed(
+                query,
+                max_results=per_filter_limit
             )
+
+
+            all_papers.extend(
+                papers
+            )
+
+
+        except Exception as e:
+
+
+            print(
+                f"Evidence search error ({study_type}): {e}"
+            )
+
+
+
+    # ==================================
+    # Remove Duplicate Papers
+    # ==================================
+
+    unique_papers = {}
+
+
+
+    for paper in all_papers:
+
+
+        key = (
+
+            paper.get("pmid")
+
+            or
+
+            paper.get("doi")
+
+            or
+
+            paper.get("title")
+
         )
 
 
-        if year >= 2023:
+        if key:
 
-            score += 5
-
-
-        elif year >= 2020:
-
-            score += 3
-
-
-    except:
-
-        pass
+            unique_papers[key] = paper
 
 
 
-    return score
+    papers = list(
+        unique_papers.values()
+    )
 
 
 
+    # ==================================
+    # Evidence Ranking
+    # ==================================
 
+    ranking = {
 
-def rank_evidence(
-    papers
-):
+        "Level 1": 1,
 
-    for paper in papers:
+        "Level 2": 2,
 
-        paper[
-            "evidence_score"
-        ] = calculate_evidence_score(
-            paper
-        )
+        "Level 3": 3,
+
+        "Level 4": 4,
+
+        "Level 5": 5,
+
+        "Unknown": 99
+
+    }
+
 
 
     papers.sort(
-        key=lambda x:
-        x.get(
-            "evidence_score",
-            0
-        ),
-        reverse=True
+
+        key=lambda paper:
+
+        ranking.get(
+
+            paper.get(
+                "evidence_level",
+                "Unknown"
+            ),
+
+            99
+
+        )
+
     )
 
 
-    return papers
+
+    return papers[:max_results]
