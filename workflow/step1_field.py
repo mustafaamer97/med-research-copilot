@@ -7,7 +7,6 @@ from modules.medical_knowledge_engine import (
     analyze_research_topic
 )
 
-
 def recommend_study_design(
     data_source,
     outcome,
@@ -53,7 +52,8 @@ def recommend_study_design(
             ]
         )
 
-    if data_source == "Literature Only":
+    # تعديل (6): تم تصحيح المطابقة لتكون "Published Literature"
+    if data_source == "Published Literature":
 
         return (
             "Systematic Review",
@@ -66,7 +66,6 @@ def recommend_study_design(
         default_design,
         []
     )
-
 
 MEDICAL_FIELDS = [
     "Cardiology",
@@ -91,13 +90,7 @@ MEDICAL_FIELDS = [
     "Public Health",
 ]
 
-TARGET_POPULATIONS = [
-    "Adults",
-    "Children",
-    "Elderly",
-    "Pregnant Women",
-    "General Population",
-]
+# تعديل (2): تم حذف القوائم غير المستخدمة FIELD_KEYWORD_HINTS و TARGET_POPULATIONS
 
 STUDY_DESIGNS = [
 
@@ -200,30 +193,6 @@ VALID_DESIGNS = {
 
 }
 
-FIELD_KEYWORD_HINTS = {
-    "Cardiology": "heart failure, NT-proBNP, ejection fraction, mortality",
-    "Neurology": "stroke, epilepsy, cognition, MRI",
-    "Oncology": "survival, chemotherapy, tumor markers",
-    "Endocrinology": "diabetes, HbA1c, insulin resistance",
-    "Gastroenterology": "IBD, colonoscopy, liver disease",
-    "Pulmonology": "COPD, asthma, spirometry",
-    "Nephrology": "CKD, dialysis, eGFR",
-    "Infectious Diseases": "COVID-19, sepsis, antimicrobial resistance",
-    "Psychiatry": "depression, anxiety, quality of life",
-    "Dermatology": "psoriasis, eczema, skin lesions",
-    "Pediatrics": "growth, vaccination, childhood disease",
-    "Obstetrics & Gynecology": "pregnancy outcomes, infertility",
-    "General Surgery": "postoperative complications, wound infection",
-    "Orthopedic Surgery": "fractures, arthroplasty, outcomes",
-    "Neurosurgery": "brain tumors, spinal surgery",
-    "Urology": "prostate cancer, kidney stones",
-    "Ophthalmology": "glaucoma, cataract, visual acuity",
-    "Otolaryngology (ENT)": "hearing loss, sinusitis",
-    "Emergency Medicine": "triage, trauma, emergency care",
-    "Public Health": "prevalence, risk factors, screening",
-}
-
-
 def render():
 
     st.header("🧭 Research Context & Scope")
@@ -279,19 +248,23 @@ def render():
     analysis = None
 
     if disease:
+        # تعديل (3): حماية التطبيق من الانهيار في حال فشل تحليل الـ AI
+        try:
+            analysis = analyze_research_topic(
+                topic=disease,
+                goal=research_goal,
+                data_source=data_source,
+            )
+        except Exception:
+            analysis = None
 
-        analysis = analyze_research_topic(
-            topic=disease,
-            goal=research_goal,
-            data_source=data_source,
-        )
+        if analysis:
+            st.markdown(
+                "### 🤖 Research Detection"
+            )
 
-        st.markdown(
-            "### 🤖 Research Detection"
-        )
-
-        st.success(
-            f"""
+            st.success(
+                f"""
 Field:
 {analysis['field']}
 
@@ -301,7 +274,7 @@ Population:
 Recommended Design:
 {analysis['recommended_design']}
 """
-        )
+            )
 
     if study_design == "Auto Detect" and analysis:
 
@@ -412,12 +385,30 @@ Allowed Designs:
 
     }
 
+    # تعديل (4): توسيع نطاق الـ Session State لدعم الخطوات القادمة
     st.session_state["research_context"] = context
-
-    validation = validate_research_idea(
-        study_design,
-        data_source
+    st.session_state["research_field"] = context.get(
+        "field",
+        ""
     )
+    st.session_state["research_population"] = context.get(
+        "population",
+        ""
+    )
+    st.session_state["research_goal"] = research_goal
+    st.session_state["research_outcome"] = outcome
+    st.session_state["research_disease"] = disease
+
+    # تعديل (1): التمرير الصحيح للمُدخلات لدالة التقييم
+    validation = validate_research_idea(
+        disease,
+        context
+    )
+
+    # تعديل (8): حفظ نتائج الـ Validation لاستخدامها في بقية الخطوات
+    st.session_state[
+        "context_validation"
+    ] = validation
 
     if recommended_design:
 
@@ -575,9 +566,20 @@ Feasibility Level: LOW
             type="primary",
         ):
 
+            # تعديل (7): فحص جودة السياق البحثي قبل الحفظ لمنع الاستمرار بحالة ضعيفة
+            if validation["score"] < 50:
+                st.error(
+                    "Research context quality is too low. Please improve the study design or data source."
+                )
+                st.stop()
+
+            # تعديل (5): تحديث حالة الخطوة ورقم الخطوة الحالية لنظام 13 خطوة
             st.session_state[
                 "context_completed"
             ] = True
+            st.session_state[
+                "current_step"
+            ] = 1
 
             st.success(
                 "Research context saved successfully."
