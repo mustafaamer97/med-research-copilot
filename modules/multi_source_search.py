@@ -63,6 +63,10 @@ def search_all_sources(
             max_results
         )
 
+        for paper in epmc_papers:
+
+            paper["source"] = "Europe PMC"
+
 
         papers.extend(
             epmc_papers
@@ -87,6 +91,10 @@ def search_all_sources(
             query,
             max_results
         )
+
+        for paper in openalex_papers:
+
+            paper["source"] = "OpenAlex"
 
 
         papers.extend(
@@ -119,7 +127,10 @@ def search_all_sources(
             paper.get("pmid")
             or
 
-            paper.get("title")
+            paper.get(
+                "title",
+                ""
+            ).lower().strip()
 
         )
 
