@@ -13,6 +13,56 @@ from modules.research_gap_detector import (
 )
 
 
+def build_smart_search_query(question_data):
+    """
+    Builds structured smart search queries (PICO, Broad, and Evidence-based)
+    to optimize search recall and precision across literature databases.
+    """
+    pico_data = question_data.get("pico", {})
+
+    population = pico_data.get("population", "").strip()
+    intervention = pico_data.get("intervention", "").strip()
+    comparison = pico_data.get("comparison", "").strip()
+    outcome = pico_data.get("outcome", "").strip()
+
+    # 1. PICO Query
+    pico_terms = [x for x in [population, intervention, comparison, outcome] if x]
+    pico_query = " ".join(pico_terms)
+
+    # 2. Broad Query (Population + Intervention)
+    broad_terms = [x for x in [population, intervention] if x]
+    broad_query = " ".join(broad_terms)
+
+    # 3. Evidence Query (Appends study design filters)
+    evidence_filters = "(systematic review OR meta-analysis OR randomized controlled trial OR cohort study)"
+    
+    if broad_query:
+        evidence_query = f"{broad_query} {evidence_filters}"
+    elif pico_query:
+        evidence_query = f"{pico_query} {evidence_filters}"
+    else:
+        evidence_query = evidence_filters
+
+    master_query = question_data.get("master_query", "").strip()
+
+    # Smart fallback / auto query combination
+    if master_query and pico_query:
+        smart_query = f"{master_query} {pico_query} {evidence_filters}"
+    elif master_query:
+        smart_query = f"{master_query} {evidence_filters}"
+    elif pico_query:
+        smart_query = evidence_query
+    else:
+        smart_query = ""
+
+    return {
+        "pico_query": pico_query,
+        "broad_query": broad_query,
+        "evidence_query": evidence_query,
+        "smart_query": smart_query
+    }
+
+
 def render():
 
     st.header(
@@ -24,31 +74,6 @@ def render():
         {}
     )
 
-    pico_data = question_data.get(
-        "pico",
-        {}
-    )
-
-    population = pico_data.get(
-        "population",
-        ""
-    )
-
-    intervention = pico_data.get(
-        "intervention",
-        ""
-    )
-
-    comparison = pico_data.get(
-        "comparison",
-        ""
-    )
-
-    outcome = pico_data.get(
-        "outcome",
-        ""
-    )
-
     if not question_data:
 
         st.warning(
@@ -56,6 +81,20 @@ def render():
         )
 
         return
+
+    # Extract PICO data
+    pico_data = question_data.get(
+        "pico",
+        {}
+    )
+
+    population = pico_data.get("population", "")
+    intervention = pico_data.get("intervention", "")
+    comparison = pico_data.get("comparison", "")
+    outcome = pico_data.get("outcome", "")
+
+    # Build Smart Search Queries
+    smart_queries = build_smart_search_query(question_data)
 
     # ==========================================
     # Research Question
@@ -108,29 +147,17 @@ def render():
         ""
     )
 
-    pico_query = " ".join(
-        [
-            x
-            for x in [
-                population,
-                intervention,
-                comparison,
-                outcome
-            ]
-            if x
-        ]
-    )
-
     st.markdown(
         "### 🔍 Search Strategy"
     )
 
-    tab1, tab2, tab3, tab4 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [
             "PubMed",
             "Europe PMC",
             "OpenAlex",
-            "Master Query"
+            "Master Query",
+            "Smart Query"
         ]
     )
 
@@ -163,6 +190,14 @@ def render():
         master_query = st.text_area(
             "Master Query",
             value=master_query,
+            height=120
+        )
+
+    with tab5:
+
+        smart_query_input = st.text_area(
+            "Smart Combined Query",
+            value=smart_queries.get("smart_query", ""),
             height=120
         )
 
@@ -217,53 +252,52 @@ def render():
             "Searching PubMed, Europe PMC and OpenAlex..."
         ):
 
-            search_query = master_query
-
             if search_mode == "Auto (Recommended)":
-
-                search_query = (
-                    f"{master_query} "
-                    f"{pico_query}"
-                )
+                search_query = smart_queries.get("smart_query") or master_query
+            else:
+                search_query = master_query
 
             papers = search_all_sources(
                 search_query,
                 max_results=number
             )
 
-        st.session_state[
-            "literature_search"
-        ] = papers
+        # Prepare screening articles with standard default keys for Step 5
+        screening_articles = []
+        for p in papers:
+            article = {
+                "title": p.get("title", ""),
+                "abstract": p.get("abstract", "No abstract available."),
+                "pmid": p.get("pmid", ""),
+                "doi": p.get("doi", ""),
+                "authors": p.get("authors", ""),
+                "year": p.get("year", "N/A"),
+                "source": p.get("source", "Unknown"),
+                "decision": "",
+                "exclusion_reason": ""
+            }
+            screening_articles.append(article)
 
-        st.session_state[
-            "search_metadata"
-        ] = {
+        st.session_state["literature_search"] = papers
+        st.session_state["screening_articles"] = screening_articles
 
-            "query":
-            search_query,
-
-            "pico":
-            pico_data,
-
-            "number_results":
-            len(papers),
-
-            "sources":
-            [
-                "PubMed",
-                "Europe PMC",
-                "OpenAlex"
-            ]
+        st.session_state["search_metadata"] = {
+            "query": search_query,
+            "pico": pico_data,
+            "number_results": len(papers),
+            "sources": ["PubMed", "Europe PMC", "OpenAlex"]
         }
 
-        st.session_state[
-            "literature_completed"
-        ] = len(papers) > 0
+        st.session_state["literature_completed"] = len(papers) > 0
+
+        # Clear cached gap analysis for new search
+        if "research_gap_analysis" in st.session_state:
+            del st.session_state["research_gap_analysis"]
 
         st.rerun()
 
     # ==========================================
-    # Results
+    # Results Check
     # ==========================================
 
     papers = st.session_state.get(
@@ -294,137 +328,152 @@ def render():
         ] = analysis
 
     st.subheader(
-        "🎯 Research Gaps"
+        "🎯 Research Gaps Analysis"
     )
 
-    for gap in analysis.get(
-        "research_gaps",
-        []
-    ):
+    # Structured Gap Categories Display
+    gap_categories = [
+        ("Missing Evidence", analysis.get("missing_evidence", [])),
+        ("Lack of RCTs", analysis.get("lack_of_rcts", [])),
+        ("Lack of Meta-Analysis", analysis.get("lack_of_meta_analysis", [])),
+        ("Population Gaps", analysis.get("population_gaps", [])),
+        ("Geographic Gaps", analysis.get("geographic_gaps", []))
+    ]
 
-        st.warning(gap)
+    has_structured_gaps = any(len(items) > 0 for _, items in gap_categories)
+
+    if has_structured_gaps:
+
+        for cat_name, gap_items in gap_categories:
+
+            if gap_items:
+
+                st.markdown(f"**{cat_name}:**")
+
+                for item in gap_items:
+
+                    st.warning(item)
+
+    else:
+
+        for gap in analysis.get(
+            "research_gaps",
+            []
+        ):
+
+            st.warning(gap)
 
     # ==========================================
-    # Filtering
+    # Filtering & Sorting Controls
     # ==========================================
+
+    col_filt1, col_filt2, col_filt3 = st.columns(3)
+
+    with col_filt1:
+
+        evidence_filter = st.selectbox(
+            "Filter by Evidence",
+            [
+                "All",
+                "Level 1",
+                "Level 2",
+                "Level 3",
+                "Level 4"
+            ],
+            key="filter_evidence_dropdown"
+        )
+
+    with col_filt2:
+
+        source_filter = st.selectbox(
+            "Filter by Source",
+            [
+                "All",
+                "PubMed",
+                "Europe PMC",
+                "OpenAlex"
+            ],
+            key="filter_source_dropdown"
+        )
+
+    with col_filt3:
+
+        sort_option = st.selectbox(
+            "Sort Papers",
+            [
+                "Evidence Score",
+                "Year",
+                "Citations",
+                "Source"
+            ]
+        )
 
     filtered_papers = papers
 
     if evidence_filter != "All":
 
         filtered_papers = [
-
-            paper
-
-            for paper in papers
-
-            if paper.get(
-                "evidence_level"
-            ) == evidence_filter
+            paper for paper in filtered_papers
+            if paper.get("evidence_level") == evidence_filter
         ]
-
-    # ==========================================
-    # Source Filter
-    # ==========================================
-
-    source_filter = st.selectbox(
-        "Source Filter",
-        [
-            "All",
-            "PubMed",
-            "Europe PMC",
-            "OpenAlex"
-        ]
-    )
 
     if source_filter != "All":
 
         filtered_papers = [
-
-            paper
-
-            for paper in filtered_papers
-
-            if paper.get(
-                "source",
-                ""
-            ) == source_filter
+            paper for paper in filtered_papers
+            if paper.get("source", "") == source_filter
         ]
+
+    # Apply Sorting
+    if sort_option == "Evidence Score":
+        filtered_papers = sorted(
+            filtered_papers,
+            key=lambda x: x.get("evidence_score", 0),
+            reverse=True
+        )
+    elif sort_option == "Year":
+        filtered_papers = sorted(
+            filtered_papers,
+            key=lambda x: str(x.get("year", "0")),
+            reverse=True
+        )
+    elif sort_option == "Citations":
+        filtered_papers = sorted(
+            filtered_papers,
+            key=lambda x: x.get("citation_count", 0),
+            reverse=True
+        )
+    elif sort_option == "Source":
+        filtered_papers = sorted(
+            filtered_papers,
+            key=lambda x: x.get("source", "")
+        )
 
     # ==========================================
-    # Dashboard
+    # Evidence Dashboard
     # ==========================================
 
-    level1 = len(
-        [
-            p
-            for p in papers
-            if p.get(
-                "evidence_level"
-            ) == "Level 1"
-        ]
-    )
+    level1 = len([p for p in papers if p.get("evidence_level") == "Level 1"])
+    level2 = len([p for p in papers if p.get("evidence_level") == "Level 2"])
+    level3 = len([p for p in papers if p.get("evidence_level") == "Level 3"])
+    
+    scores = [p.get("evidence_score", 0) for p in papers if p.get("evidence_score") is not None]
+    avg_score = round(sum(scores) / len(scores), 2) if scores else 0.0
 
-    level2 = len(
-        [
-            p
-            for p in papers
-            if p.get(
-                "evidence_level"
-            ) == "Level 2"
-        ]
-    )
-
-    level3 = len(
-        [
-            p
-            for p in papers
-            if p.get(
-                "evidence_level"
-            ) == "Level 3"
-        ]
-    )
-
-    level4 = len(
-        [
-            p
-            for p in papers
-            if p.get(
-                "evidence_level"
-            ) == "Level 4"
-        ]
-    )
+    open_access_count = len([p for p in papers if p.get("is_open_access") is True])
 
     st.success(
         f"Found {len(filtered_papers)} papers after filtering"
     )
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    d1, d2, d3, d4, d5, d6 = st.columns(6)
 
-    c1.metric(
-        "Total",
-        len(papers)
-    )
-
-    c2.metric(
-        "Level 1",
-        level1
-    )
-
-    c3.metric(
-        "Level 2",
-        level2
-    )
-
-    c4.metric(
-        "Level 3",
-        level3
-    )
-
-    c5.metric(
-        "Level 4",
-        level4
-    )
+    d1.metric("Total Papers", len(papers))
+    d2.metric("Level 1", level1)
+    d3.metric("Level 2", level2)
+    d4.metric("Level 3", level3)
+    d5.metric("Avg Score", avg_score)
+    d6.metric("Open Access", open_access_count)
 
     st.divider()
 
@@ -446,10 +495,7 @@ def render():
                 paper=paper
             )
 
-            if result.get(
-                "saved",
-                False
-            ):
+            if result.get("saved", False):
 
                 saved_count += 1
 
@@ -458,168 +504,97 @@ def render():
         )
 
     # ==========================================
-    # Papers
+    # Display Papers as Cards
     # ==========================================
 
-    for idx, paper in enumerate(
-        filtered_papers
-    ):
+    for idx, paper in enumerate(filtered_papers):
 
-        title = paper.get(
-            "title",
-            "No Title"
-        )
-
-        journal = paper.get(
-            "journal",
-            "Unknown Journal"
-        )
-
-        year = paper.get(
-            "year",
-            "N/A"
-        )
-
-        evidence = paper.get(
-            "evidence_level",
-            "Unknown"
-        )
-
-        doi = paper.get(
-            "doi",
-            ""
-        )
-
-        abstract = paper.get(
-            "abstract",
-            "No abstract available."
-        )
-
-        authors = paper.get(
-            "authors",
-            ""
-        )
-
-        url = paper.get(
-            "url",
-            ""
-        )
-
-        source = paper.get(
-            "source",
-            "Unknown"
-        )
-
-        citation_count = paper.get(
-            "citation_count",
-            0
-        )
+        title = paper.get("title", "No Title")
+        journal = paper.get("journal", "Unknown Journal")
+        year = paper.get("year", "N/A")
+        evidence = paper.get("evidence_level", "Unknown")
+        evidence_score = paper.get("evidence_score", "N/A")
+        doi = paper.get("doi", "")
+        abstract = paper.get("abstract", "No abstract available.")
+        authors = paper.get("authors", "")
+        url = paper.get("url", "")
+        source = paper.get("source", "Unknown")
+        citation_count = paper.get("citation_count", 0)
 
         with st.container():
 
             st.markdown("---")
 
-            st.markdown(
-                f"### 📄 {title}"
-            )
+            st.markdown(f"### 📄 {title}")
 
-            m1, m2, m3, m4 = st.columns(4)
+            m1, m2, m3, m4, m5 = st.columns(5)
 
             with m1:
-
-                st.metric(
-                    "Year",
-                    year
-                )
+                st.metric("Year", year)
 
             with m2:
-
-                st.metric(
-                    "Evidence",
-                    evidence
-                )
+                st.metric("Evidence Level", evidence)
 
             with m3:
-
-                st.metric(
-                    "Source",
-                    source
-                )
+                st.metric("Score", evidence_score)
 
             with m4:
+                st.metric("Source", source)
 
-                st.metric(
-                    "Citations",
-                    citation_count
-                )
+            with m5:
+                st.metric("Citations", citation_count)
 
-            st.caption(
-                f"Journal: {journal}"
-            )
+            st.caption(f"**Journal:** {journal}")
 
             if authors:
-
-                st.caption(
-                    f"Authors: {authors}"
-                )
+                st.caption(f"**Authors:** {authors}")
 
             if doi:
+                st.caption(f"**DOI:** {doi}")
 
-                st.caption(
-                    f"DOI: {doi}"
-                )
-
-            with st.expander(
-                "📖 Abstract"
-            ):
-
-                st.write(
-                    abstract
-                )
+            with st.expander("📖 Abstract"):
+                st.write(abstract)
 
             btn1, btn2 = st.columns(2)
 
             with btn1:
-
                 if url:
-
                     st.link_button(
                         "🔗 Open Article",
-                        url
+                        url,
+                        use_container_width=True
                     )
 
             with btn2:
-
                 if st.button(
                     "💾 Save Paper",
-                    key=f"save_{idx}"
+                    key=f"save_{idx}",
+                    use_container_width=True
                 ):
-
                     result = save_paper(
                         project_id=1,
                         paper=paper
                     )
 
-                    if result["saved"]:
-
-                        st.success(
-                            result["message"]
-                        )
-
+                    if result.get("saved"):
+                        st.success(result.get("message", "Saved!"))
                     else:
-
-                        st.warning(
-                            result["message"]
-                        )
+                        st.warning(result.get("message", "Already saved or error."))
 
     # ==========================================
-    # Step Completed
+    # Step Completion & Transition to Step 5
     # ==========================================
 
-    if st.session_state.get(
-        "literature_completed"
-    ):
+    if len(papers) > 0:
 
-        st.success(
-            "✅ Step 4 Completed"
-        )
+        st.markdown("---")
+
+        st.success("✅ Step 4 Completed")
+
+        if st.button(
+            "➡️ Proceed to Article Screening (Step 5)",
+            type="primary",
+            use_container_width=True
+        ):
+            st.session_state["current_step"] = 5
+            st.rerun()
