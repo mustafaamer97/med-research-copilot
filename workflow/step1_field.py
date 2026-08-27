@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 
 from modules.idea_validator import (
@@ -97,23 +98,58 @@ TARGET_POPULATIONS = [
 ]
 
 STUDY_DESIGNS = [
+
+    "Auto Detect",
+
     "Cross-Sectional Study",
     "Case-Control Study",
-    "Cohort Study",
+    "Prospective Cohort Study",
+    "Retrospective Cohort Study",
+    "Nested Case-Control Study",
+    "Case-Cohort Study",
+
     "Randomized Controlled Trial (RCT)",
-    "Systematic Review",
-    "Meta-Analysis",
+    "Cluster Randomized Trial",
+    "Pragmatic Clinical Trial",
+    "Adaptive Clinical Trial",
+
+    "Diagnostic Accuracy Study",
+    "Prediction Model Study",
+    "Prognostic Study",
+
+    "Survey Study",
+    "Ecological Study",
+    "Registry-Based Study",
+
+    "Interrupted Time Series",
+    "Before-After Study",
+
     "Case Report",
     "Case Series",
-    "Diagnostic Study",
-    "Survey Study",
+
+    "Systematic Review",
+    "Meta-Analysis",
+    "Network Meta-Analysis",
+    "Scoping Review",
+    "Umbrella Review",
+
+    "Qualitative Study",
+    "Mixed Methods Study",
+
+    "Health Services Research",
+    "Implementation Study",
+    "Quality Improvement Study",
 ]
 
 DATA_SOURCES = [
-    "Primary Data",
     "Hospital Records",
     "Registry Database",
-    "Literature Only",
+    "Electronic Health Records (EHR)",
+    "Survey / Questionnaire",
+    "Laboratory Data",
+    "Imaging Data",
+    "Published Literature",
+    "Mixed Sources",
 ]
 
 VALID_DESIGNS = {
@@ -166,14 +202,38 @@ def render():
         "Define your research area before building the research question."
     )
 
-    field = st.selectbox(
-        "Main Medical Field",
-        MEDICAL_FIELDS
+    st.subheader(
+        "Research Basics"
     )
 
-    population = st.selectbox(
-        "Target Population",
-        TARGET_POPULATIONS
+    disease = st.text_input(
+        "Disease / Research Topic",
+        placeholder="Cancer, Diabetes, Stroke..."
+    )
+
+    location = st.text_input(
+        "Study Location",
+        placeholder="Sana'a, Yemen"
+    )
+
+    outcome = st.text_input(
+        "Primary Outcome",
+        placeholder="Incidence, Mortality, Survival, Risk Factors..."
+    )
+
+    research_goal = st.selectbox(
+        "Research Goal",
+        [
+            "Trend Analysis",
+            "Incidence",
+            "Prevalence",
+            "Risk Factors",
+            "Treatment Outcomes",
+            "Survival Analysis",
+            "Diagnostic Accuracy",
+            "Prediction Model",
+            "Systematic Review",
+        ]
     )
 
     study_design = st.selectbox(
@@ -210,21 +270,6 @@ Allowed Designs:
 """
         )
 
-    disease = st.text_input(
-        "Disease / Research Topic",
-        placeholder="Cancer, Diabetes, Stroke..."
-    )
-
-    location = st.text_input(
-        "Study Location",
-        placeholder="Sana'a, Yemen"
-    )
-
-    outcome = st.text_input(
-        "Primary Outcome",
-        placeholder="Incidence, Mortality, Survival, Risk Factors..."
-    )
-
     recommended_design = None
     alternative_designs = []
 
@@ -243,12 +288,20 @@ Allowed Designs:
         placeholder="2015-2025"
     )
 
+    auto_keywords = []
+
+    for item in [
+        disease,
+        outcome,
+        research_goal,
+    ]:
+        if item:
+            auto_keywords.append(item)
+
     keywords = st.text_area(
-        "Initial Keywords",
-        placeholder=FIELD_KEYWORD_HINTS.get(
-            field,
-            "Enter important keywords"
-        ),
+        "Keywords",
+        value=", ".join(auto_keywords),
+        height=120,
     )
 
     # ==================================
@@ -263,8 +316,10 @@ Allowed Designs:
     ]):
 
         generated_title = (
-            f"{outcome} of {disease} in "
-            f"{location} ({study_period})"
+            f"{research_goal} of "
+            f"{disease} in "
+            f"{location} "
+            f"({study_period})"
         )
 
         st.markdown("### Suggested Research Title")
@@ -289,10 +344,9 @@ Allowed Designs:
     ]):
 
         draft_question = (
-            f"What are the patterns of "
-            f"{outcome.lower()} among "
-            f"{population.lower()} with "
-            f"{disease.lower()} in "
+            f"What are the "
+            f"{research_goal.lower()} patterns "
+            f"of {disease.lower()} in "
             f"{location} during "
             f"{study_period}?"
         )
@@ -310,8 +364,9 @@ Allowed Designs:
         ] = draft_question
 
     context = {
-        "field": field,
-        "population": population,
+        "field": "",
+        "population": "",
+        "research_goal": research_goal,
         "study_design": study_design,
         "data_source": data_source,
         "disease": disease,
@@ -434,9 +489,7 @@ Feasibility Level: LOW
 
     st.info(
         f"""
-**Medical Field:** {field}
-
-**Target Population:** {population}
+**Research Goal:** {research_goal}
 
 **Study Design:** {study_design}
 
@@ -461,6 +514,30 @@ Feasibility Level: LOW
         study_period,
         keywords
     ]
+
+    if disease and data_source:
+
+        if (
+            "cancer" in disease.lower()
+            or "tumor" in disease.lower()
+            or "neoplasm" in disease.lower()
+        ):
+
+            st.info(
+                "Detected possible Oncology project."
+            )
+
+        elif "diabetes" in disease.lower():
+
+            st.info(
+                "Detected possible Endocrinology project."
+            )
+
+        elif "stroke" in disease.lower():
+
+            st.info(
+                "Detected possible Neurology project."
+            )
 
     if all(str(x).strip() for x in required_fields):
 
