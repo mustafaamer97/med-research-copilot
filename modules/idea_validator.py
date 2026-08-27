@@ -39,7 +39,15 @@ def validate_research_idea(
     # Study Design Feasibility
     # =========================
 
-    if "Randomized" in study_design:
+    if any(
+        x in study_design
+        for x in [
+            "Randomized",
+            "Clinical Trial",
+            "Adaptive",
+            "Pragmatic"
+        ]
+    ):
 
         score -= 25
 
@@ -48,7 +56,15 @@ def validate_research_idea(
         )
 
 
-    elif "Cohort" in study_design:
+    elif any(
+        x in study_design
+        for x in [
+            "Cohort",
+            "Longitudinal",
+            "Prospective",
+            "Retrospective"
+        ]
+    ):
 
         score -= 10
 
@@ -62,7 +78,15 @@ def validate_research_idea(
         score -= 5
 
 
-    elif "Systematic Review" in study_design:
+    elif any(
+        x in study_design
+        for x in [
+            "Systematic Review",
+            "Meta-Analysis",
+            "Scoping Review",
+            "Umbrella Review"
+        ]
+    ):
 
         score += 5
 
@@ -96,6 +120,51 @@ def validate_research_idea(
     elif data_source == "Published Literature":
 
         score += 5
+
+
+
+    # =========================
+    # Study Design and Goal Compatibility
+    # =========================
+
+    if research_goal == "Survival Analysis":
+
+        if "Survival" not in study_design and "Cohort" not in study_design:
+
+            score -= 10
+
+            notes.append(
+                "Survival outcomes usually require longitudinal or time-to-event study designs."
+            )
+
+
+    if research_goal == "Prediction Model":
+
+        if "Prediction" not in study_design:
+
+            score -= 10
+
+            notes.append(
+                "Prediction research usually requires model development or validation designs."
+            )
+
+
+    if research_goal == "Risk Factors":
+
+        if not any(
+            x in study_design
+            for x in [
+                "Cohort",
+                "Case-Control",
+                "Cross-Sectional"
+            ]
+        ):
+
+            score -= 10
+
+            notes.append(
+                "Risk factor studies require analytical observational designs."
+            )
 
 
 
@@ -182,6 +251,12 @@ def validate_research_idea(
 
         feasibility = "Low"
 
+
+    if score >= 90:
+
+        notes.append(
+            "Research idea shows strong methodological compatibility."
+        )
 
 
     return {
