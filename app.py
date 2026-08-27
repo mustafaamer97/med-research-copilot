@@ -31,36 +31,40 @@ from workflow.step4_literature import (
     render as step4_render
 )
 
-from workflow.step5_screening_extraction import (
+from workflow.step5_screening import (
     render as step5_render
 )
 
-from workflow.step6_protocol import (
+from workflow.step6_evidence_extraction import (
     render as step6_render
 )
 
-from workflow.step7_sample_size import (
+from workflow.step7_protocol_builder import (
     render as step7_render
 )
 
-from workflow.step8_irb import (
+from workflow.step8_sample_size import (
     render as step8_render
 )
 
-from workflow.step9_data_collection import (
+from workflow.step9_irb import (
     render as step9_render
 )
 
-from workflow.step10_statistics import (
+from workflow.step10_data_collection import (
     render as step10_render
 )
 
-from workflow.step11_proposal import (
+from workflow.step11_statistics import (
     render as step11_render
 )
 
-from workflow.step12_manuscript import (
+from workflow.step12_proposal import (
     render as step12_render
+)
+
+from workflow.step13_manuscript import (
+    render as step13_render
 )
 
 
@@ -91,47 +95,41 @@ Base.metadata.create_all(
 )
 
 
-# ==================================
-# Session State
-# ==================================
+# =========================
+# Session State Setup
+# =========================
+if "research_context" not in st.session_state:
+    st.session_state[
+        "research_context"
+    ] = {}
 
-DEFAULT_STATES = {
-
-    "research_context": {},
-
+WORKFLOW_STEPS = {
+    # Phase 1
     "context_completed": False,
-
     "idea_completed": False,
-
     "question_completed": False,
-
+    # Phase 2
     "literature_completed": False,
-
     "screening_completed": False,
-
+    "evidence_extraction_completed": False,
     "protocol_completed": False,
-
+    # Phase 3
     "sample_size_completed": False,
-
     "irb_completed": False,
-
+    # Phase 4
     "data_collection_completed": False,
-
+    # Phase 5
     "analysis_completed": False,
-
+    # Phase 6
     "proposal_completed": False,
-
     "manuscript_completed": False,
-
+    # Extra States
+    "google_form_ready": False,
 }
 
-
-for key, value in DEFAULT_STATES.items():
-
+for key, value in WORKFLOW_STEPS.items():
     if key not in st.session_state:
-
         st.session_state[key] = value
-
 
 
 # ==================================
@@ -192,33 +190,35 @@ menu = st.sidebar.radio(
 
         "Step 4: Literature Search",
 
-        "Step 5: Screening & Evidence Extraction",
+        "Step 5: Screening",
 
-        "Step 6: Protocol Builder",
+        "Step 6: Evidence Extraction",
+
+        "Step 7: Protocol Builder",
 
 
         "──────── PHASE 3 ────────",
 
-        "Step 7: Sample Size & Power",
+        "Step 8: Sample Size & Power",
 
-        "Step 8: Ethics & IRB",
+        "Step 9: Ethics & IRB",
 
 
         "──────── PHASE 4 ────────",
 
-        "Step 9: Data Collection",
+        "Step 10: Data Collection",
 
 
         "──────── PHASE 5 ────────",
 
-        "Step 10: Statistical Analysis",
+        "Step 11: Statistical Analysis",
 
 
         "──────── PHASE 6 ────────",
 
-        "Step 11: Proposal Builder",
+        "Step 12: Proposal Builder",
 
-        "Step 12: Manuscript Writer",
+        "Step 13: Manuscript Writer",
 
 
         "──────── TOOLS ────────",
@@ -250,14 +250,15 @@ Research Workflow:
 2. Research Idea
 3. Research Question
 4. Literature Search
-5. Screening & Evidence Extraction
-6. Protocol Development
-7. Sample Size Calculation
-8. Ethics & IRB
-9. Data Collection
-10. Statistical Analysis
-11. Proposal Development
-12. Manuscript Writing
+5. Screening
+6. Evidence Extraction
+7. Protocol Development
+8. Sample Size Calculation
+9. Ethics & IRB
+10. Data Collection
+11. Statistical Analysis
+12. Proposal Development
+13. Manuscript Writing
 """
     )
 
@@ -286,51 +287,57 @@ elif menu == "Step 4: Literature Search":
 
 
 
-elif menu == "Step 5: Screening & Evidence Extraction":
+elif menu == "Step 5: Screening":
 
     step5_render()
 
 
 
-elif menu == "Step 6: Protocol Builder":
+elif menu == "Step 6: Evidence Extraction":
 
     step6_render()
 
 
 
-elif menu == "Step 7: Sample Size & Power":
+elif menu == "Step 7: Protocol Builder":
 
     step7_render()
 
 
 
-elif menu == "Step 8: Ethics & IRB":
+elif menu == "Step 8: Sample Size & Power":
 
     step8_render()
 
 
 
-elif menu == "Step 9: Data Collection":
+elif menu == "Step 9: Ethics & IRB":
 
     step9_render()
 
 
 
-elif menu == "Step 10: Statistical Analysis":
+elif menu == "Step 10: Data Collection":
 
     step10_render()
 
 
 
-elif menu == "Step 11: Proposal Builder":
+elif menu == "Step 11: Statistical Analysis":
 
     step11_render()
 
 
 
-elif menu == "Step 12: Manuscript Writer":
+elif menu == "Step 12: Proposal Builder":
 
     step12_render()
+
+
+
+elif menu == "Step 13: Manuscript Writer":
+
+    step13_render()
 
 
 
