@@ -1,4 +1,3 @@
-import re
 import streamlit as st
 
 from modules.idea_validator import (
@@ -156,21 +155,49 @@ DATA_SOURCES = [
 ]
 
 VALID_DESIGNS = {
+
     "Registry Database": [
+        "Auto Detect",
+        "Registry-Based Study",
         "Cross-Sectional Study",
         "Case-Control Study",
-        "Cohort Study",
+        "Prospective Cohort Study",
+        "Retrospective Cohort Study",
+        "Interrupted Time Series",
     ],
+
     "Hospital Records": [
+        "Auto Detect",
         "Cross-Sectional Study",
         "Case-Control Study",
-        "Cohort Study",
+        "Retrospective Cohort Study",
         "Case Series",
     ],
-    "Literature Only": [
+
+    "Electronic Health Records (EHR)": [
+        "Auto Detect",
+        "Retrospective Cohort Study",
+        "Prediction Model Study",
+        "Diagnostic Accuracy Study",
+    ],
+
+    "Survey / Questionnaire": [
+        "Auto Detect",
+        "Survey Study",
+        "Cross-Sectional Study",
+        "Mixed Methods Study",
+    ],
+
+    "Published Literature": [
+        "Auto Detect",
         "Systematic Review",
         "Meta-Analysis",
+        "Network Meta-Analysis",
+        "Scoping Review",
     ],
+
+    "Mixed Sources": STUDY_DESIGNS,
+
 }
 
 FIELD_KEYWORD_HINTS = {
@@ -239,6 +266,16 @@ def render():
         ]
     )
 
+    study_design = st.selectbox(
+        "Study Design",
+        STUDY_DESIGNS
+    )
+
+    data_source = st.selectbox(
+        "Available Data Source",
+        DATA_SOURCES
+    )
+
     analysis = None
 
     if disease:
@@ -246,7 +283,7 @@ def render():
         analysis = analyze_research_topic(
             topic=disease,
             goal=research_goal,
-            data_source=data_source if 'data_source' in locals() else DATA_SOURCES[0],
+            data_source=data_source,
         )
 
         st.markdown(
@@ -266,15 +303,17 @@ Recommended Design:
 """
         )
 
-    study_design = st.selectbox(
-        "Study Design",
-        STUDY_DESIGNS
-    )
+    if study_design == "Auto Detect" and analysis:
 
-    data_source = st.selectbox(
-        "Available Data Source",
-        DATA_SOURCES
-    )
+        study_design = analysis["recommended_design"]
+
+        st.info(
+            f"""
+🤖 Auto detected study design:
+
+{study_design}
+"""
+        )
 
     # ==================================
     # Study Design Validation
@@ -340,88 +379,37 @@ Allowed Designs:
         height=120,
     )
 
-    # ==================================
-    # Auto Research Title
-    # ==================================
-
-    if all([
-        disease,
-        location,
-        outcome,
-        study_period
-    ]):
-
-        generated_title = (
-            f"{research_goal} of "
-            f"{disease} in "
-            f"{location} "
-            f"({study_period})"
-        )
-
-        st.markdown("### Suggested Research Title")
-
-        st.success(
-            generated_title
-        )
-
-        st.session_state[
-            "generated_title"
-        ] = generated_title
-
-    # ==================================
-    # Draft Research Question
-    # ==================================
-
-    if all([
-        disease,
-        location,
-        outcome,
-        study_period
-    ]):
-
-        draft_question = (
-            f"What are the "
-            f"{research_goal.lower()} patterns "
-            f"of {disease.lower()} in "
-            f"{location} during "
-            f"{study_period}?"
-        )
-
-        st.markdown(
-            "### Draft Research Question"
-        )
-
-        st.info(
-            draft_question
-        )
-
-        st.session_state[
-            "draft_research_question"
-        ] = draft_question
-
     context = {
+
         "field": analysis["field"]
         if analysis
         else "",
+
         "population": analysis["population"]
         if analysis
         else "",
+
         "research_goal": research_goal,
+
         "study_design": study_design,
+
+        "recommended_design":
+        analysis["recommended_design"]
+        if analysis
+        else "",
+
         "data_source": data_source,
+
         "disease": disease,
+
         "location": location,
+
         "outcome": outcome,
+
         "study_period": study_period,
+
         "keywords": keywords,
-        "generated_title": st.session_state.get(
-            "generated_title",
-            ""
-        ),
-        "draft_research_question": st.session_state.get(
-            "draft_research_question",
-            ""
-        ),
+
     }
 
     st.session_state["research_context"] = context
@@ -598,7 +586,7 @@ Feasibility Level: LOW
     else:
 
         st.warning(
-            "Please complete Disease, Location, Outcome, Study Period and Keywords."
+            "Please complete Disease, Location, Outcome, Study Period and Keywords to continue."
         )
 
     if st.session_state.get(
