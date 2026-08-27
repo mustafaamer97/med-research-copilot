@@ -8,11 +8,16 @@ from modules.idea_validator import (
     validate_manual_idea
 )
 
-
 def render():
 
     st.header(
         "💡 Idea Generator & Validation"
+    )
+
+    # قراءة الـ Context المخزّن في الخطوة الأولى مقدماً لتغذي الاستخدام في كلا الوضعين
+    context = st.session_state.get(
+        "research_context",
+        {}
     )
 
     idea_mode = st.radio(
@@ -28,11 +33,6 @@ def render():
     # ==================================
 
     if idea_mode == "Generate New Research Idea":
-
-        context = st.session_state.get(
-            "research_context",
-            {}
-        )
 
         if not context:
 
@@ -217,21 +217,37 @@ Location:
         with col1:
 
             disease = st.text_input(
-                "Disease / Condition"
+                "Disease / Condition",
+                value=context.get(
+                    "disease",
+                    ""
+                )
             )
 
             location = st.text_input(
-                "Location / Setting"
+                "Location / Setting",
+                value=context.get(
+                    "location",
+                    ""
+                )
             )
 
         with col2:
 
             outcome = st.text_input(
-                "Main Outcome"
+                "Main Outcome",
+                value=context.get(
+                    "outcome",
+                    ""
+                )
             )
 
             period = st.text_input(
-                "Study Period"
+                "Study Period",
+                value=context.get(
+                    "study_period",
+                    ""
+                )
             )
 
         idea_title = st.text_input(
@@ -245,6 +261,10 @@ Location:
 
         research_goal = st.text_input(
             "Research Goal",
+            value=context.get(
+                "research_goal",
+                ""
+            ),
             placeholder="Incidence, Risk factors, Treatment outcome..."
         )
 
@@ -341,10 +361,7 @@ Description:
                 research_goal,
 
                 "context":
-                st.session_state.get(
-                    "research_context",
-                    {}
-                )
+                context
             }
 
             st.session_state[
@@ -360,7 +377,7 @@ Description:
             )
 
     # ==================================
-    # Completion Status
+    # Completion Status & Preview
     # ==================================
 
     if st.session_state.get(
@@ -370,3 +387,12 @@ Description:
         st.success(
             "✅ Step 2 Completed"
         )
+
+        with st.expander(
+            "Selected Research Idea"
+        ):
+            st.json(
+                st.session_state[
+                    "selected_research_idea"
+                ]
+            )
