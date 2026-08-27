@@ -4,6 +4,9 @@ import streamlit as st
 from modules.idea_validator import (
     validate_research_idea
 )
+from modules.medical_knowledge_engine import (
+    analyze_research_topic
+)
 
 
 def recommend_study_design(
@@ -236,6 +239,33 @@ def render():
         ]
     )
 
+    analysis = None
+
+    if disease:
+
+        analysis = analyze_research_topic(
+            topic=disease,
+            goal=research_goal,
+            data_source=data_source if 'data_source' in locals() else DATA_SOURCES[0],
+        )
+
+        st.markdown(
+            "### 🤖 Research Detection"
+        )
+
+        st.success(
+            f"""
+Field:
+{analysis['field']}
+
+Population:
+{analysis['population']}
+
+Recommended Design:
+{analysis['recommended_design']}
+"""
+        )
+
     study_design = st.selectbox(
         "Study Design",
         STUDY_DESIGNS
@@ -279,7 +309,9 @@ Allowed Designs:
             recommend_study_design(
                 data_source,
                 outcome,
-                default_design=study_design
+                default_design=analysis["recommended_design"]
+                if analysis
+                else study_design
             )
         )
 
@@ -300,7 +332,11 @@ Allowed Designs:
 
     keywords = st.text_area(
         "Keywords",
-        value=", ".join(auto_keywords),
+        value=", ".join(
+            analysis["keywords"]
+        )
+        if analysis
+        else "",
         height=120,
     )
 
@@ -364,8 +400,12 @@ Allowed Designs:
         ] = draft_question
 
     context = {
-        "field": "",
-        "population": "",
+        "field": analysis["field"]
+        if analysis
+        else "",
+        "population": analysis["population"]
+        if analysis
+        else "",
         "research_goal": research_goal,
         "study_design": study_design,
         "data_source": data_source,
