@@ -8,7 +8,7 @@ from modules.idea_generator import (
 def render():
 
     st.header(
-        "💡 Research Idea Workspace"
+        "💡 Idea Generator & Validation"
     )
 
     idea_mode = st.radio(
@@ -30,20 +30,36 @@ def render():
             {}
         )
 
-        field = context.get(
-            "field",
-            ""
-        )
+        if not context:
+
+            st.warning(
+                "Please complete Step 1 first."
+            )
+
+            return
 
         st.info(
             f"""
-Field: {context.get('field','')}
+Field:
+{context.get('field','')}
 
-Population: {context.get('population','')}
+Topic:
+{context.get('disease','')}
 
-Study Design: {context.get('study_design','')}
+Goal:
+{context.get('research_goal','')}
 
-Data Source: {context.get('data_source','')}
+Population:
+{context.get('population','')}
+
+Recommended Design:
+{context.get('recommended_design','')}
+
+Data Source:
+{context.get('data_source','')}
+
+Location:
+{context.get('location','')}
 """
         )
 
@@ -51,25 +67,17 @@ Data Source: {context.get('data_source','')}
             "Generate Ideas"
         ):
 
-            if field:
+            with st.spinner(
+                "Generating research ideas..."
+            ):
 
-                with st.spinner(
-                    "Generating research ideas..."
-                ):
-
-                    ideas = generate_research_ideas(
-                        field
-                    )
-
-                st.session_state[
-                    "generated_ideas"
-                ] = ideas
-
-            else:
-
-                st.warning(
-                    "Please select a field first."
+                ideas = generate_research_ideas(
+                    context
                 )
+
+            st.session_state[
+                "generated_ideas"
+            ] = ideas
 
         if st.session_state.get(
             "generated_ideas"
@@ -89,6 +97,50 @@ Data Source: {context.get('data_source','')}
                 "Generated from PubMed / Europe PMC / OpenAlex evidence and research gap analysis."
             )
 
+            st.subheader(
+                "🔬 Idea Validation"
+            )
+
+            validation_score = st.slider(
+                "Feasibility Score",
+                0,
+                100,
+                70
+            )
+
+            novelty_score = st.slider(
+                "Novelty Score",
+                0,
+                100,
+                70
+            )
+
+            clinical_score = st.slider(
+                "Clinical Importance",
+                0,
+                100,
+                70
+            )
+
+            overall_score = int(
+                (
+                    validation_score
+                    +
+                    novelty_score
+                    +
+                    clinical_score
+                )
+                /
+                3
+            )
+
+            st.success(
+                f"""
+Overall Research Idea Score:
+{overall_score}/100
+"""
+            )
+
             if st.button(
                 "Use Generated Ideas"
             ):
@@ -96,14 +148,35 @@ Data Source: {context.get('data_source','')}
                 st.session_state[
                     "selected_research_idea"
                 ] = {
+
                     "title":
-                    "Generated Research Ideas",
+                    "Generated Research Idea",
+
                     "description":
                     st.session_state[
                         "generated_ideas"
                     ],
+
                     "source":
-                    "AI"
+                    "AI",
+
+                    "validation": {
+
+                        "feasibility":
+                        validation_score,
+
+                        "novelty":
+                        novelty_score,
+
+                        "clinical_importance":
+                        clinical_score,
+
+                        "overall":
+                        overall_score
+                    },
+
+                    "context":
+                    context
                 }
 
                 st.session_state[
@@ -175,6 +248,18 @@ Description:
 """
 
         st.info(preview)
+
+        if idea_title and idea_description:
+
+            st.success(
+                "Idea structure looks complete."
+            )
+
+        else:
+
+            st.warning(
+                "Please add title and description."
+            )
 
         if st.button(
             "Save Research Idea"
