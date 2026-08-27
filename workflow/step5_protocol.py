@@ -155,12 +155,12 @@ Description:
         )
 
         st.metric(
-            "Retrieved / Available Papers",
+            "Retrieved Papers",
             len(literature)
         )
 
         st.metric(
-            "Included Screened Evidence Used",
+            "Evidence Used",
             len(literature)
         )
 
