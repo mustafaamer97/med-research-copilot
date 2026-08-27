@@ -15,7 +15,6 @@ from modules.openalex import (
 )
 
 
-
 def search_all_sources(
     query,
     max_results=20
@@ -24,22 +23,24 @@ def search_all_sources(
     papers = []
 
 
-    # =========================
+    # ==================================
     # PubMed
-    # =========================
+    # ==================================
 
     try:
 
         pubmed_papers = get_recent_evidence(
-            query
+            query,
+            max_results=max_results
         )
 
         for paper in pubmed_papers:
 
             paper["source"] = "PubMed"
 
+
         papers.extend(
-            pubmed_papers[:max_results]
+            pubmed_papers
         )
 
 
@@ -51,9 +52,9 @@ def search_all_sources(
 
 
 
-    # =========================
+    # ==================================
     # Europe PMC
-    # =========================
+    # ==================================
 
     try:
 
@@ -61,11 +62,6 @@ def search_all_sources(
             query,
             max_results
         )
-
-
-        for paper in epmc_papers:
-
-            paper["source"] = "Europe PMC"
 
 
         papers.extend(
@@ -81,9 +77,9 @@ def search_all_sources(
 
 
 
-    # =========================
+    # ==================================
     # OpenAlex
-    # =========================
+    # ==================================
 
     try:
 
@@ -91,11 +87,6 @@ def search_all_sources(
             query,
             max_results
         )
-
-
-        for paper in openalex_papers:
-
-            paper["source"] = "OpenAlex"
 
 
         papers.extend(
@@ -111,9 +102,9 @@ def search_all_sources(
 
 
 
-    # =========================
+    # ==================================
     # Remove Duplicates
-    # =========================
+    # ==================================
 
     unique = {}
 
@@ -121,9 +112,15 @@ def search_all_sources(
     for paper in papers:
 
         key = (
+
             paper.get("doi")
-            or paper.get("pmid")
-            or paper.get("title")
+            or
+
+            paper.get("pmid")
+            or
+
+            paper.get("title")
+
         )
 
 
@@ -139,13 +136,13 @@ def search_all_sources(
 
 
 
-    # =========================
+    # ==================================
     # Evidence Ranking
-    # =========================
+    # ==================================
 
     papers = rank_evidence(
         papers
     )
 
 
-    return papers[:max_results]
+    return papers
