@@ -9,8 +9,8 @@ def save_paper(
 
     db = SessionLocal()
 
-    doi = paper.get("doi", "")
-    pmid = paper.get("pmid", "")
+    doi = paper.get("doi") or None
+    pmid = paper.get("pmid") or None
 
     # منع التكرار بواسطة DOI
     if doi:
