@@ -80,6 +80,15 @@ def render():
     # Article Cards
     # ==================================
 
+    papers = sorted(
+        papers,
+        key=lambda x: x.get(
+            "evidence_score",
+            0
+        ),
+        reverse=True
+    )
+
     for idx, paper in enumerate(
         papers
     ):
@@ -274,6 +283,15 @@ def render():
             == "Include"
 
         ]
+
+
+        if len(included_articles) == 0:
+
+            st.error(
+                "Please include at least one article."
+            )
+
+            return
 
 
         st.session_state[
