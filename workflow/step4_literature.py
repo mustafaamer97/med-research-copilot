@@ -267,12 +267,16 @@ def render():
         for p in papers:
             article = {
                 "title": p.get("title", ""),
-                "abstract": p.get("abstract", "No abstract available."),
+                "abstract": p.get("abstract", ""),
                 "pmid": p.get("pmid", ""),
                 "doi": p.get("doi", ""),
                 "authors": p.get("authors", ""),
-                "year": p.get("year", "N/A"),
-                "source": p.get("source", "Unknown"),
+                "year": p.get("year", ""),
+                "journal": p.get("journal", ""),
+                "source": p.get("source", ""),
+                "citation_count": p.get("citation_count", 0),
+                "evidence_level": p.get("evidence_level", ""),
+                "evidence_score": p.get("evidence_score", 0),
                 "decision": "",
                 "exclusion_reason": ""
             }
