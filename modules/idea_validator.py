@@ -274,3 +274,110 @@ def validate_research_idea(
         True
 
     }
+
+
+def validate_idea_quality(
+    context,
+    idea
+):
+
+    result = validate_research_idea(
+        idea,
+        context
+    )
+
+    score = result["score"]
+
+    return {
+
+        "feasibility":
+        score,
+
+        "novelty":
+        score,
+
+        "clinical_importance":
+        score,
+
+        "overall_score":
+        score,
+
+        "notes":
+        result["notes"],
+
+        "validated":
+        True
+    }
+
+
+def validate_manual_idea(
+    disease,
+    outcome,
+    description
+):
+
+    score = 100
+
+    notes = []
+
+
+    if not disease:
+
+        score -= 20
+
+        notes.append(
+            "Disease or research topic is missing."
+        )
+
+
+    if not outcome:
+
+        score -= 20
+
+        notes.append(
+            "Main outcome is not specified."
+        )
+
+
+    if not description:
+
+        score -= 20
+
+        notes.append(
+            "Research description is incomplete."
+        )
+
+
+    score = max(
+        0,
+        score
+    )
+
+
+    if score >= 85:
+
+        quality = "High"
+
+    elif score >= 70:
+
+        quality = "Moderate"
+
+    else:
+
+        quality = "Low"
+
+
+    return {
+
+        "overall_score":
+        score,
+
+        "quality":
+        quality,
+
+        "notes":
+        notes,
+
+        "validated":
+        True
+    }
