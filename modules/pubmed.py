@@ -5,7 +5,9 @@ from modules.evidence_classifier import (
     classify_evidence_level
 )
 
+
 Entrez.email = "mustafaamer97@gmail.com"
+
 
 
 # =====================================
@@ -14,20 +16,23 @@ Entrez.email = "mustafaamer97@gmail.com"
 
 def optimize_query(query):
 
+    if not query:
+        return ""
+
+
     query = query.lower()
 
+
     stop_words = [
+
         "adults",
         "adult",
         "children",
+        "child",
         "patients",
+        "patient",
         "population",
-        "reduction",
-        "improve",
-        "improves",
-        "improved",
-        "compared",
-        "comparison",
+        "group",
         "study",
         "trial",
         "effect",
@@ -39,33 +44,51 @@ def optimize_query(query):
         "of",
         "in",
         "on",
-        "does"
+        "does",
+        "compared",
+        "comparison",
+        "improve",
+        "improved"
+
     ]
+
 
     words = re.findall(
         r"[a-zA-Z0-9\-]+",
         query
     )
 
+
     keywords = []
 
+
     for word in words:
+
 
         if len(word) < 3:
             continue
 
+
         if word in stop_words:
             continue
 
+
         keywords.append(word)
 
+
+
     keywords = list(
-        dict.fromkeys(keywords)
+        dict.fromkeys(
+            keywords
+        )
     )
 
+
     return " AND ".join(
-        keywords[:8]
+        keywords[:10]
     )
+
+
 
 
 # =====================================
@@ -78,25 +101,47 @@ def is_animal_study(article):
 
         mesh_terms = article[
             "MedlineCitation"
-        ]["MeshHeadingList"]
+        ].get(
+            "MeshHeadingList",
+            []
+        )
+
 
         for mesh in mesh_terms:
 
-            if str(
-                mesh["DescriptorName"]
-            ).lower() in [
-                "mice",
-                "rats",
+            name = str(
+                mesh.get(
+                    "DescriptorName",
+                    ""
+                )
+            ).lower()
+
+
+            if name in [
+
                 "animals",
-                "cats",
-                "dogs"
+
+                "mice",
+
+                "rats",
+
+                "dogs",
+
+                "cats"
+
             ]:
+
                 return True
 
+
     except:
+
         pass
 
+
     return False
+
+
 
 
 # =====================================
@@ -107,25 +152,32 @@ def is_low_evidence_study(
     publication_type
 ):
 
-    publication_type = (
+    text = (
         publication_type.lower()
     )
 
-    excluded_types = [
+
+    excluded = [
+
         "editorial",
+
         "letter",
+
         "comment",
+
         "news",
-        "interview",
+
         "biography"
+
     ]
 
-    for item in excluded_types:
 
-        if item in publication_type:
-            return True
+    return any(
+        item in text
+        for item in excluded
+    )
 
-    return False
+
 
 
 # =====================================
@@ -137,51 +189,59 @@ def search_pubmed(
     max_results=10
 ):
 
+
     optimized_query = optimize_query(
         query
     )
 
-    print(
-        "\nOriginal Query:",
-        query
-    )
-
-    print(
-        "\nOptimized Query:",
-        optimized_query
-    )
 
     try:
 
+
         handle = Entrez.esearch(
+
             db="pubmed",
+
             term=optimized_query,
+
             retmax=max_results,
+
             sort="relevance"
+
         )
 
-        results = Entrez.read(handle)
 
-        ids = results["IdList"]
+        results = Entrez.read(
+            handle
+        )
 
-        print(
-            "PubMed IDs:",
+
+        ids = results[
+            "IdList"
+        ]
+
+
+        if not ids:
+
+            return []
+
+
+        return get_details(
             ids
         )
 
-        if not ids:
-            return []
-
-        return get_details(ids)
 
     except Exception as e:
 
+
         print(
-            "PubMed Search Error:",
-            e
+            f"PubMed Search Error: {e}"
         )
 
+
         return []
+
+
 
 
 # =====================================
@@ -190,195 +250,276 @@ def search_pubmed(
 
 def get_details(ids):
 
+
+    papers = []
+
+
     try:
 
+
         handle = Entrez.efetch(
+
             db="pubmed",
+
             id=",".join(ids),
+
             rettype="medline",
+
             retmode="xml"
+
         )
+
 
         records = Entrez.read(
             handle
         )
 
+
     except Exception as e:
 
+
         print(
-            "PubMed Fetch Error:",
-            e
+            f"PubMed Fetch Error: {e}"
         )
+
 
         return []
 
-    papers = []
+
+
 
     for article in records[
+
         "PubmedArticle"
+
     ]:
 
+
         if is_animal_study(article):
+
             continue
 
-        title = ""
 
-        try:
-            title = str(
-                article[
-                    "MedlineCitation"
-                ]["Article"][
-                    "ArticleTitle"
-                ]
+
+        citation = article[
+            "MedlineCitation"
+        ]
+
+
+        article_data = citation[
+            "Article"
+        ]
+
+
+
+        title = str(
+
+            article_data.get(
+                "ArticleTitle",
+                ""
             )
-        except:
-            pass
+
+        )
+
+
 
         abstract = ""
 
         try:
 
-            abstract_parts = article[
-                "MedlineCitation"
-            ]["Article"][
-                "Abstract"
-            ]["AbstractText"]
-
             abstract = " ".join(
+
                 [
-                    str(part)
-                    for part in abstract_parts
+
+                    str(x)
+
+                    for x in article_data[
+                        "Abstract"
+                    ][
+                        "AbstractText"
+                    ]
+
                 ]
+
             )
 
         except:
+
             pass
+
+
 
         pmid = str(
-            article[
-                "MedlineCitation"
-            ]["PMID"]
-        )
 
-        pubmed_url = (
-            f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
-        )
-
-        doi = ""
-
-        try:
-
-            for item in article[
-                "PubmedData"
-            ]["ArticleIdList"]:
-
-                if (
-                    item.attributes.get(
-                        "IdType"
-                    )
-                    == "doi"
-                ):
-                    doi = str(item)
-                    break
-
-        except:
-            pass
-
-        authors = ""
-
-        try:
-
-            author_list = article[
-                "MedlineCitation"
-            ]["Article"][
-                "AuthorList"
+            citation[
+                "PMID"
             ]
 
-            authors = ", ".join(
-                [
-                    f"{a.get('ForeName','')} {a.get('LastName','')}".strip()
-                    for a in author_list
-                    if "LastName" in a
-                ]
-            )
+        )
 
-        except:
-            pass
 
-        journal = ""
-
-        try:
-
-            journal = str(
-                article[
-                    "MedlineCitation"
-                ]["Article"][
-                    "Journal"
-                ]["Title"]
-            )
-
-        except:
-            pass
-
-        year = ""
-
-        try:
-
-            year = str(
-                article[
-                    "MedlineCitation"
-                ]["Article"][
-                    "Journal"
-                ]["JournalIssue"][
-                    "PubDate"
-                ]["Year"]
-            )
-
-        except:
-            pass
 
         publication_type = ""
+
 
         try:
 
             publication_type = ", ".join(
+
                 [
-                    str(p)
-                    for p in article[
-                        "MedlineCitation"
-                    ]["Article"][
+
+                    str(x)
+
+                    for x in article_data[
                         "PublicationTypeList"
                     ]
+
                 ]
+
             )
 
         except:
+
             pass
+
+
 
         if is_low_evidence_study(
             publication_type
         ):
+
             continue
 
-        evidence_level = (
-            classify_evidence_level(
-                publication_type
+
+
+        year = ""
+
+
+        try:
+
+            year = str(
+
+                article_data[
+                    "Journal"
+                ][
+                    "JournalIssue"
+                ][
+                    "PubDate"
+                ].get(
+                    "Year",
+                    ""
+                )
+
             )
+
+        except:
+
+            pass
+
+
+
+        doi = ""
+
+
+        try:
+
+            for item in article[
+
+                "PubmedData"
+
+            ][
+
+                "ArticleIdList"
+
+            ]:
+
+
+                if item.attributes.get(
+                    "IdType"
+                ) == "doi":
+
+                    doi = str(
+                        item
+                    )
+
+                    break
+
+
+        except:
+
+            pass
+
+
+
+        evidence_level = classify_evidence_level(
+            publication_type
         )
 
+
+
         papers.append(
+
             {
-                "pmid": pmid,
-                "title": title,
-                "authors": authors,
-                "journal": journal,
-                "year": year,
-                "doi": doi,
-                "url": pubmed_url,
-                "publication_type": publication_type,
-                "evidence_level": evidence_level,
-                "abstract": abstract
+
+                "pmid":
+                pmid,
+
+
+                "title":
+                title,
+
+
+                "authors":
+                "",
+
+
+                "journal":
+                str(
+
+                    article_data[
+                        "Journal"
+                    ][
+                        "Title"
+                    ]
+
+                ),
+
+
+                "year":
+                year,
+
+
+                "doi":
+                doi,
+
+
+                "url":
+                f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+
+
+                "publication_type":
+                publication_type,
+
+
+                "evidence_level":
+                evidence_level,
+
+
+                "abstract":
+                abstract,
+
+
+                "source":
+                "PubMed",
+
+
+                "citation_count":
+                0
+
             }
+
         )
+
+
 
     return papers
