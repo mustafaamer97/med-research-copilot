@@ -71,7 +71,8 @@ def build_pico(
     population,
     intervention,
     comparison,
-    outcome
+    outcome,
+    study_design=""
 ):
 
     missing = []
@@ -79,11 +80,9 @@ def build_pico(
     if not population:
         missing.append("Population")
 
-    if not intervention:
-        missing.append("Intervention")
-
     if not outcome:
         missing.append("Outcome")
+
 
     if missing:
 
@@ -92,42 +91,107 @@ def build_pico(
             f"Missing: {', '.join(missing)}"
         }
 
-    question = (
-        f"In {population}, "
-        f"does {intervention} "
-        f"compared with {comparison} "
-        f"improve {outcome}?"
-    )
+
+    # =========================
+    # Adaptive Question
+    # =========================
+
+    if (
+        "Cohort" in study_design
+        or
+        "Case-Control" in study_design
+        or
+        "Cross-Sectional" in study_design
+    ):
+
+        question = (
+            f"Among {population}, "
+            f"is {intervention} "
+            f"associated with {outcome}"
+        )
+
+        if comparison:
+
+            question += (
+                f" compared with {comparison}"
+            )
+
+        question += "?"
+
+
+    else:
+
+        question = (
+            f"In {population}, "
+            f"does {intervention}"
+        )
+
+        if comparison:
+
+            question += (
+                f" compared with {comparison}"
+            )
+
+        question += (
+            f" improve {outcome}?"
+        )
+
+
+    # =========================
+    # Search Terms
+    # =========================
 
     search_terms = []
 
-    search_terms.extend(
-        extract_search_terms(
-            population
-        )
-    )
 
-    search_terms.extend(
-        extract_search_terms(
-            intervention
-        )
-    )
+    for item in [
+        population,
+        intervention,
+        comparison,
+        outcome
+    ]:
 
-    search_terms.extend(
-        extract_search_terms(
-            outcome
+        search_terms.extend(
+            extract_search_terms(item)
         )
-    )
+
 
     search_terms = list(
-        dict.fromkeys(search_terms)
+        dict.fromkeys(
+            search_terms
+        )
     )
+
 
     keywords = " AND ".join(
-        search_terms[:8]
+        search_terms[:10]
     )
 
+
     return {
-        "question": question,
-        "keywords": keywords
+
+        "question":
+        question,
+
+        "keywords":
+        keywords,
+
+        "pico": {
+
+            "population":
+            population,
+
+            "intervention":
+            intervention,
+
+            "comparison":
+            comparison,
+
+            "outcome":
+            outcome
+        },
+
+        "study_design":
+        study_design
+
     }
