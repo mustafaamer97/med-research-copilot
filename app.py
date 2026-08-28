@@ -115,7 +115,7 @@ menu = st.sidebar.radio(
         "🏠 Dashboard",
 
         "──────── PHASE 1 ────────",
-        "Step 1: Context & Scope Builder",
+        "Step 1: Research Foundation",
         "Step 2: Idea Generator & Validation",
         "Step 3: Research Question Builder",
 
@@ -153,7 +153,7 @@ if menu == "🏠 Dashboard":
 
     progress_items = [
 
-        ("Context", st.session_state["context_completed"]),
+        ("Foundation", st.session_state["context_completed"]),
         ("Idea", st.session_state["idea_completed"]),
         ("Question", st.session_state["question_completed"]),
         ("Literature", st.session_state["literature_completed"]),
@@ -188,7 +188,7 @@ if menu == "🏠 Dashboard":
                 f"⬜ {name}"
             )
 
-elif menu == "Step 1: Context & Scope Builder":
+elif menu == "Step 1: Research Foundation":
 
     step1_render()
 
