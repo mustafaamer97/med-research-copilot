@@ -4,15 +4,45 @@ from modules.pico_builder import (
     build_pico
 )
 
+# =========================
+# التعديل 3: Dynamic Framework Detection
+# =========================
+def detect_framework(
+    study_design
+):
+    design = (
+        study_design or ""
+    ).lower()
+    if "systematic review" in design:
+        return "PEO"
+    if "meta-analysis" in design:
+        return "PEO"
+    if "diagnostic" in design:
+        return "PIRT"
+    if "prognostic" in design:
+        return "PICOTS"
+    if "prediction" in design:
+        return "PICOTS"
+    if "cross-sectional" in design:
+        return "PEO"
+    if "case-control" in design:
+        return "PEO"
+    if "cohort" in design:
+        return "PEO"
+    return "PICO"
+
 
 def render():
 
+    # =========================
+    # التعديل 1: تغيير عنوان الصفحة
+    # =========================
     st.header(
-        "🧬 Research Question Builder"
+        "🧬 Research Question Framework Builder"
     )
 
     st.info(
-        "Build a structured PICO research question."
+        "Build a structured research question tailored to your study design."
     )
 
     # =========================
@@ -24,7 +54,7 @@ def render():
         {}
     )
 
-    # 1. Extracted Data from Step 2 (Flexible context fallback)
+    # Extracted Data from Step 2 (Flexible context fallback)
     default_topic = (
         idea_data.get("context", {}).get("disease")
         or idea_data.get("disease")
@@ -73,12 +103,40 @@ def render():
         {}
     )
 
+    # =========================
+    # التعديل 2 & 4: عرض Study Design و Recommended Question Framework
+    # =========================
+    study_design = (
+        context.get(
+            "recommended_design"
+        )
+        or context.get(
+            "study_design"
+        )
+        or ""
+    )
+    st.info(
+        f"""
+Study Design:
+{study_design}
+"""
+    )
+
+    framework = detect_framework(
+        study_design
+    )
+    st.success(
+        f"""
+Recommended Question Framework:
+{framework}
+"""
+    )
+
     default_population = context.get(
         "population",
         ""
     )
 
-    # 2. Population default without hardcoded disease prefix
     population_default = default_population
 
     population = st.text_input(
@@ -86,7 +144,7 @@ def render():
         value=population_default
     )
 
-    # 3. Auto-fill Intervention from Step 2
+    # Auto-fill Intervention from Step 2
     if idea_data:
 
         intervention_default = idea_data.get(
@@ -107,6 +165,13 @@ def render():
         "Comparison (C)"
     )
 
+    # =========================
+    # التعديل 5: إضافة Research Factor
+    # =========================
+    research_factor = st.text_input(
+        "Exposure / Risk Factor"
+    )
+
     outcome = st.text_input(
         "Outcome (O)",
         value=default_outcome
@@ -124,7 +189,6 @@ def render():
 
     with c1:
 
-        # 4. Display Topic instead of hardcoded Disease
         st.write(
             f"**Research Topic:** {default_topic}"
         )
@@ -195,18 +259,18 @@ def render():
 
             return
 
-        # Passing study_design with fallback to recommended_design
+        # =========================
+        # التعديل 6: تعديل بناء السؤال عبر تمرير research_goal و study_design
+        # =========================
         result = build_pico(
             population,
             intervention,
             comparison,
             outcome,
+            study_design,
             context.get(
-                "study_design",
-                context.get(
-                    "recommended_design",
-                    ""
-                )
+                "research_goal",
+                ""
             )
         )
 
@@ -254,10 +318,13 @@ def render():
                     f'("{outcome_text}"[Title/Abstract])'
                 )
 
-            if period:
+            # =========================
+            # التعديل 8: إضافة Study Design للبحث بدلاً من Period (التعديل 7)
+            # =========================
+            if study_design:
 
                 pubmed_query_parts.append(
-                    f'("{period}"[Title/Abstract])'
+                    f'("{study_design}")'
                 )
 
             pubmed_query = " AND ".join(
@@ -275,7 +342,7 @@ def render():
                         default_topic,
                         location,
                         outcome_text,
-                        period
+                        study_design
                     ]
                     if x
                 ]
@@ -292,7 +359,7 @@ def render():
                         default_topic,
                         location,
                         outcome_text,
-                        period
+                        study_design
                     ]
                     if x
                 ]
@@ -309,9 +376,11 @@ def render():
                         default_topic,
                         location,
                         intervention,
+                        research_factor,
                         comparison,
                         outcome_text,
-                        population
+                        population,
+                        study_design
                     ]
                     if x
                 ]
@@ -357,6 +426,13 @@ def render():
 
         st.subheader(
             "Research Question"
+        )
+
+        # =========================
+        # التعديل 11: عرض Framework في قسم النتيجة
+        # =========================
+        st.write(
+            f"Framework Used: {framework}"
         )
 
         st.success(
@@ -427,22 +503,21 @@ def render():
                 type="primary"
             ):
 
+                # =========================
+                # التعديل 9 & 10: حفظ Framework والانتقال المباشر إلى Step 4
+                # =========================
                 st.session_state[
                     "research_question"
                 ] = {
                     **result,
+                    "framework": framework,
                     "pico": {
                         "population": population,
                         "intervention": intervention,
+                        "research_factor": research_factor,
                         "comparison": comparison,
                         "outcome": outcome,
-                        "study_design": context.get(
-                            "study_design",
-                            context.get(
-                                "recommended_design",
-                                ""
-                            )
-                        )
+                        "study_design": study_design
                     },
                     "context": context
                 }
@@ -451,8 +526,16 @@ def render():
                     "question_completed"
                 ] = True
 
+                st.session_state[
+                    "current_step"
+                ] = 4
+
                 st.success(
                     "Research Question saved successfully."
+                )
+
+                st.info(
+                    "Next Step: Literature Search"
                 )
 
                 st.rerun()
