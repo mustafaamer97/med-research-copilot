@@ -143,6 +143,40 @@ def render():
         ],
     )
 
+    # ==================================
+    # Dynamic Research Variables
+    # ==================================
+    exposure = ""
+    intervention = ""
+    comparison = ""
+    if research_goal in [
+        "Risk Factors",
+        "Survival Analysis",
+        "Prediction Model"
+    ]:
+        exposure = st.text_input(
+            "Exposure / Prognostic Factor",
+            placeholder="Smoking, Obesity, HER2 Status, Stage..."
+        )
+    elif research_goal == "Treatment Outcomes":
+        intervention = st.text_input(
+            "Intervention",
+            placeholder="Chemotherapy"
+        )
+        comparison = st.text_input(
+            "Comparator",
+            placeholder="Radiotherapy"
+        )
+    elif research_goal == "Diagnostic Accuracy":
+        intervention = st.text_input(
+            "Index Test",
+            placeholder="MRI"
+        )
+        comparison = st.text_input(
+            "Reference Standard",
+            placeholder="Histopathology"
+        )
+
     study_design = st.selectbox("Study Design", STUDY_DESIGNS)
 
     data_source = st.selectbox("Available Data Source", DATA_SOURCES)
@@ -228,6 +262,9 @@ Allowed Designs:
         "field": analysis.get("field", "") if analysis else "",
         "population": analysis.get("population", "") if analysis else "",
         "research_goal": research_goal,
+        "exposure": exposure,
+        "intervention": intervention,
+        "comparison": comparison,
         "study_design": study_design,
         "data_source": data_source,
         "disease": clean_disease,
@@ -245,9 +282,14 @@ Allowed Designs:
 
     context["recommended_design"] = design_result.get("recommended_design", "")
 
-    # عدم استبدال اختيار المستخدم إلا إذا كان "Auto Detect"
+    # إصلاح Auto Detect وتحديد Study Design
     if study_design == "Auto Detect":
-        context["study_design"] = design_result.get("recommended_design", study_design)
+        auto_design = design_result.get(
+            "recommended_design",
+            study_design
+        )
+        context["study_design"] = auto_design
+        st.session_state["study_design"] = auto_design
     else:
         context["study_design"] = study_design
 
@@ -267,6 +309,9 @@ Allowed Designs:
     st.session_state["research_population"] = context.get("population", "")
     st.session_state["research_goal"] = research_goal
     st.session_state["research_outcome"] = clean_outcome
+    st.session_state["research_exposure"] = exposure
+    st.session_state["research_intervention"] = intervention
+    st.session_state["research_comparison"] = comparison
     st.session_state["research_disease"] = clean_disease
 
     validation = validate_research_idea(clean_disease, context)
@@ -333,6 +378,10 @@ Feasibility Level: LOW
         f"""
 **Research Goal:** {research_goal}
 
+**Exposure:** {exposure if exposure else 'Not specified'}
+**Intervention:** {intervention if intervention else 'Not specified'}
+**Comparator:** {comparison if comparison else 'Not specified'}
+
 **Selected Study Design:** {context['study_design']}
 
 **Recommended Study Design:** {context['recommended_design']}
@@ -356,7 +405,6 @@ Feasibility Level: LOW
         clean_location,
         clean_outcome,
         clean_study_period,
-        clean_keywords,
     ]
 
     if clean_disease and data_source:
