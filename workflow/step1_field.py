@@ -417,6 +417,11 @@ Allowed Designs:
 
     context = {
         "research_type": research_type,
+        "research_category": (
+            analysis["research_category"]
+            if analysis
+            else research_type
+        ),
         "field": analysis["field"] if analysis else "",
         "population": target_population,
         "intervention": exposure_or_intervention,
@@ -434,6 +439,15 @@ Allowed Designs:
     }
 
     st.session_state["research_context"] = context
+    st.session_state["research_type"] = research_type
+    st.session_state["disease"] = disease
+    st.session_state["population"] = target_population
+    st.session_state["intervention"] = exposure_or_intervention
+    st.session_state["comparison"] = comparison
+    st.session_state["outcome"] = outcome
+    st.session_state["study_design"] = study_design
+    st.session_state["data_source"] = data_source
+    st.session_state["study_objective"] = study_objective
 
     st.session_state["pico"] = {
 
@@ -447,7 +461,7 @@ Allowed Designs:
     }
 
     validation = validate_research_idea(
-        study_objective,
+        disease,
         context
     )
 
@@ -623,13 +637,15 @@ Feasibility Level: LOW
             type="primary",
         ):
 
-            st.session_state[
-                "context_completed"
-            ] = True
+            st.session_state["context_completed"] = True
+
+            st.session_state["research_context"] = context
 
             st.success(
                 "Research context saved successfully."
             )
+
+            st.rerun()
 
     else:
 
