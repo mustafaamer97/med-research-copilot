@@ -33,6 +33,15 @@ def validate_research_idea(
         ""
     )
 
+    location = context.get(
+        "location",
+        ""
+    )
+    period = context.get(
+        "study_period",
+        ""
+    )
+
 
 
     # =========================
@@ -222,6 +231,18 @@ def validate_research_idea(
 
         notes.append(
             "Primary outcome should be specified."
+        )
+
+
+    if not location:
+        score -= 5
+        notes.append(
+            "Study location is not specified."
+        )
+    if not period:
+        score -= 5
+        notes.append(
+            "Study period is not specified."
         )
 
 
