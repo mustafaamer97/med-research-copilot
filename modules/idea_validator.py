@@ -7,7 +7,6 @@ def validate_research_idea(
 
     notes = []
 
-
     study_design = context.get(
         "study_design",
         ""
@@ -33,8 +32,6 @@ def validate_research_idea(
         ""
     )
 
-
-
     # =========================
     # Study Design Feasibility
     # =========================
@@ -55,7 +52,6 @@ def validate_research_idea(
             "Randomized studies require strong resources, ethical approval and controlled implementation."
         )
 
-
     elif any(
         x in study_design
         for x in [
@@ -72,11 +68,9 @@ def validate_research_idea(
             "Cohort studies require reliable follow-up data."
         )
 
-
     elif "Case-Control" in study_design:
 
         score -= 5
-
 
     elif any(
         x in study_design
@@ -90,8 +84,6 @@ def validate_research_idea(
 
         score += 5
 
-
-
     # =========================
     # Data Source Compatibility
     # =========================
@@ -104,7 +96,6 @@ def validate_research_idea(
 
         score += 10
 
-
     elif data_source in [
         "Survey / Questionnaire",
         "Primary Data"
@@ -116,12 +107,9 @@ def validate_research_idea(
             "Primary data collection increases time and operational requirements."
         )
 
-
     elif data_source == "Published Literature":
 
         score += 5
-
-
 
     # =========================
     # Study Design and Goal Compatibility
@@ -137,7 +125,6 @@ def validate_research_idea(
                 "Survival outcomes usually require longitudinal or time-to-event study designs."
             )
 
-
     if research_goal == "Prediction Model":
 
         if "Prediction" not in study_design:
@@ -147,7 +134,6 @@ def validate_research_idea(
             notes.append(
                 "Prediction research usually requires model development or validation designs."
             )
-
 
     if research_goal == "Risk Factors":
 
@@ -165,8 +151,6 @@ def validate_research_idea(
             notes.append(
                 "Risk factor studies require analytical observational designs."
             )
-
-
 
     # =========================
     # Research Goal Compatibility
@@ -190,7 +174,6 @@ def validate_research_idea(
                 "Epidemiological trends require reliable population-level data."
             )
 
-
     if research_goal == "Diagnostic Accuracy":
 
         if "Diagnostic" not in study_design:
@@ -200,8 +183,6 @@ def validate_research_idea(
             )
 
             score -= 10
-
-
 
     # =========================
     # Completeness
@@ -215,7 +196,6 @@ def validate_research_idea(
             "Target population is not clearly defined."
         )
 
-
     if not outcome:
 
         score -= 10
@@ -223,7 +203,6 @@ def validate_research_idea(
         notes.append(
             "Primary outcome should be specified."
         )
-
 
     if not context.get(
         "intervention"
@@ -235,17 +214,29 @@ def validate_research_idea(
             "Intervention/Exposure not specified."
         )
 
+    comparison_required_designs = [
+        "Randomized",
+        "Clinical Trial",
+        "Case-Control",
+        "Cohort",
+        "Diagnostic",
+        "Prediction"
+    ]
 
-    if not context.get(
-        "comparison"
+    if any(
+        x in study_design
+        for x in comparison_required_designs
     ):
 
-        score -= 5
+        if not context.get(
+            "comparison"
+        ):
 
-        notes.append(
-            "Comparator not specified."
-        )
+            score -= 5
 
+            notes.append(
+                "Comparator not specified."
+            )
 
     if not context.get(
         "objective"
@@ -257,7 +248,38 @@ def validate_research_idea(
             "Study objective is not defined."
         )
 
+    objective = context.get(
+        "objective",
+        ""
+    )
 
+    if objective and len(objective) < 20:
+
+        score -= 5
+
+        notes.append(
+            "Study objective appears too short."
+        )
+
+    pico_score = 0
+
+    for item in [
+        context.get("population"),
+        context.get("intervention"),
+        context.get("outcome")
+    ]:
+
+        if item:
+
+            pico_score += 1
+
+    if pico_score < 3:
+
+        score -= 10
+
+        notes.append(
+            "PICO framework is incomplete."
+        )
 
     # =========================
     # Final Score
@@ -271,7 +293,6 @@ def validate_research_idea(
         )
     )
 
-
     if score >= 85:
 
         feasibility = "High"
@@ -284,13 +305,11 @@ def validate_research_idea(
 
         feasibility = "Low"
 
-
     if score >= 90:
 
         notes.append(
             "Research idea shows strong methodological compatibility."
         )
-
 
     return {
 
@@ -353,7 +372,6 @@ def validate_manual_idea(
 
     notes = []
 
-
     if not disease:
 
         score -= 20
@@ -361,7 +379,6 @@ def validate_manual_idea(
         notes.append(
             "Disease or research topic is missing."
         )
-
 
     if not outcome:
 
@@ -371,7 +388,6 @@ def validate_manual_idea(
             "Main outcome is not specified."
         )
 
-
     if not description:
 
         score -= 20
@@ -380,12 +396,10 @@ def validate_manual_idea(
             "Research description is incomplete."
         )
 
-
     score = max(
         0,
         score
     )
-
 
     if score >= 85:
 
@@ -398,7 +412,6 @@ def validate_manual_idea(
     else:
 
         quality = "Low"
-
 
     return {
 
