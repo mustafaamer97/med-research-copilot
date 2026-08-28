@@ -84,31 +84,8 @@ def generate_research_ideas(
     # Dynamic Evidence Search
     # =========================
 
-    query = f"""
-
-    Topic:
-    {topic}
-
-    Field:
-    {field}
-
-    Goal:
-    {research_goal}
-
-    Outcome:
-    {outcome}
-
-    Population:
-    {population}
-
-    Keywords:
-    {keywords}
-
-    """
-
-
     papers = get_recent_evidence(
-        query
+        research_context
     )
 
 
