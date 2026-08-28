@@ -245,6 +245,21 @@ def render():
         ]
     )
 
+    if research_type == "Primary Research":
+
+        data_source = st.selectbox(
+            "Available Data Source",
+            DATA_SOURCES
+        )
+
+    else:
+
+        data_source = "Published Literature"
+
+        st.info(
+            "Data source automatically set to Published Literature."
+        )
+
     disease = st.text_input(
         "Disease / Research Topic",
         placeholder="Cancer, Diabetes, Stroke..."
@@ -295,11 +310,6 @@ def render():
     study_design = st.selectbox(
         "Study Design",
         STUDY_DESIGNS
-    )
-
-    data_source = st.selectbox(
-        "Available Data Source",
-        DATA_SOURCES
     )
 
     analysis = None
@@ -425,9 +435,20 @@ Allowed Designs:
 
     st.session_state["research_context"] = context
 
+    st.session_state["pico"] = {
+
+        "population": target_population,
+
+        "intervention": exposure_or_intervention,
+
+        "comparison": comparison,
+
+        "outcome": outcome
+    }
+
     validation = validate_research_idea(
-        study_design,
-        data_source
+        study_objective,
+        context
     )
 
     if recommended_design:
@@ -559,11 +580,16 @@ Feasibility Level: LOW
     required_fields = [
         disease,
         target_population,
-        location,
         outcome,
         study_period,
         keywords
     ]
+
+    if research_type == "Primary Research":
+
+        required_fields.append(
+            location
+        )
 
     if disease and data_source:
 
