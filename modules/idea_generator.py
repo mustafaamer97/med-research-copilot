@@ -103,8 +103,10 @@ def generate_research_ideas(
     # Gap Detection
     # =========================
 
+    # تم التحديث لتمرير research_context كاملاً كمعامل ثانٍ
     gap_report = detect_research_gaps(
-        papers
+        papers,
+        research_context
     )
 
 
