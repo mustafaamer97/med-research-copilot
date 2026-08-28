@@ -29,14 +29,19 @@ def render():
     intervention = context.get("intervention", context.get("exposure", ""))
     comparison = context.get("comparison", "")
     outcome = context.get("outcome", "")
+    
+    # ---------------------------------------------------------
+    # الفلتر والقيد الإلزامي لنوع التصميم المختار (Study Design Constraint)
+    # ---------------------------------------------------------
+    selected_design = context.get("study_design", "")
 
-    # توليد سؤال البحث عبر وحدة build_pico
+    # توليد سؤال البحث عبر وحدة build_pico مع تمرير التصميم المكتشف كقيد إلزامي
     question_data = build_pico(
         population=population,
         intervention=intervention,
         comparison=comparison,
         outcome=outcome,
-        study_design=context.get("study_design", ""),
+        study_design=selected_design,
         research_goal=context.get("research_goal", "")
     )
 
@@ -61,7 +66,7 @@ def render():
             "keywords": question_data["keywords"],
             "pico": question_data.get("pico", {}),
             "research_goal": context.get("research_goal", ""),
-            "study_design": context.get("study_design", "")
+            "study_design": selected_design
         }
 
         st.session_state["question_completed"] = True
@@ -69,10 +74,11 @@ def render():
 
         st.success("Research question saved successfully.")
 
-    # عرض حالة الإكمال والدالة عند الحفظ
+    # عرض حالة الإكمال عند الحفظ
     if st.session_state.get("research_question"):
         st.success("✅ Step 2 Completed")
         with st.expander("Saved Research Question Details", expanded=True):
             saved = st.session_state["research_question"]
             st.markdown(f"**Question:** {saved.get('question')}")
+            st.markdown(f"**Target Design:** {saved.get('study_design')}")
             st.markdown(f"**Keywords:** `{saved.get('keywords')}`")
