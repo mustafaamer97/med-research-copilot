@@ -3,14 +3,14 @@ def classify_evidence_level(publication_type):
     if not publication_type:
         return "Unknown"
 
-    publication_type = publication_type.lower()
+    text = publication_type.lower()
 
     # ====================================
     # Level 1
     # ====================================
 
     if any(
-        x in publication_type
+        x in text
         for x in [
             "meta-analysis",
             "meta analysis",
@@ -26,7 +26,7 @@ def classify_evidence_level(publication_type):
     # ====================================
 
     if any(
-        x in publication_type
+        x in text
         for x in [
             "randomized controlled trial",
             "randomized",
@@ -42,7 +42,7 @@ def classify_evidence_level(publication_type):
     # ====================================
 
     if any(
-        x in publication_type
+        x in text
         for x in [
             "cohort",
             "prospective study",
@@ -50,7 +50,9 @@ def classify_evidence_level(publication_type):
             "prognostic study",
             "diagnostic accuracy",
             "diagnostic study",
-            "prediction model"
+            "prediction model",
+            "follow-up",
+            "longitudinal"
         ]
     ):
         return "Level 3"
@@ -60,11 +62,14 @@ def classify_evidence_level(publication_type):
     # ====================================
 
     if any(
-        x in publication_type
+        x in text
         for x in [
             "case-control",
+            "case control",
             "cross-sectional",
-            "observational study"
+            "cross sectional",
+            "observational study",
+            "observational"
         ]
     ):
         return "Level 4"
@@ -74,7 +79,7 @@ def classify_evidence_level(publication_type):
     # ====================================
 
     if any(
-        x in publication_type
+        x in text
         for x in [
             "case series",
             "case report"
