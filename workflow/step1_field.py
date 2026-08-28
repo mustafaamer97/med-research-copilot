@@ -591,6 +591,22 @@ Feasibility Level: LOW
 """
     )
 
+    st.markdown("---")
+
+    st.subheader("🧩 Preliminary PICO")
+
+    st.info(
+        f"""
+P = {target_population}
+
+I = {exposure_or_intervention}
+
+C = {comparison}
+
+O = {outcome}
+"""
+    )
+
     required_fields = [
         disease,
         target_population,
