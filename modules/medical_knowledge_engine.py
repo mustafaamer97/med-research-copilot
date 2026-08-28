@@ -92,13 +92,13 @@ GOAL_DESIGN_MAP = {
         "Cross-Sectional Study",
 
     "risk factors":
-        "Case-Control Study",
+        "Case-Control Study / Cohort Study",
 
     "treatment outcomes":
         "Retrospective Cohort Study",
 
     "survival analysis":
-        "Retrospective Cohort Study",
+        "Prognostic Study",
 
     "diagnostic accuracy":
         "Diagnostic Accuracy Study",
@@ -154,39 +154,11 @@ def detect_population(
     topic,
     data_source,
 ):
-
-    topic = topic.lower()
-
-    if any(
-        x in topic
-        for x in [
-            "cancer",
-            "tumor",
-            "neoplasm",
-        ]
-    ):
-        return (
-            "Patients diagnosed "
-            "with malignant neoplasms"
-        )
-
-    if "diabetes" in topic:
-
-        return (
-            "Patients with diabetes"
-        )
-
-    if "stroke" in topic:
-
-        return (
-            "Patients with stroke"
-        )
-
-    if data_source == "Survey / Questionnaire":
-
-        return "General Population"
-
-    return "Study Population"
+    if not topic:
+        return "Study Population"
+    return (
+        f"Patients with {topic.title()}"
+    )
 
 
 def recommend_design(
