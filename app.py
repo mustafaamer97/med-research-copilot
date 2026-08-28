@@ -147,25 +147,46 @@ menu = st.sidebar.radio(
 
 if menu == "🏠 Dashboard":
 
-    st.write(
-        """
-Welcome to Med Research Copilot.
-
-Workflow:
-
-1. Research Context
-2. Research Idea
-3. Research Question
-4. Literature Review
-5. Protocol Development
-6. Sample Size Calculation
-7. Ethics & IRB
-8. Data Collection
-9. Statistical Analysis
-10. Research Proposal
-11. Manuscript Writing & Journal Selection
-"""
+    st.header(
+        "Research Progress"
     )
+
+    progress_items = [
+
+        ("Context", st.session_state["context_completed"]),
+        ("Idea", st.session_state["idea_completed"]),
+        ("Question", st.session_state["question_completed"]),
+        ("Literature", st.session_state["literature_completed"]),
+        ("Protocol", st.session_state["protocol_completed"]),
+        ("Sample Size", st.session_state["sample_size_completed"]),
+        ("IRB", st.session_state["irb_completed"]),
+        ("Data Collection", st.session_state["data_collection_completed"]),
+        ("Statistics", st.session_state["analysis_completed"]),
+        ("Proposal", st.session_state["proposal_completed"]),
+        ("Manuscript", st.session_state["manuscript_completed"]),
+    ]
+
+    completed = sum(
+        1 for _, done in progress_items if done
+    )
+
+    progress = completed / len(progress_items)
+
+    st.progress(progress)
+
+    for name, done in progress_items:
+
+        if done:
+
+            st.success(
+                f"✅ {name}"
+            )
+
+        else:
+
+            st.info(
+                f"⬜ {name}"
+            )
 
 elif menu == "Step 1: Context & Scope Builder":
 
