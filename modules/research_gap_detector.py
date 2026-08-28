@@ -2,13 +2,35 @@ from collections import Counter
 import re
 
 
-def detect_research_gaps(papers):
+def detect_research_gaps(
+    papers,
+    research_context=None
+):
 
     keyword_counter = Counter()
     publication_types = Counter()
     journals = Counter()
 
     total_papers = len(papers)
+
+    research_context = (
+        research_context or {}
+    )
+    research_goal = str(
+        research_context.get(
+            "research_goal",
+            ""
+        )
+    ).lower()
+    study_design = str(
+        research_context.get(
+            "recommended_design",
+            research_context.get(
+                "study_design",
+                ""
+            )
+        )
+    ).lower()
 
     evidence_scores = []
 
@@ -92,7 +114,7 @@ def detect_research_gaps(papers):
 
 
     # =========================
-    # Evidence Level Analysis
+    # Dynamic Evidence Level Analysis
     # =========================
 
     level1 = levels.get(
@@ -106,17 +128,42 @@ def detect_research_gaps(papers):
     )
 
 
-    if level1 == 0:
-
+    if (
+        "systematic review" in study_design
+        or
+        "meta-analysis" in study_design
+    ):
+        if level1 == 0:
+            gaps.append(
+                "No high-level review evidence identified."
+            )
+    elif (
+        "trial" in study_design
+        or
+        "randomized" in study_design
+    ):
+        if level2 < 3:
+            gaps.append(
+                "Limited clinical trial evidence."
+            )
+    elif (
+        "cohort" in study_design
+    ):
+        if level2 == 0 and level1 == 0:
+            gaps.append(
+                "Limited longitudinal evidence."
+            )
+    elif (
+        "diagnostic" in study_design
+    ):
         gaps.append(
-            "No high-level evidence identified (systematic reviews/meta-analyses)."
+            "Need further validation of diagnostic performance across populations."
         )
-
-
-    if level2 < 3:
-
+    elif (
+        "prognostic" in study_design
+    ):
         gaps.append(
-            "Limited randomized clinical trial evidence."
+            "Need external validation of prognostic findings."
         )
 
 
@@ -183,6 +230,88 @@ def detect_research_gaps(papers):
 
 
 
+    # =========================
+    # Recent Evidence Analysis
+    # =========================
+
+    years = []
+    for paper in papers:
+        year = paper.get(
+            "year"
+        )
+        try:
+            years.append(
+                int(year)
+            )
+        except Exception:
+            pass
+    recent_ratio = 0
+    if years:
+        recent_count = len(
+            [
+                y
+                for y in years
+                if y >= 2020
+            ]
+        )
+        recent_ratio = round(
+            recent_count
+            /
+            len(years)
+            *
+            100,
+            1
+        )
+        if recent_ratio < 30:
+            gaps.append(
+                "Limited recent evidence available."
+            )
+
+
+
+    # =========================
+    # Target Population Analysis
+    # =========================
+
+    population_keywords = [
+        "children",
+        "pediatric",
+        "elderly",
+        "women",
+        "pregnant"
+    ]
+    population_hits = 0
+    for paper in papers:
+        title = paper.get(
+            "title",
+            ""
+        ).lower()
+        if any(
+            x in title
+            for x in population_keywords
+        ):
+            population_hits += 1
+    if (
+        total_papers > 0
+        and
+        population_hits < 3
+    ):
+        gaps.append(
+            "Limited evidence in special populations."
+        )
+
+
+
+    # =========================
+    # Gap Score Calculation
+    # =========================
+
+    gap_score = max(
+        0,
+        100 - len(gaps) * 10
+    )
+
+
     return {
 
 
@@ -211,6 +340,18 @@ def detect_research_gaps(papers):
 
 
         "research_gaps":
-        gaps
+        gaps,
+
+
+        "gap_score":
+        gap_score,
+
+
+        "recent_evidence_ratio":
+        recent_ratio,
+
+
+        "gap_count":
+        len(gaps)
 
     }
