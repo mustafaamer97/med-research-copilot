@@ -67,6 +67,34 @@ def extract_search_terms(text):
     )
 
 
+# =====================================
+# التعديل 1: Framework Detector
+# =====================================
+def detect_framework(
+    study_design=""
+):
+    design = (
+        study_design or ""
+    ).lower()
+    if "systematic review" in design:
+        return "PEO"
+    if "meta-analysis" in design:
+        return "PEO"
+    if "diagnostic" in design:
+        return "PIRT"
+    if "prognostic" in design:
+        return "PICOTS"
+    if "prediction" in design:
+        return "PICOTS"
+    if "cross-sectional" in design:
+        return "PEO"
+    if "case-control" in design:
+        return "PEO"
+    if "cohort" in design:
+        return "PEO"
+    return "PICO"
+
+
 def build_pico(
     population,
     intervention,
@@ -104,121 +132,79 @@ def build_pico(
     ).lower()
 
     # =====================================
-    # Adaptive Medical Question Builder
+    # التعديل 2: تحديد الـ Framework
     # =====================================
-
-    # فحص الدراسات الرصدية مع التعامل المباشر مع حالات غياب الـ Intervention
-    observational_study = any(
-        x.lower() in study_design_str
-        for x in [
-            "cohort",
-            "case-control",
-            "cross-sectional",
-            "observational",
-            "diagnostic",
-            "prognostic"
-        ]
+    framework = detect_framework(
+        study_design
     )
 
     # =====================================
-    # Survival Analysis
+    # التعديل 3: Dynamic Framework Builder
     # =====================================
-
-    if (
-        "survival" in research_goal_str
-        or outcome.lower() == "survival"
-    ):
-
-        question = (
-            f"What factors are associated with "
-            f"survival among {population}?"
-        )
-
-    # =====================================
-    # Risk Factors
-    # =====================================
-
-    elif (
-        "risk" in research_goal_str
-        or "risk factor" in research_goal_str
-    ):
-
-        question = (
-            f"What are the risk factors among "
-            f"{population}?"
-        )
-
-    # =====================================
-    # Incidence
-    # =====================================
-
-    elif "incidence" in research_goal_str:
-
-        question = (
-            f"What is the incidence among "
-            f"{population}?"
-        )
-
-    # =====================================
-    # Prevalence
-    # =====================================
-
-    elif "prevalence" in research_goal_str:
-
-        question = (
-            f"What is the prevalence among "
-            f"{population}?"
-        )
-
-    # =====================================
-    # Observational Designs (Updated Logic)
-    # =====================================
-
-    elif observational_study:
-
-        if intervention.strip():
-
-            question = (
-                f"Among {population}, "
-                f"what is the relationship between "
-                f"{intervention} and {outcome}"
-            )
-
-            if comparison.strip():
-
-                question += (
-                    f" compared with {comparison}"
-                )
-
-            question += "?"
-
-        else:
-
-            question = (
-                f"What factors are associated with "
-                f"{outcome.lower()} among "
-                f"{population}?"
-            )
-
-    # =====================================
-    # Interventional Designs
-    # =====================================
-
-    else:
-
+    if framework == "PICO":
         question = (
             f"In {population}, "
             f"does {intervention}"
         )
-
         if comparison.strip():
-
             question += (
                 f" compared with {comparison}"
             )
-
         question += (
             f" improve {outcome}?"
+        )
+    elif framework == "PEO":
+        if intervention.strip():
+            question = (
+                f"Among {population}, "
+                f"is {intervention} associated with "
+                f"{outcome}?"
+            )
+        else:
+            question = (
+                f"What factors are associated with "
+                f"{outcome} among "
+                f"{population}?"
+            )
+    elif framework == "PIRT":
+        question = (
+            f"How accurately does "
+            f"{intervention} diagnose "
+            f"{outcome} among "
+            f"{population}?"
+        )
+    elif framework == "PICOTS":
+        if "prediction" in study_design_str:
+            question = (
+                f"Can a prediction model estimate "
+                f"{outcome} among "
+                f"{population}?"
+            )
+        else:
+            question = (
+                f"What prognostic factors predict "
+                f"{outcome} among "
+                f"{population}?"
+            )
+    else:
+        question = (
+            f"What is the relationship between "
+            f"{intervention} and {outcome} "
+            f"among {population}?"
+        )
+
+    # =====================================
+    # التعديل 4: دعم Survival و Prognostic بشكل أفضل
+    # =====================================
+    if (
+        "survival" in research_goal_str
+        or
+        "mortality" in outcome.lower()
+    ):
+        question = (
+            f"What factors are associated with "
+            f"survival among "
+            f"{population}?"
         )
 
     # =====================================
@@ -238,18 +224,23 @@ def build_pico(
             extract_search_terms(item)
         )
 
-    search_terms = list(
-        dict.fromkeys(
-            search_terms
+    # =====================================
+    # التعديل 5: تحسين كلمات البحث
+    # =====================================
+    if study_design:
+        search_terms.append(
+            study_design
         )
-    )
-
     keywords = " AND ".join(
-        search_terms[:15]
+        list(
+            dict.fromkeys(
+                search_terms
+            )
+        )[:20]
     )
 
     # =====================================
-    # Return
+    # Return (تعديلات 6، 7، 8)
     # =====================================
 
     return {
@@ -259,6 +250,9 @@ def build_pico(
 
         "keywords":
         keywords,
+
+        "framework":
+        framework,
 
         "pico": {
 
@@ -276,6 +270,9 @@ def build_pico(
         },
 
         "study_design":
+        study_design,
+
+        "recommended_study_design":
         study_design,
 
         "research_goal":
