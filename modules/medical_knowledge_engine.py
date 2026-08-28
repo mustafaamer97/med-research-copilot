@@ -1,6 +1,10 @@
 import re
 
 
+# ============================================================
+# Medical Specialty Detection
+# ============================================================
+
 SPECIALTY_MAP = {
 
     "oncology": [
@@ -80,25 +84,29 @@ SPECIALTY_MAP = {
 }
 
 
+# ============================================================
+# Goal → Default Design
+# ============================================================
+
 GOAL_DESIGN_MAP = {
 
     "trend analysis":
-        "Retrospective Registry-Based Study",
+        "Retrospective Cohort Study",
 
     "incidence":
-        "Retrospective Registry-Based Study",
+        "Retrospective Cohort Study",
 
     "prevalence":
         "Cross-Sectional Study",
 
     "risk factors":
-        "Case-Control Study / Cohort Study",
+        "Case-Control Study",
 
     "treatment outcomes":
         "Retrospective Cohort Study",
 
     "survival analysis":
-        "Prognostic Study",
+        "Retrospective Cohort Study",
 
     "diagnostic accuracy":
         "Diagnostic Accuracy Study",
@@ -111,9 +119,13 @@ GOAL_DESIGN_MAP = {
 }
 
 
+# ============================================================
+# Specialty
+# ============================================================
+
 def detect_specialty(topic):
 
-    text = topic.lower()
+    text = str(topic or "").lower().strip()
 
     for specialty, keywords in SPECIALTY_MAP.items():
 
@@ -126,53 +138,122 @@ def detect_specialty(topic):
     return "General Medicine"
 
 
+# ============================================================
+# Keywords
+# ============================================================
+
 def generate_keywords(topic):
+
+    text = str(topic or "")
 
     words = re.findall(
         r"[A-Za-z0-9\-]+",
-        topic
+        text
     )
 
-    words = [
-        w.strip()
-        for w in words
-        if len(w) > 2
-    ]
+    stop_words = {
+        "the",
+        "and",
+        "with",
+        "from",
+        "among",
+        "study",
+        "patients",
+        "patient",
+        "disease",
+        "effect",
+        "outcome",
+        "outcomes",
+    }
 
-    unique_words = []
+    keywords = []
 
     for word in words:
 
-        if word not in unique_words:
+        word = word.strip().lower()
 
-            unique_words.append(word)
+        if len(word) < 3:
+            continue
 
-    return unique_words[:15]
+        if word in stop_words:
+            continue
 
+        if word not in keywords:
+
+            keywords.append(word)
+
+    return keywords[:15]
+
+
+# ============================================================
+# Population Detection
+# ============================================================
 
 def detect_population(
     topic,
     data_source,
 ):
-    if not topic:
-        return "Study Population"
-    return (
-        f"Patients with {topic.title()}"
-    )
 
+    text = str(topic or "").lower()
+
+    if any(
+        x in text
+        for x in [
+            "cancer",
+            "tumor",
+            "tumour",
+            "neoplasm",
+        ]
+    ):
+
+        return (
+            "Patients diagnosed "
+            "with malignant neoplasms"
+        )
+
+    if "diabetes" in text:
+
+        return (
+            "Patients with diabetes"
+        )
+
+    if "stroke" in text:
+
+        return (
+            "Patients with stroke"
+        )
+
+    if data_source == "Survey / Questionnaire":
+
+        return "General Population"
+
+    return "Study Population"
+
+
+# ============================================================
+# Default Design Recommendation
+# ============================================================
 
 def recommend_design(
     goal,
     data_source,
 ):
 
-    goal = goal.lower()
+    goal_text = str(
+        goal or ""
+    ).lower().strip()
 
-    if goal in GOAL_DESIGN_MAP:
+    source_text = str(
+        data_source or ""
+    ).strip()
 
-        return GOAL_DESIGN_MAP[goal]
+    if goal_text in GOAL_DESIGN_MAP:
 
-    if data_source in [
+        return GOAL_DESIGN_MAP[
+            goal_text
+        ]
+
+    if source_text in [
         "Registry Database",
         "Hospital Records",
         "Electronic Health Records (EHR)",
@@ -182,10 +263,20 @@ def recommend_design(
             "Retrospective Cohort Study"
         )
 
-    return (
-        "Cross-Sectional Study"
-    )
+    if source_text == "Published Literature":
 
+        return "Systematic Review"
+
+    if source_text == "Survey / Questionnaire":
+
+        return "Cross-Sectional Study"
+
+    return "Cross-Sectional Study"
+
+
+# ============================================================
+# Main Research Topic Analysis
+# ============================================================
 
 def analyze_research_topic(
     topic,
@@ -193,10 +284,16 @@ def analyze_research_topic(
     data_source,
 ):
 
+    topic = str(
+        topic or ""
+    ).strip()
+
     return {
 
         "field":
-        detect_specialty(topic),
+        detect_specialty(
+            topic
+        ),
 
         "population":
         detect_population(
@@ -211,5 +308,7 @@ def analyze_research_topic(
         ),
 
         "keywords":
-        generate_keywords(topic),
+        generate_keywords(
+            topic
+        ),
     }
