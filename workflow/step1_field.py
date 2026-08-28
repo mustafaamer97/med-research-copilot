@@ -236,9 +236,31 @@ def render():
         "Research Basics"
     )
 
+    research_type = st.selectbox(
+        "Research Type",
+        [
+            "Primary Research",
+            "Secondary Research",
+            "Evidence Synthesis"
+        ]
+    )
+
     disease = st.text_input(
         "Disease / Research Topic",
         placeholder="Cancer, Diabetes, Stroke..."
+    )
+
+    target_population = st.text_input(
+        "Target Population",
+        placeholder="Breast cancer patients"
+    )
+
+    exposure_or_intervention = st.text_input(
+        "Exposure / Intervention"
+    )
+
+    comparison = st.text_input(
+        "Comparator"
     )
 
     location = st.text_input(
@@ -249,6 +271,10 @@ def render():
     outcome = st.text_input(
         "Primary Outcome",
         placeholder="Incidence, Mortality, Survival, Risk Factors..."
+    )
+
+    study_objective = st.text_area(
+        "Study Objective"
     )
 
     research_goal = st.selectbox(
@@ -380,36 +406,21 @@ Allowed Designs:
     )
 
     context = {
-
-        "field": analysis["field"]
-        if analysis
-        else "",
-
-        "population": analysis["population"]
-        if analysis
-        else "",
-
-        "research_goal": research_goal,
-
-        "study_design": study_design,
-
-        "recommended_design":
-        analysis["recommended_design"]
-        if analysis
-        else "",
-
-        "data_source": data_source,
-
-        "disease": disease,
-
-        "location": location,
-
+        "research_type": research_type,
+        "field": analysis["field"] if analysis else "",
+        "population": target_population,
+        "intervention": exposure_or_intervention,
+        "comparison": comparison,
         "outcome": outcome,
-
+        "objective": study_objective,
+        "research_goal": research_goal,
+        "study_design": study_design,
+        "recommended_design": analysis["recommended_design"] if analysis else "",
+        "data_source": data_source,
+        "disease": disease,
+        "location": location,
         "study_period": study_period,
-
         "keywords": keywords,
-
     }
 
     st.session_state["research_context"] = context
@@ -517,6 +528,16 @@ Feasibility Level: LOW
 
     st.info(
         f"""
+**Research Type:** {research_type}
+
+**Target Population:** {target_population if target_population else 'Not specified'}
+
+**Exposure / Intervention:** {exposure_or_intervention if exposure_or_intervention else 'Not specified'}
+
+**Comparator:** {comparison if comparison else 'Not specified'}
+
+**Study Objective:** {study_objective if study_objective else 'Not specified'}
+
 **Research Goal:** {research_goal}
 
 **Study Design:** {study_design}
@@ -537,6 +558,7 @@ Feasibility Level: LOW
 
     required_fields = [
         disease,
+        target_population,
         location,
         outcome,
         study_period,
@@ -586,7 +608,7 @@ Feasibility Level: LOW
     else:
 
         st.warning(
-            "Please complete Disease, Location, Outcome, Study Period and Keywords to continue."
+            "Please complete Disease, Target Population, Location, Outcome, Study Period and Keywords to continue."
         )
 
     if st.session_state.get(
