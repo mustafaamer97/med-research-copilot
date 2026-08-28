@@ -225,6 +225,39 @@ def validate_research_idea(
         )
 
 
+    if not context.get(
+        "intervention"
+    ):
+
+        score -= 5
+
+        notes.append(
+            "Intervention/Exposure not specified."
+        )
+
+
+    if not context.get(
+        "comparison"
+    ):
+
+        score -= 5
+
+        notes.append(
+            "Comparator not specified."
+        )
+
+
+    if not context.get(
+        "objective"
+    ):
+
+        score -= 5
+
+        notes.append(
+            "Study objective is not defined."
+        )
+
+
 
     # =========================
     # Final Score
