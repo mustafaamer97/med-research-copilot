@@ -1,29 +1,121 @@
 from modules.pubmed import search_pubmed
 
 
-PRIORITY_FILTERS = [
-    "systematic review",
-    "meta-analysis",
-    "randomized controlled trial",
-    "clinical trial",
-    "cohort study",
-    "observational study"
-]
+def build_evidence_filters(research_context):
+    goal = str(
+        research_context.get(
+            "research_goal",
+            ""
+        )
+    ).lower()
+    design = str(
+        research_context.get(
+            "recommended_design",
+            research_context.get(
+                "study_design",
+                ""
+            )
+        )
+    ).lower()
+    if "systematic review" in design:
+        return [
+            "systematic review",
+            "meta-analysis"
+        ]
+    if "meta-analysis" in design:
+        return [
+            "meta-analysis",
+            "systematic review"
+        ]
+    if "diagnostic" in design:
+        return [
+            "diagnostic accuracy",
+            "sensitivity",
+            "specificity",
+            "roc"
+        ]
+    if "prognostic" in design:
+        return [
+            "prognostic",
+            "survival",
+            "mortality",
+            "cox regression"
+        ]
+    if "prediction" in design:
+        return [
+            "prediction model",
+            "risk model",
+            "machine learning"
+        ]
+    if "case-control" in design:
+        return [
+            "case-control study",
+            "risk factors"
+        ]
+    if "cross-sectional" in design:
+        return [
+            "cross-sectional study",
+            "prevalence"
+        ]
+    if "cohort" in design:
+        return [
+            "cohort study",
+            "follow-up"
+        ]
+    if goal.lower() == "survival analysis":
+        return [
+            "survival",
+            "kaplan-meier",
+            "cox regression"
+        ]
+    return [
+        "observational study",
+        "cohort study"
+    ]
 
 
-def get_recent_evidence(topic):
+def get_recent_evidence(research_context):
 
+    topic = research_context.get(
+        "disease",
+        ""
+    )
+    population = research_context.get(
+        "population",
+        ""
+    )
+    outcome = research_context.get(
+        "outcome",
+        ""
+    )
+    filters = build_evidence_filters(
+        research_context
+    )
     all_papers = []
 
-    for study_type in PRIORITY_FILTERS:
+    for study_type in filters:
 
-        query = f"{topic} AND {study_type}"
+        query_parts = [
+            topic,
+            study_type
+        ]
+        if population:
+            query_parts.append(population)
+        if outcome:
+            query_parts.append(outcome)
+        query = " AND ".join(
+            [
+                x
+                for x in query_parts
+                if x
+            ]
+        )
 
         try:
 
             papers = search_pubmed(
                 query,
-                max_results=10
+                max_results=20
             )
 
             all_papers.extend(papers)
@@ -71,4 +163,4 @@ def get_recent_evidence(topic):
         )
     )
 
-    return papers[:20]
+    return papers[:40]
