@@ -9,11 +9,15 @@ def classify_evidence_level(publication_type):
     # Level 1
     # ====================================
 
-    if (
-        "meta-analysis" in publication_type
-        or "systematic review" in publication_type
-        or "network meta-analysis" in publication_type
-        or "umbrella review" in publication_type
+    if any(
+        x in publication_type
+        for x in [
+            "meta-analysis",
+            "meta analysis",
+            "systematic review",
+            "network meta-analysis",
+            "umbrella review"
+        ]
     ):
         return "Level 1"
 
@@ -21,37 +25,47 @@ def classify_evidence_level(publication_type):
     # Level 2
     # ====================================
 
-    if (
-        "randomized controlled trial" in publication_type
-        or "randomized" in publication_type
-        or "clinical trial" in publication_type
-        or "pragmatic trial" in publication_type
+    if any(
+        x in publication_type
+        for x in [
+            "randomized controlled trial",
+            "randomized",
+            "clinical trial",
+            "controlled clinical trial",
+            "pragmatic trial"
+        ]
     ):
         return "Level 2"
 
     # ====================================
-    # Level 3
+    # Level 3 (Cohort, Prospective, Retrospective, Diagnostic, Prognostic, Prediction)
     # ====================================
 
-    if (
-        "cohort" in publication_type
-        or "prospective study" in publication_type
-        or "retrospective study" in publication_type
-        or "prognostic study" in publication_type
+    if any(
+        x in publication_type
+        for x in [
+            "cohort",
+            "prospective study",
+            "retrospective study",
+            "prognostic study",
+            "diagnostic accuracy",
+            "diagnostic study",
+            "prediction model"
+        ]
     ):
         return "Level 3"
 
     # ====================================
-    # Level 4
+    # Level 4 (Case-Control, Cross-Sectional, Observational)
     # ====================================
 
-    if (
-        "case-control" in publication_type
-        or "cross-sectional" in publication_type
-        or "observational study" in publication_type
-        or "diagnostic study" in publication_type
-        or "diagnostic accuracy study" in publication_type
-        or "prediction model" in publication_type
+    if any(
+        x in publication_type
+        for x in [
+            "case-control",
+            "cross-sectional",
+            "observational study"
+        ]
     ):
         return "Level 4"
 
@@ -59,10 +73,29 @@ def classify_evidence_level(publication_type):
     # Level 5
     # ====================================
 
-    if (
-        "case series" in publication_type
-        or "case report" in publication_type
+    if any(
+        x in publication_type
+        for x in [
+            "case series",
+            "case report"
+        ]
     ):
         return "Level 5"
 
     return "Unknown"
+
+
+# ====================================
+# Evidence Score Assessment
+# ====================================
+
+def evidence_score(level):
+    scores = {
+        "Level 1": 100,
+        "Level 2": 90,
+        "Level 3": 75,
+        "Level 4": 60,
+        "Level 5": 40,
+        "Unknown": 20
+    }
+    return scores.get(level, 20)
