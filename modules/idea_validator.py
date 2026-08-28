@@ -1,12 +1,24 @@
+# ============================================================
+# Research Context Validator
+# ============================================================
+
 def validate_research_idea(
     idea,
     context
 ):
 
+    context = context or {}
+
     score = 100
 
     notes = []
 
+    topic = (
+        context.get("research_topic")
+        or context.get("disease")
+        or idea
+        or ""
+    )
 
     study_design = context.get(
         "study_design",
@@ -37,16 +49,73 @@ def validate_research_idea(
         "location",
         ""
     )
-    period = context.get(
-        "study_period",
+
+    study_period = (
+        context.get("study_period")
+        or context.get("period")
+        or ""
+    )
+
+    keywords = context.get(
+        "keywords",
         ""
     )
 
+    # ========================================================
+    # Required Context
+    # ========================================================
 
+    if not topic.strip():
 
-    # =========================
+        score -= 20
+
+        notes.append(
+            "Research topic is not clearly defined."
+        )
+
+    if not population.strip():
+
+        score -= 10
+
+        notes.append(
+            "Target population is not clearly defined."
+        )
+
+    if not outcome.strip():
+
+        score -= 10
+
+        notes.append(
+            "Primary outcome should be specified."
+        )
+
+    if not location.strip():
+
+        score -= 5
+
+        notes.append(
+            "Study location or setting is missing."
+        )
+
+    if not study_period.strip():
+
+        score -= 5
+
+        notes.append(
+            "Study period is missing."
+        )
+
+    if not str(keywords).strip():
+
+        score -= 5
+
+        notes.append(
+            "Research keywords are missing."
+        )
+
+    # ========================================================
     # Study Design Feasibility
-    # =========================
+    # ========================================================
 
     if any(
         x in study_design
@@ -54,16 +123,16 @@ def validate_research_idea(
             "Randomized",
             "Clinical Trial",
             "Adaptive",
-            "Pragmatic"
+            "Pragmatic",
         ]
     ):
 
-        score -= 25
+        score -= 20
 
         notes.append(
-            "Randomized studies require strong resources, ethical approval and controlled implementation."
+            "Interventional studies require adequate resources, "
+            "ethical approval, recruitment and controlled implementation."
         )
-
 
     elif any(
         x in study_design
@@ -71,21 +140,19 @@ def validate_research_idea(
             "Cohort",
             "Longitudinal",
             "Prospective",
-            "Retrospective"
+            "Retrospective",
         ]
     ):
 
-        score -= 10
+        score -= 5
 
         notes.append(
-            "Cohort studies require reliable follow-up data."
+            "Cohort studies require reliable participant or follow-up data."
         )
-
 
     elif "Case-Control" in study_design:
 
-        score -= 5
-
+        score -= 3
 
     elif any(
         x in study_design
@@ -93,59 +160,60 @@ def validate_research_idea(
             "Systematic Review",
             "Meta-Analysis",
             "Scoping Review",
-            "Umbrella Review"
+            "Umbrella Review",
         ]
     ):
 
         score += 5
 
-
-
-    # =========================
+    # ========================================================
     # Data Source Compatibility
-    # =========================
+    # ========================================================
 
     if data_source in [
         "Hospital Records",
         "Registry Database",
-        "Electronic Health Records (EHR)"
+        "Electronic Health Records (EHR)",
     ]:
 
         score += 10
 
-
     elif data_source in [
         "Survey / Questionnaire",
-        "Primary Data"
+        "Primary Data",
     ]:
 
-        score -= 10
+        score -= 5
 
         notes.append(
-            "Primary data collection increases time and operational requirements."
+            "Primary data collection increases operational requirements."
         )
-
 
     elif data_source == "Published Literature":
 
         score += 5
 
-
-
-    # =========================
-    # Study Design and Goal Compatibility
-    # =========================
+    # ========================================================
+    # Goal / Design Compatibility
+    # ========================================================
 
     if research_goal == "Survival Analysis":
 
-        if "Survival" not in study_design and "Cohort" not in study_design:
+        if not any(
+            x in study_design
+            for x in [
+                "Survival",
+                "Cohort",
+                "Prognostic",
+            ]
+        ):
 
             score -= 10
 
             notes.append(
-                "Survival outcomes usually require longitudinal or time-to-event study designs."
+                "Survival analysis usually requires longitudinal "
+                "or time-to-event data."
             )
-
 
     if research_goal == "Prediction Model":
 
@@ -154,9 +222,9 @@ def validate_research_idea(
             score -= 10
 
             notes.append(
-                "Prediction research usually requires model development or validation designs."
+                "Prediction research usually requires a prediction "
+                "model development or validation design."
             )
-
 
     if research_goal == "Risk Factors":
 
@@ -165,100 +233,81 @@ def validate_research_idea(
             for x in [
                 "Cohort",
                 "Case-Control",
-                "Cross-Sectional"
+                "Cross-Sectional",
             ]
         ):
 
             score -= 10
 
             notes.append(
-                "Risk factor studies require analytical observational designs."
+                "Risk-factor research usually requires an analytical "
+                "observational design."
             )
-
-
-
-    # =========================
-    # Research Goal Compatibility
-    # =========================
 
     if research_goal in [
         "Trend Analysis",
         "Incidence",
-        "Prevalence"
+        "Prevalence",
     ]:
 
         if data_source not in [
             "Registry Database",
             "Hospital Records",
-            "Electronic Health Records (EHR)"
+            "Electronic Health Records (EHR)",
         ]:
 
-            score -= 15
+            score -= 10
 
             notes.append(
-                "Epidemiological trends require reliable population-level data."
+                "Incidence, prevalence and trend analyses require "
+                "reliable population or healthcare data."
             )
-
 
     if research_goal == "Diagnostic Accuracy":
 
         if "Diagnostic" not in study_design:
 
-            notes.append(
-                "Diagnostic studies usually require diagnostic accuracy designs."
-            )
-
             score -= 10
 
+            notes.append(
+                "Diagnostic accuracy research should use an appropriate "
+                "diagnostic study design."
+            )
 
+    # ========================================================
+    # Design / Data Source Conflict
+    # ========================================================
 
-    # =========================
-    # Completeness
-    # =========================
+    if (
+        data_source == "Published Literature"
+        and study_design
+        not in [
+            "Systematic Review",
+            "Meta-Analysis",
+            "Network Meta-Analysis",
+            "Scoping Review",
+            "Umbrella Review",
+        ]
+    ):
 
-    if not population:
-
-        score -= 5
+        score -= 15
 
         notes.append(
-            "Target population is not clearly defined."
+            "Published literature as the primary data source is generally "
+            "more compatible with evidence-synthesis designs."
         )
 
-
-    if not outcome:
-
-        score -= 10
-
-        notes.append(
-            "Primary outcome should be specified."
-        )
-
-
-    if not location:
-        score -= 5
-        notes.append(
-            "Study location is not specified."
-        )
-    if not period:
-        score -= 5
-        notes.append(
-            "Study period is not specified."
-        )
-
-
-
-    # =========================
+    # ========================================================
     # Final Score
-    # =========================
+    # ========================================================
 
     score = max(
         0,
         min(
-            score,
+            int(score),
             100
         )
     )
-
 
     if score >= 85:
 
@@ -272,13 +321,11 @@ def validate_research_idea(
 
         feasibility = "Low"
 
-
-    if score >= 90:
+    if not notes:
 
         notes.append(
-            "Research idea shows strong methodological compatibility."
+            "Research context shows good methodological compatibility."
         )
-
 
     return {
 
@@ -292,10 +339,13 @@ def validate_research_idea(
         notes,
 
         "validated":
-        True
-
+        True,
     }
 
+
+# ============================================================
+# Idea Quality Validator
+# ============================================================
 
 def validate_idea_quality(
     context,
@@ -327,9 +377,13 @@ def validate_idea_quality(
         result["notes"],
 
         "validated":
-        True
+        True,
     }
 
+
+# ============================================================
+# Manual Idea Validator
+# ============================================================
 
 def validate_manual_idea(
     disease,
@@ -341,7 +395,6 @@ def validate_manual_idea(
 
     notes = []
 
-
     if not disease:
 
         score -= 20
@@ -349,7 +402,6 @@ def validate_manual_idea(
         notes.append(
             "Disease or research topic is missing."
         )
-
 
     if not outcome:
 
@@ -359,7 +411,6 @@ def validate_manual_idea(
             "Main outcome is not specified."
         )
 
-
     if not description:
 
         score -= 20
@@ -368,12 +419,10 @@ def validate_manual_idea(
             "Research description is incomplete."
         )
 
-
     score = max(
         0,
         score
     )
-
 
     if score >= 85:
 
@@ -387,7 +436,6 @@ def validate_manual_idea(
 
         quality = "Low"
 
-
     return {
 
         "overall_score":
@@ -400,5 +448,5 @@ def validate_manual_idea(
         notes,
 
         "validated":
-        True
+        True,
     }
