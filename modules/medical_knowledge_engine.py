@@ -1,8 +1,6 @@
 import re
 
-
 SPECIALTY_MAP = {
-
     "oncology": [
         "cancer",
         "tumor",
@@ -14,7 +12,6 @@ SPECIALTY_MAP = {
         "carcinoma",
         "sarcoma",
     ],
-
     "cardiology": [
         "heart",
         "cardiac",
@@ -23,7 +20,6 @@ SPECIALTY_MAP = {
         "heart failure",
         "hypertension",
     ],
-
     "neurology": [
         "stroke",
         "epilepsy",
@@ -32,7 +28,6 @@ SPECIALTY_MAP = {
         "alzheimer",
         "neurological",
     ],
-
     "endocrinology": [
         "diabetes",
         "thyroid",
@@ -40,21 +35,18 @@ SPECIALTY_MAP = {
         "obesity",
         "insulin",
     ],
-
     "pulmonology": [
         "asthma",
         "copd",
         "lung disease",
         "respiratory",
     ],
-
     "nephrology": [
         "kidney",
         "renal",
         "ckd",
         "dialysis",
     ],
-
     "gastroenterology": [
         "hepatitis",
         "liver",
@@ -62,14 +54,12 @@ SPECIALTY_MAP = {
         "gastric",
         "ibd",
     ],
-
     "psychiatry": [
         "depression",
         "anxiety",
         "mental health",
         "psychiatric",
     ],
-
     "infectious diseases": [
         "covid",
         "infection",
@@ -79,35 +69,15 @@ SPECIALTY_MAP = {
     ],
 }
 
-
 GOAL_DESIGN_MAP = {
-
-    "trend analysis":
-        "Retrospective Registry-Based Study",
-
-    "incidence":
-        "Retrospective Registry-Based Study",
-
-    "prevalence":
-        "Cross-Sectional Study",
-
-    "risk factors":
-        "Case-Control Study",
-
-    "treatment outcomes":
-        "Retrospective Cohort Study",
-
-    "survival analysis":
-        "Retrospective Cohort Study",
-
-    "diagnostic accuracy":
-        "Diagnostic Accuracy Study",
-
-    "prediction model":
-        "Prediction Model Study",
-
-    "systematic review":
-        "Systematic Review",
+    "trend analysis": "Retrospective Registry-Based Study",
+    "incidence": "Retrospective Registry-Based Study",
+    "prevalence": "Cross-Sectional Study",
+    "treatment outcomes": "Retrospective Cohort Study",
+    "survival analysis": "Retrospective Cohort Study",
+    "diagnostic accuracy": "Diagnostic Accuracy Study",
+    "prediction model": "Prediction Model Study",
+    "systematic review": "Systematic Review",
 }
 
 
@@ -196,6 +166,22 @@ def recommend_design(
 
     goal = goal.lower()
 
+    if goal == "risk factors":
+
+        if data_source in [
+            "Hospital Records",
+            "Electronic Health Records (EHR)",
+            "Registry Database"
+        ]:
+
+            return (
+                "Retrospective Cohort Study"
+            )
+
+        return (
+            "Case-Control Study"
+        )
+
     if goal in GOAL_DESIGN_MAP:
 
         return GOAL_DESIGN_MAP[goal]
@@ -217,16 +203,25 @@ def recommend_design(
 
 def detect_research_category(
     data_source,
-    goal
+    goal,
+    study_design
 ):
 
     goal = goal.lower()
 
-    if goal == "systematic review":
+    if study_design in [
+        "Systematic Review",
+        "Meta-Analysis",
+        "Network Meta-Analysis",
+        "Scoping Review",
+        "Umbrella Review"
+    ]:
+
         return "Evidence Synthesis"
 
     if data_source == "Published Literature":
-        return "Evidence Synthesis"
+
+        return "Secondary Research"
 
     return "Primary Research"
 
@@ -257,7 +252,11 @@ def analyze_research_topic(
         "research_category":
         detect_research_category(
             data_source,
-            goal
+            goal,
+            recommend_design(
+                goal,
+                data_source
+            )
         ),
 
         "keywords":
