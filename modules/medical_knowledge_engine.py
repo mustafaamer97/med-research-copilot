@@ -215,6 +215,22 @@ def recommend_design(
     )
 
 
+def detect_research_category(
+    data_source,
+    goal
+):
+
+    goal = goal.lower()
+
+    if goal == "systematic review":
+        return "Evidence Synthesis"
+
+    if data_source == "Published Literature":
+        return "Evidence Synthesis"
+
+    return "Primary Research"
+
+
 def analyze_research_topic(
     topic,
     goal,
@@ -236,6 +252,12 @@ def analyze_research_topic(
         recommend_design(
             goal,
             data_source,
+        ),
+
+        "research_category":
+        detect_research_category(
+            data_source,
+            goal
         ),
 
         "keywords":
