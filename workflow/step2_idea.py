@@ -166,83 +166,58 @@ Location:
                 "Select Best Research Idea"
             ):
 
+                # تجهيز قاموس الفكرة المختارة
+                raw_generated_idea = st.session_state["generated_ideas"]
+                selected_idea = {
+                    "title": st.session_state.get("generated_title", "AI Generated Research Idea"),
+                    "rationale": raw_generated_idea.get("ideas", ""),
+                    "source": "AI",
+                    "validation": validation,
+                    "research_goal": context.get("research_goal", ""),
+                    "evidence_count": raw_generated_idea.get("evidence_count", 0),
+                    "gap_analysis": raw_generated_idea.get("gap_analysis", {}),
+                    "disease": context.get("disease", ""),
+                    "population": context.get("population", ""),
+                    "outcome": context.get("outcome", ""),
+                    "study_design": context.get("study_design", ""),
+                    "data_source": context.get("data_source", ""),
+                    "field": context.get("field", ""),
+                }
+
+                # التعديل المطلوب لـ st.session_state["selected_research_idea"]
                 st.session_state[
                     "selected_research_idea"
                 ] = {
+                    **selected_idea,
 
-                    "title":
-                    st.session_state.get(
-                        "generated_title",
-                        "AI Generated Research Idea"
-                    ),
+                    "title": selected_idea.get("title", ""),
+                    "description": selected_idea.get("rationale", ""),
 
-                    "description":
-                    st.session_state[
-                        "generated_ideas"
-                    ]["ideas"],
+                    "population": selected_idea.get("population", ""),
+                    "exposure_or_intervention": selected_idea.get("exposure_or_intervention", ""),
+                    "comparison": selected_idea.get("comparison", ""),
+                    "primary_outcome": selected_idea.get("primary_outcome", ""),
 
-                    "source":
-                    "AI",
-
-                    "validation":
-                    validation,
-
-                    "research_goal":
-                    context.get(
-                        "research_goal",
-                        ""
-                    ),
-
-                    "evidence_count":
-                    st.session_state[
-                        "generated_ideas"
-                    ].get(
-                        "evidence_count",
-                        0
-                    ),
-
-                    "gap_analysis":
-                    st.session_state[
-                        "generated_ideas"
-                    ].get(
-                        "gap_analysis",
+                    "location": st.session_state.get(
+                        "research_context",
                         {}
+                    ).get(
+                        "location",
+                        ""
                     ),
 
-                    "context":
-                    context,
+                    "study_period": st.session_state.get(
+                        "research_context",
+                        {}
+                    ).get(
+                        "study_period",
+                        ""
+                    ),
 
-                    # التعديل 4: إضافة مفاتيح السياق المباشرة لـ Step 3
-                    "disease":
-                    context.get(
-                        "disease",
-                        ""
-                    ),
-                    "population":
-                    context.get(
-                        "population",
-                        ""
-                    ),
-                    "outcome":
-                    context.get(
-                        "outcome",
-                        ""
-                    ),
-                    "study_design":
-                    context.get(
-                        "study_design",
-                        ""
-                    ),
-                    "data_source":
-                    context.get(
-                        "data_source",
-                        ""
-                    ),
-                    "field":
-                    context.get(
-                        "field",
-                        ""
-                    ),
+                    "context": st.session_state.get(
+                        "research_context",
+                        {}
+                    )
                 }
 
                 st.session_state[
@@ -252,10 +227,9 @@ Location:
                 # التعديل 5: إضافة selected_idea_title في session_state
                 st.session_state[
                     "selected_idea_title"
-                ] = st.session_state.get(
-                    "generated_title",
-                    "AI Generated Research Idea"
-                )
+                ] = st.session_state[
+                    "selected_research_idea"
+                ]["title"]
 
                 st.session_state[
                     "current_step"
@@ -378,64 +352,56 @@ Description:
                 "Save Research Idea"
             ):
 
+                selected_idea = {
+                    "title": idea_title,
+                    "rationale": idea_description,
+                    "source": "manual",
+                    "disease": disease,
+                    "location": location,
+                    "primary_outcome": outcome,
+                    "period": period,
+                    "validation": manual_validation,
+                    "research_goal": research_goal,
+                    "population": st.session_state.get("population", ""),
+                    "study_design": st.session_state.get("study_design", ""),
+                    "data_source": st.session_state.get("data_source", ""),
+                    "field": st.session_state.get("field", ""),
+                }
+
+                # التعديل المطلوب لـ st.session_state["selected_research_idea"]
                 st.session_state[
                     "selected_research_idea"
                 ] = {
+                    **selected_idea,
 
-                    "title":
-                    idea_title,
+                    "title": selected_idea.get("title", ""),
+                    "description": selected_idea.get("rationale", ""),
 
-                    "description":
-                    idea_description,
+                    "population": selected_idea.get("population", ""),
+                    "exposure_or_intervention": selected_idea.get("exposure_or_intervention", ""),
+                    "comparison": selected_idea.get("comparison", ""),
+                    "primary_outcome": selected_idea.get("primary_outcome", ""),
 
-                    "source":
-                    "manual",
-
-                    "disease":
-                    disease,
-
-                    "location":
-                    location,
-
-                    "outcome":
-                    outcome,
-
-                    "period":
-                    period,
-
-                    "validation":
-                    manual_validation,
-
-                    "research_goal":
-                    research_goal,
-
-                    "context":
-                    st.session_state.get(
+                    "location": st.session_state.get(
                         "research_context",
                         {}
+                    ).get(
+                        "location",
+                        ""
                     ),
 
-                    # التعديل 7: إضافة الحقول المطلوبة لـ Step 3 في القسم اليدوي
-                    "population":
-                    st.session_state.get(
-                        "population",
+                    "study_period": st.session_state.get(
+                        "research_context",
+                        {}
+                    ).get(
+                        "study_period",
                         ""
                     ),
-                    "study_design":
-                    st.session_state.get(
-                        "study_design",
-                        ""
-                    ),
-                    "data_source":
-                    st.session_state.get(
-                        "data_source",
-                        ""
-                    ),
-                    "field":
-                    st.session_state.get(
-                        "field",
-                        ""
-                    ),
+
+                    "context": st.session_state.get(
+                        "research_context",
+                        {}
+                    )
                 }
 
                 st.session_state[
