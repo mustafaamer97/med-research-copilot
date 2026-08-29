@@ -24,44 +24,74 @@ def render():
         "🔎 Literature Search & Evidence Review"
     )
 
-    # 1) قراءة البيانات من Context
-    context = get_context()
+    # 1) قراءة البيانات من Context وجلب البيانات الأساسية
+    context_data = get_context()
 
-    # 5) إظهار ملخص الخطوات السابقة في بداية الصفحة
-    with st.expander(
-        "Research Summary",
-        expanded=False
-    ):
-        st.write(
-            f"Topic: {context.get('disease', '')}"
-        )
-        st.write(
-            f"Population: {context.get('population', '')}"
-        )
-        st.write(
-            f"Outcome: {context.get('outcome', '')}"
-        )
-        st.write(
-            f"Design: {context.get('study_design', '')}"
-        )
-        st.write(
-            f"Question: {context.get('research_question', '')}"
-        )
+    question_data = st.session_state.get(
+        "research_question",
+        context_data.get("research_question_data", {})
+    )
 
-    question_data = context.get(
-        "research_question_data",
-        {}
-    ) if isinstance(context.get("research_question_data"), dict) else {}
+    context = question_data.get(
+        "context",
+        st.session_state.get(
+            "research_context",
+            context_data
+        )
+    )
+    disease = context.get(
+        "disease",
+        ""
+    )
+    location = context.get(
+        "location",
+        ""
+    )
+    study_period = context.get(
+        "study_period",
+        ""
+    )
+    study_design = context.get(
+        "study_design",
+        ""
+    )
+    research_goal = context.get(
+        "research_goal",
+        ""
+    )
 
     pico_data = question_data.get(
         "pico",
         {}
     )
 
-    population = context.get("population") or pico_data.get("population", "")
-    intervention = context.get("intervention") or pico_data.get("intervention", "")
-    comparison = context.get("comparison") or pico_data.get("comparison", "")
-    outcome = context.get("outcome") or pico_data.get("outcome", "")
+    population = pico_data.get(
+        "population",
+        context.get("population", "")
+    )
+
+    intervention = pico_data.get(
+        "intervention",
+        context.get("intervention", "")
+    )
+
+    comparison = pico_data.get(
+        "comparison",
+        context.get("comparison", "")
+    )
+
+    outcome = pico_data.get(
+        "outcome",
+        context.get("outcome", "")
+    )
+
+    if not question_data and not context:
+
+        st.warning(
+            "Please complete Step 3 first."
+        )
+
+        return
 
     # ==========================================
     # Research Question
@@ -71,13 +101,39 @@ def render():
         "Research Question"
     )
 
-    research_q = (
-        context.get("research_question") 
-        or question_data.get("question") 
-        or "No research question found."
+    st.info(
+        question_data.get(
+            "question",
+            context.get("research_question", "No research question found.")
+        )
     )
 
-    st.info(research_q)
+    # 3) إضافة بطاقة Context Summary
+    with st.expander(
+        "📋 Research Context",
+        expanded=True
+    ):
+        st.write(
+            f"**Disease:** {disease}"
+        )
+        st.write(
+            f"**Population:** {population}"
+        )
+        st.write(
+            f"**Outcome:** {outcome}"
+        )
+        st.write(
+            f"**Location:** {location}"
+        )
+        st.write(
+            f"**Period:** {study_period}"
+        )
+        st.write(
+            f"**Design:** {study_design}"
+        )
+        st.write(
+            f"**Goal:** {research_goal}"
+        )
 
     # ==========================================
     # PICO Framework
@@ -100,17 +156,15 @@ def render():
     # Search Queries
     # ==========================================
 
-    # 2) استخدام البحث المحفوظ من Step3
     default_query = (
         context.get("master_query")
         or context.get("pubmed_query")
-        or question_data.get("master_query")
-        or ""
+        or question_data.get("master_query", "")
     )
 
     pubmed_query = question_data.get(
         "pubmed_query",
-        context.get("pubmed_query", "")
+        ""
     )
 
     europe_pmc_query = question_data.get(
@@ -123,14 +177,23 @@ def render():
         ""
     )
 
+    master_query = question_data.get(
+        "master_query",
+        default_query
+    )
+
+    # 2) استبدال بناء pico_query
     pico_query = " ".join(
         [
             x
             for x in [
+                disease,
                 population,
                 intervention,
                 comparison,
-                outcome
+                outcome,
+                location,
+                study_period
             ]
             if x
         ]
@@ -150,13 +213,15 @@ def render():
     )
 
     with tab1:
+
         query = st.text_area(
             "Search Query",
-            value=default_query,
+            value=master_query if master_query else default_query,
             height=120
         )
 
     with tab2:
+
         pubmed_query = st.text_area(
             "PubMed Query",
             value=pubmed_query,
@@ -164,6 +229,7 @@ def render():
         )
 
     with tab3:
+
         europe_pmc_query = st.text_area(
             "Europe PMC Query",
             value=europe_pmc_query,
@@ -171,6 +237,7 @@ def render():
         )
 
     with tab4:
+
         openalex_query = st.text_area(
             "OpenAlex Query",
             value=openalex_query,
@@ -230,12 +297,20 @@ def render():
 
             search_query = query
 
+            # 4) تحسين Auto Search
             if search_mode == "Auto (Recommended)":
 
-                search_query = (
-                    f"{query} "
-                    f"{pico_query}"
-                ).strip()
+                search_query = " ".join(
+                    [
+                        disease,
+                        population,
+                        intervention,
+                        comparison,
+                        outcome,
+                        location,
+                        study_period
+                    ]
+                )
 
             papers = search_all_sources(
                 search_query,
@@ -246,23 +321,42 @@ def render():
             "literature_search"
         ] = papers
 
+        # 6) إضافة بيانات الأدلة للخطوة الخامسة
+        st.session_state[
+            "evidence_pool"
+        ] = papers
+        st.session_state[
+            "selected_papers"
+        ] = papers
+
         st.session_state[
             "retrieved_papers"
         ] = papers
 
+        # 5) تخزين كل شيء للخطوة الخامسة
         st.session_state[
             "search_metadata"
         ] = {
-
             "query":
             search_query,
-
+            "disease":
+            disease,
+            "population":
+            population,
+            "outcome":
+            outcome,
+            "location":
+            location,
+            "study_period":
+            study_period,
+            "study_design":
+            study_design,
+            "research_goal":
+            research_goal,
             "pico":
             pico_data,
-
             "number_results":
             len(papers),
-
             "sources":
             [
                 "PubMed",
@@ -271,7 +365,6 @@ def render():
             ]
         }
 
-        # 3) حفظ نتائج البحث داخل Context
         update_context(
             evidence_count=len(papers),
             retrieved_papers=papers,
@@ -290,7 +383,7 @@ def render():
 
     papers = st.session_state.get(
         "literature_search",
-        context.get("retrieved_papers", [])
+        []
     )
 
     if not papers:
@@ -315,7 +408,6 @@ def render():
             "research_gap_analysis"
         ] = analysis
 
-        # 4) حفظ إحصائيات الأدلة في Context
         gap_results = analysis if isinstance(analysis, dict) else {}
         update_context(
             evidence_studies=gap_results.get(
@@ -655,7 +747,7 @@ def render():
 
     if st.session_state.get(
         "literature_completed"
-    ) or context.get("literature_search_completed"):
+    ):
 
         st.success(
             "✅ Step 4 Completed"
