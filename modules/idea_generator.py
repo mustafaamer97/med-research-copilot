@@ -27,6 +27,14 @@ def generate_research_ideas(
         )
     )
 
+    # التحقق من وجود المفهوم/المرض الأساسي
+    if not topic:
+
+        return {
+            "status": "error",
+            "message": "Research topic missing."
+        }
+
     field = research_context.get(
         "field",
         research_context.get(
@@ -186,6 +194,9 @@ Medical Field:
 
 Research Goal:
 {research_goal}
+
+Research Category:
+{research_context.get('research_category','')}
 
 Population:
 {population}
