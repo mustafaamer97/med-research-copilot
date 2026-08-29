@@ -1,12 +1,25 @@
 import streamlit as st
 
-from modules.idea_validator import (
-    validate_research_idea
-)
-from modules.medical_knowledge_engine import (
-    analyze_research_topic
-)
+from modules.idea_validator import validate_research_idea
+from modules.medical_knowledge_engine import analyze_research_topic
 
+RESEARCH_TYPES = [
+    "Primary Research",
+    "Secondary Research",
+    "Evidence Synthesis"
+]
+
+RESEARCH_GOALS = [
+    "Trend Analysis",
+    "Incidence",
+    "Prevalence",
+    "Risk Factors",
+    "Treatment Outcomes",
+    "Survival Analysis",
+    "Diagnostic Accuracy",
+    "Prediction Model",
+    "Systematic Review",
+]
 
 STUDY_DESIGNS = [
     "Auto Detect",
@@ -55,7 +68,6 @@ DATA_SOURCES = [
 
 VALID_DESIGNS = {
     "Registry Database": [
-        "Auto Detect",
         "Registry-Based Study",
         "Cross-Sectional Study",
         "Case-Control Study",
@@ -64,72 +76,111 @@ VALID_DESIGNS = {
         "Interrupted Time Series",
     ],
     "Hospital Records": [
-        "Auto Detect",
         "Cross-Sectional Study",
         "Case-Control Study",
         "Retrospective Cohort Study",
         "Case Series",
     ],
     "Electronic Health Records (EHR)": [
-        "Auto Detect",
         "Retrospective Cohort Study",
         "Prediction Model Study",
         "Diagnostic Accuracy Study",
     ],
     "Survey / Questionnaire": [
-        "Auto Detect",
         "Survey Study",
         "Cross-Sectional Study",
         "Mixed Methods Study",
     ],
     "Published Literature": [
-        "Auto Detect",
         "Systematic Review",
         "Meta-Analysis",
         "Network Meta-Analysis",
         "Scoping Review",
     ],
-    "Mixed Sources": STUDY_DESIGNS,
+    "Mixed Sources": [d for d in STUDY_DESIGNS if d != "Auto Detect"],
 }
 
+# 4. دالة مساعدة لتقييم جدوى البحث
+def render_feasibility(validation):
+    st.markdown("---")
+    st.subheader("Research Feasibility Assessment")
+
+    if not validation:
+        st.info("Complete Disease, Outcome, and select a valid Study Design to view Feasibility Score.")
+        return
+
+    score = validation.get("score", 0)
+    level = validation.get("feasibility", "Unknown").upper()
+
+    if level == "HIGH":
+        st.success(f"Feasibility Score: {score}/100 | Feasibility Level: HIGH")
+    elif level == "MODERATE":
+        st.warning(f"Feasibility Score: {score}/100 | Feasibility Level: MODERATE")
+    else:
+        st.error(f"Feasibility Score: {score}/100 | Feasibility Level: LOW")
+
+    if validation.get("notes"):
+        with st.expander("Why was this score assigned?"):
+            for note in validation["notes"]:
+                st.write(f"• {note}")
+
+# 5. دالة لبناء قاموس السياق (Context Builder)
+def build_context(
+    research_type, analysis, target_population, exposure_or_intervention,
+    comparison, outcome, study_objective, research_goal, study_design,
+    recommended_design, data_source, disease, location, study_period, keywords
+):
+    return {
+        "research_type": research_type,
+        "research_category": (
+            analysis["research_category"] if analysis else research_type
+        ),
+        "field": analysis["field"] if analysis else "",
+        "population": target_population,
+        "intervention": exposure_or_intervention,
+        "comparison": comparison,
+        "outcome": outcome,
+        "objective": study_objective,
+        "research_goal": research_goal,
+        "study_design": study_design,
+        "recommended_design": recommended_design if recommended_design else "",
+        "data_source": data_source,
+        "disease": disease,
+        "location": location,
+        "study_period": study_period,
+        "keywords": keywords,
+        "pico": {
+            "population": target_population,
+            "intervention": exposure_or_intervention,
+            "comparison": comparison,
+            "outcome": outcome,
+            "topic": disease,
+            "goal": research_goal,
+            "study_design": study_design,
+        },
+    }
 
 def render():
-
     saved_context = st.session_state.get("research_context", {})
 
     st.header("🧭 Research Context & Scope")
+    st.write("Define your research area before building the research question.")
 
-    st.write(
-        "Define your research area before building the research question."
-    )
+    st.subheader("Research Basics")
 
-    st.subheader(
-        "Research Basics"
-    )
+    # استرجاع Research Type
+    saved_type = saved_context.get("research_type", RESEARCH_TYPES[0])
+    type_index = RESEARCH_TYPES.index(saved_type) if saved_type in RESEARCH_TYPES else 0
+    research_type = st.selectbox("Research Type", RESEARCH_TYPES, index=type_index)
 
-    research_type = st.selectbox(
-        "Research Type",
-        [
-            "Primary Research",
-            "Secondary Research",
-            "Evidence Synthesis"
-        ]
-    )
-
+    # استرجاع Data Source
     if research_type == "Primary Research":
-
-        data_source = st.selectbox(
-            "Available Data Source",
-            DATA_SOURCES
-        )
-
+        saved_source = saved_context.get("data_source", DATA_SOURCES[0])
+        source_index = DATA_SOURCES.index(saved_source) if saved_source in DATA_SOURCES else 0
+        data_source = st.selectbox("Available Data Source", DATA_SOURCES, index=source_index)
     else:
-
         data_source = "Published Literature"
-
-        st.info(
-            "Data source automatically set to Published Literature."
-        )
+        st.info("Data source automatically set to Published Literature.")
 
     disease = st.text_input(
         "Disease / Research Topic",
@@ -137,51 +188,34 @@ def render():
         placeholder="Cancer, Diabetes, Stroke..."
     )
 
-    research_goal = st.selectbox(
-        "Research Goal",
-        [
-            "Trend Analysis",
-            "Incidence",
-            "Prevalence",
-            "Risk Factors",
-            "Treatment Outcomes",
-            "Survival Analysis",
-            "Diagnostic Accuracy",
-            "Prediction Model",
-            "Systematic Review",
-        ]
-    )
+    # استرجاع Research Goal
+    saved_goal = saved_context.get("research_goal", RESEARCH_GOALS[0])
+    goal_index = RESEARCH_GOALS.index(saved_goal) if saved_goal in RESEARCH_GOALS else 0
+    research_goal = st.selectbox("Research Goal", RESEARCH_GOALS, index=goal_index)
 
+    # 9. إدارة التحليل الذكي وتجنب إعادة الحساب (Caching)
     analysis = None
     recommended_design = None
-    alternative_designs = []
 
     if disease:
-
-        analysis = analyze_research_topic(
-            topic=disease,
-            goal=research_goal,
-            data_source=data_source,
-        )
-
-        st.markdown(
-            "### 🤖 Research Detection"
-        )
-
-        st.success(
-            f"""
-Field:
-{analysis['field']}
-
-Population:
-{analysis['population']}
-"""
-        )
+        cache_key = f"{disease}_{research_goal}_{data_source}"
+        if st.session_state.get("analysis_cache_key") == cache_key:
+            analysis = st.session_state.get("analysis_cache")
+        else:
+            analysis = analyze_research_topic(
+                topic=disease,
+                goal=research_goal,
+                data_source=data_source,
+            )
+            st.session_state["analysis_cache"] = analysis
+            st.session_state["analysis_cache_key"] = cache_key
 
         recommended_design = analysis.get("recommended_design")
-        alternative_designs = analysis.get("alternative_designs", [])
 
-    # استخدام التنبؤ الذكي للـ Target Population تلقائياً إن وجد
+        # 3. إزالة التكرار: عرض Field و Recommended Design فقط
+        st.markdown("### 🤖 Research Detection")
+        st.success(f"**Field:** {analysis['field']}\n\n**Recommended Design:** {recommended_design}")
+
     target_population = st.text_input(
         "Target Population",
         value=saved_context.get(
@@ -218,58 +252,37 @@ Population:
         value=saved_context.get("objective", "")
     )
 
-    # تحديد التصميم الافتراضي الذكي: التكيف تلقائياً مع recommendation أو القيمة المحفوظة
-    default_design = saved_context.get("study_design")
-    if not default_design:
-        default_design = recommended_design if recommended_design else "Auto Detect"
-
-    # تحديد المؤشر الافتراضي للقائمة (Index)
-    default_index = 0
-    if default_design in STUDY_DESIGNS:
-        default_index = STUDY_DESIGNS.index(default_design)
-
-    study_design = st.selectbox(
-        "Study Design",
-        STUDY_DESIGNS,
-        index=default_index
-    )
-
-    if (
-        study_design == "Auto Detect"
-        and recommended_design
-    ):
-
-        study_design = recommended_design
-
-        st.info(
-            f"""
-🤖 Auto detected study design:
-
-{study_design}
-"""
+    # 10. جعل Recommended Design افتراضياً مع خيار التجاوز اليدوي (Override Design)
+    selected_design = saved_context.get("study_design", recommended_design if recommended_design else "Cross-Sectional Study")
+    
+    with st.expander("⚙️ Override Study Design (Optional)", expanded=False):
+        design_options = [d for d in STUDY_DESIGNS if d != "Auto Detect"]
+        override_index = design_options.index(selected_design) if selected_design in design_options else 0
+        override_choice = st.selectbox(
+            "Select Alternative Study Design",
+            design_options,
+            index=override_index
         )
+        if override_choice:
+            study_design = override_choice
+    
+    if 'study_design' not in locals():
+        study_design = selected_design
 
-    # ==================================
     # Study Design Validation
-    # ==================================
-
     allowed_designs = VALID_DESIGNS.get(
         data_source,
-        STUDY_DESIGNS
+        [d for d in STUDY_DESIGNS if d != "Auto Detect"]
     )
 
-    if study_design not in allowed_designs:
+    design_is_valid = study_design in allowed_designs
 
+    if not design_is_valid:
         st.error(
             f"""
-❌ Selected study design is not compatible
-with the chosen data source.
-
-Data Source:
-{data_source}
-
-Allowed Designs:
-{", ".join(allowed_designs)}
+❌ Selected study design is not compatible with the chosen data source.
+Data Source: {data_source}
+Allowed Designs: {", ".join(allowed_designs)}
 """
         )
 
@@ -279,159 +292,50 @@ Allowed Designs:
         placeholder="2015-2025"
     )
 
-    keywords = st.text_area(
-        "Keywords",
-        value=saved_context.get(
-            "keywords",
-            ", ".join(analysis["keywords"]) if analysis else ""
-        ),
-        height=120,
+    default_keywords = (
+        ", ".join(analysis["keywords"])
+        if analysis and analysis.get("keywords")
+        else ""
     )
 
-    context = {
-        "research_type": research_type,
-        "research_category": (
-            analysis["research_category"]
-            if analysis
-            else research_type
-        ),
-        "field": analysis["field"] if analysis else "",
-        "population": target_population,
-        "intervention": exposure_or_intervention,
-        "comparison": comparison,
-        "outcome": outcome,
-        "objective": study_objective,
-        "research_goal": research_goal,
-        "study_design": study_design,
-        "recommended_design": recommended_design if recommended_design else "",
-        "data_source": data_source,
-        "disease": disease,
-        "location": location,
-        "study_period": study_period,
-        "keywords": keywords,
-        "pico": {
-            "population": target_population,
-            "intervention": exposure_or_intervention,
-            "comparison": comparison,
-            "outcome": outcome,
-            "topic": disease,
-            "goal": research_goal,
-            "study_design": study_design
-        }
-    }
+    # 6. إصلاح زر Refresh Keywords مع الحفظ الصحيح في Session State
+    col_kw_1, col_kw_2 = st.columns([4, 1])
+    with col_kw_1:
+        current_keywords_val = st.session_state.get(
+            "temp_keywords",
+            saved_context.get("keywords", default_keywords)
+        )
+        keywords = st.text_area("Keywords", value=current_keywords_val, height=120)
+    
+    with col_kw_2:
+        st.write(" ")
+        st.write(" ")
+        if st.button("🔄 Refresh Keywords", help="Regenerate keywords based on current topic"):
+            st.session_state["temp_keywords"] = default_keywords
+            if "research_context" in st.session_state:
+                st.session_state["research_context"]["keywords"] = default_keywords
+            st.rerun()
+
+    # 5. بناء السياق عبر الدالة
+    context = build_context(
+        research_type, analysis, target_population, exposure_or_intervention,
+        comparison, outcome, study_objective, research_goal, study_design,
+        recommended_design, data_source, disease, location, study_period, keywords
+    )
 
     validation = None
-    if disease and outcome:
-        validation = validate_research_idea(
-            disease,
-            context
-        )
+    if disease and outcome and design_is_valid:
+        validation = validate_research_idea(disease, context)
 
     if validation:
         context["context_quality_score"] = validation["score"]
 
-    if recommended_design:
+    # 4. التقييم بواسطة الدالة المساعدة
+    render_feasibility(validation)
 
-        st.markdown("---")
-
-        st.subheader(
-            "📚 Methodology Recommendation"
-        )
-
-        st.success(
-            f"""
-Recommended Design:
-
-{recommended_design}
-"""
-        )
-
-        if alternative_designs:
-
-            st.info(
-                "Alternative Designs:\n\n• "
-                + "\n• ".join(
-                    alternative_designs
-                )
-            )
-
-    if (
-        recommended_design
-        and study_design
-        and study_design != recommended_design
-    ):
-
-        st.warning(
-            f"""
-The selected study design differs
-from the recommended methodology.
-
-Recommended:
-{recommended_design}
-
-Selected:
-{study_design}
-"""
-        )
-
-    # ==================================
-    # 1. Feasibility Assessment
-    # ==================================
+    # Final Research Context Card
     st.markdown("---")
-
-    st.subheader(
-        "Research Feasibility Assessment"
-    )
-
-    if validation and validation["feasibility"] == "High":
-
-        st.success(
-            f"""
-Feasibility Score: {validation['score']}/100
-
-Feasibility Level: HIGH
-"""
-        )
-
-    elif validation and validation["feasibility"] == "Moderate":
-
-        st.warning(
-            f"""
-Feasibility Score: {validation['score']}/100
-
-Feasibility Level: MODERATE
-"""
-        )
-
-    elif validation:
-
-        st.error(
-            f"""
-Feasibility Score: {validation['score']}/100
-
-Feasibility Level: LOW
-"""
-        )
-
-    if validation and validation["notes"]:
-
-        with st.expander(
-            "Why was this score assigned?"
-        ):
-
-            for note in validation["notes"]:
-
-                st.write(f"• {note}")
-
-    # ==================================
-    # 2. Final Research Context Card
-    # ==================================
-    st.markdown("---")
-
-    st.subheader(
-        "📋 Final Research Context Card"
-    )
-
+    st.subheader("📋 Final Research Context Card")
     st.info(
         f"""
 **Disease / Topic:** {disease if disease else 'Not specified'}  
@@ -454,74 +358,40 @@ Feasibility Level: LOW
 """
     )
 
-    required_fields = [
-        disease,
-        target_population,
-        outcome,
-        study_period,
-        keywords
-    ]
-
+    required_fields = [disease, target_population, outcome, study_period, keywords]
     if research_type == "Primary Research":
+        required_fields.append(location)
 
-        required_fields.append(
-            location
-        )
+    can_save = all(str(x).strip() for x in required_fields) and design_is_valid
 
-    if disease and data_source:
-
-        if (
-            "cancer" in disease.lower()
-            or "tumor" in disease.lower()
-            or "neoplasm" in disease.lower()
-        ):
-
-            st.info(
-                "Detected possible Oncology project."
-            )
-
-        elif "diabetes" in disease.lower():
-
-            st.info(
-                "Detected possible Endocrinology project."
-            )
-
-        elif "stroke" in disease.lower():
-
-            st.info(
-                "Detected possible Neurology project."
-            )
-
-    # ==================================
-    # 3. Save Button
-    # ==================================
-    if all(str(x).strip() for x in required_fields):
-
-        if st.button(
-            "💾 Save Research Context",
-            use_container_width=True,
-            type="primary",
-        ):
-
+    if can_save:
+        if st.button("💾 Save Research Context", use_container_width=True, type="primary"):
+            # 7. حفظ القاموس والقيم الفردية داخل Session State
             st.session_state["context_completed"] = True
             st.session_state["research_context"] = context
+            st.session_state["disease"] = disease
+            st.session_state["population"] = target_population
+            st.session_state["study_design"] = study_design
+            st.session_state["field"] = context["field"]
 
-            st.success(
-                "Research context saved successfully."
-            )
-
+            # 8. إشعارات هادئة بدون Balloons
+            st.toast("Research Context Saved", icon="✅")
             st.rerun()
-
     else:
+        if not design_is_valid:
+            st.warning("Cannot save: Selected study design is incompatible with the chosen data source.")
+        else:
+            st.warning("Please complete Disease, Target Population, Location, Outcome, Study Period and Keywords to continue.")
 
-        st.warning(
-            "Please complete Disease, Target Population, Location, Outcome, Study Period and Keywords to continue."
-        )
+    if st.session_state.get("context_completed"):
+        st.markdown("---")
+        st.success("✅ Step 1 Completed")
 
-    if st.session_state.get(
-        "context_completed"
-    ):
-
-        st.success(
-            "✅ Step 1 Completed"
+        ctx = st.session_state.get("research_context", {})
+        st.info(
+            f"""
+**Disease / Topic:** {ctx.get('disease', 'N/A')}  
+**Design:** {ctx.get('study_design', 'N/A')}  
+**Population:** {ctx.get('population', 'N/A')}
+"""
         )
