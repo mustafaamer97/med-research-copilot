@@ -1,5 +1,9 @@
 import streamlit as st
 
+from modules.context_manager import (
+    get_context,
+    update_context
+)
 from modules.idea_generator import (
     generate_research_ideas
 )
@@ -220,6 +224,34 @@ Location:
                     )
                 }
 
+                # تحديث الـ context المضاف حديثاً
+                update_context(
+                    idea_title=selected_idea.get(
+                        "title",
+                        ""
+                    ),
+                    idea_rationale=selected_idea.get(
+                        "rationale",
+                        ""
+                    ),
+                    population=selected_idea.get(
+                        "population",
+                        ""
+                    ),
+                    exposure_or_intervention=selected_idea.get(
+                        "exposure_or_intervention",
+                        ""
+                    ),
+                    comparison=selected_idea.get(
+                        "comparison",
+                        ""
+                    ),
+                    primary_outcome=selected_idea.get(
+                        "primary_outcome",
+                        ""
+                    )
+                )
+
                 st.session_state[
                     "idea_completed"
                 ] = True
@@ -403,6 +435,34 @@ Description:
                         {}
                     )
                 }
+
+                # تحديث الـ context المضاف حديثاً
+                update_context(
+                    idea_title=selected_idea.get(
+                        "title",
+                        ""
+                    ),
+                    idea_rationale=selected_idea.get(
+                        "rationale",
+                        ""
+                    ),
+                    population=selected_idea.get(
+                        "population",
+                        ""
+                    ),
+                    exposure_or_intervention=selected_idea.get(
+                        "exposure_or_intervention",
+                        ""
+                    ),
+                    comparison=selected_idea.get(
+                        "comparison",
+                        ""
+                    ),
+                    primary_outcome=selected_idea.get(
+                        "primary_outcome",
+                        ""
+                    )
+                )
 
                 st.session_state[
                     "idea_completed"
