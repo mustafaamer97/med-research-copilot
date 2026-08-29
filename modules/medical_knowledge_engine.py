@@ -2,7 +2,7 @@ import re
 from functools import lru_cache
 
 # ---------------------------------------------------------------------------
-# 1. Constants & Configuration Sets
+# 1. Constants & Maps
 # ---------------------------------------------------------------------------
 
 DEFAULT_EVIDENCE_SYNTHESIS = "Systematic Review and Meta-Analysis"
@@ -21,8 +21,33 @@ STOP_WORDS = {
     "using", "role", "effect", "impact", "association", "between"
 }
 
+# 1. Research Type Mapping
+RESEARCH_TYPE_MAP = {
+    "trend analysis": "Epidemiology",
+    "incidence": "Epidemiology",
+    "prevalence": "Epidemiology",
+    "risk factors": "Analytical Research",
+    "treatment outcomes": "Clinical Research",
+    "survival analysis": "Clinical Research",
+    "diagnostic accuracy": "Diagnostic Research",
+    "prediction model": "Prediction Research",
+    "systematic review": "Evidence Synthesis"
+}
+
+# 2. Disease-Specific Population Rules
+TOPIC_POPULATION_RULES = {
+    "breast cancer": "Patients diagnosed with breast cancer",
+    "lung cancer": "Patients diagnosed with lung cancer",
+    "colorectal cancer": "Patients diagnosed with colorectal cancer",
+    "prostate cancer": "Patients diagnosed with prostate cancer",
+    "diabetes": "Patients diagnosed with diabetes mellitus",
+    "type 2 diabetes": "Patients diagnosed with Type 2 Diabetes Mellitus",
+    "stroke": "Patients presenting with acute ischemic or hemorrhagic stroke",
+    "hypertension": "Patients diagnosed with essential hypertension"
+}
+
 # ---------------------------------------------------------------------------
-# 2. Knowledge Base Configuration (with Medical Aliases & Acronyms)
+# 2. Knowledge Base Configuration
 # ---------------------------------------------------------------------------
 
 FIELD_RULES = {
@@ -40,7 +65,8 @@ FIELD_RULES = {
         ],
         "default_population": "Patients diagnosed with malignant neoplasms",
         "domain_keywords": ["Survival Rate", "Mortality", "Chemotherapy", "Oncology", "Tumor Markers"],
-        "outcomes": ["Overall Survival (OS)", "Progression-Free Survival (PFS)", "Cancer-Specific Mortality"]
+        # 3. Suggested Outcomes
+        "outcomes": ["Annual Incidence Rate", "Overall Survival (OS)", "Cancer-Specific Mortality", "Progression-Free Survival (PFS)"]
     },
     "Cardiology": {
         "keywords": [
@@ -143,17 +169,17 @@ GOAL_DESIGN_MAP = {
     "risk factors": {
         "primary": "Case-Control Study",
         "alternatives": ["Retrospective Cohort Study", "Cross-Sectional Study"],
-        "category": "Epidemiology"
+        "category": "Analytical Research"
     },
     "treatment outcomes": {
         "primary": "Retrospective Cohort Study",
         "alternatives": ["Prospective Cohort Study", "Randomized Controlled Trial"],
-        "category": "Primary Clinical Research"
+        "category": "Clinical Research"
     },
     "survival analysis": {
         "primary": "Retrospective Cohort Study",
         "alternatives": ["Prospective Cohort Study", "Survival Analysis Model"],
-        "category": "Primary Clinical Research"
+        "category": "Clinical Research"
     },
     "diagnostic accuracy": {
         "primary": "Diagnostic Accuracy Study",
@@ -177,10 +203,7 @@ GOAL_DESIGN_MAP = {
 # ---------------------------------------------------------------------------
 
 def detect_specialty(topic: str) -> tuple[str, int, list[tuple[str, int]]]:
-    """
-    Detects medical specialty using word boundary regex.
-    Returns: (best_field, confidence_score, candidate_fields)
-    """
+    """Detects medical specialty using word boundary regex."""
     text = topic.lower()
     scores = {}
 
@@ -199,15 +222,10 @@ def detect_specialty(topic: str) -> tuple[str, int, list[tuple[str, int]]]:
     if not scores:
         return "General Medicine", 50, [("General Medicine", 0)]
 
-    # Sort fields by number of keyword matches
     sorted_candidates = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     best_field, max_matches = sorted_candidates[0]
 
-    if max_matches == 1:
-        confidence = 85
-    else:
-        confidence = min(98, 85 + (max_matches - 1) * 5)
-
+    confidence = 85 if max_matches == 1 else min(98, 85 + (max_matches - 1) * 5)
     return best_field, confidence, sorted_candidates
 
 
@@ -219,30 +237,36 @@ def get_confidence_level(score: int) -> str:
         return "High"
     if score >= 60:
         return "Moderate"
-        
     return "Unknown"
 
 
-def detect_population(data_source: str, field: str) -> tuple[str, str]:
-    """Determines patient population and returns its source (detected vs default)."""
+def detect_population(topic: str, data_source: str, field: str) -> tuple[str, str]:
+    """Determines patient population checking specific topic rules first."""
+    text = topic.lower()
+    
+    # 2. Check Disease-Specific Rules first
+    for disease_kw, pop_str in TOPIC_POPULATION_RULES.items():
+        if re.search(rf"\b{re.escape(disease_kw)}\b", text):
+            return pop_str, "detected_topic"
+
     if field in FIELD_RULES and field != "General Medicine":
-        return FIELD_RULES[field]["default_population"], "detected"
+        return FIELD_RULES[field]["default_population"], "detected_field"
 
     if data_source in {"Survey / Questionnaire", "Public Health Data"}:
-        return "General Population", "detected"
+        return "General Population", "detected_source"
 
     return FIELD_RULES["General Medicine"]["default_population"], "default"
 
 
 def recommend_design(goal: str, data_source: str) -> tuple[str, list[str], str]:
-    """Recommends primary and alternative study designs alongside research category."""
+    """Recommends primary/alternative study designs and research category."""
     goal_key = goal.lower().strip()
     
     if goal_key in GOAL_DESIGN_MAP:
         mapping = GOAL_DESIGN_MAP[goal_key]
         primary = mapping["primary"]
         alternatives = list(mapping["alternatives"])
-        category = mapping["category"]
+        category = RESEARCH_TYPE_MAP.get(goal_key, mapping["category"])
 
         if goal_key == "risk factors" and data_source in EHR_DATA_SOURCES:
             primary = "Retrospective Cohort Study"
@@ -259,8 +283,26 @@ def recommend_design(goal: str, data_source: str) -> tuple[str, list[str], str]:
     return "Cross-Sectional Study", ["Case-Control Study", "Retrospective Cohort Study"], "Primary Clinical Research"
 
 
+# 4. Suggested Statistics Function
+def recommend_statistics(goal: str) -> list[str]:
+    """Recommends statistical tests based on research goal."""
+    goal_key = goal.lower().strip()
+    stats_map = {
+        "trend analysis": ["Mann-Kendall Test", "Linear Regression", "Joinpoint Regression"],
+        "incidence": ["Incidence Rate Ratio (IRR)", "Poisson Regression", "Kaplan-Meier Survival Analysis"],
+        "prevalence": ["Chi-Square Test", "Prevalence Ratio", "Multivariable Logistic Regression"],
+        "risk factors": ["Odds Ratio (OR)", "Multivariable Logistic Regression", "Chi-Square Test"],
+        "treatment outcomes": ["Paired t-test", "Wilcoxon Signed-Rank Test", "Relative Risk (RR)", "Hazard Ratio (HR)"],
+        "survival analysis": ["Kaplan-Meier Curves", "Log-Rank Test", "Cox Proportional Hazards Model"],
+        "diagnostic accuracy": ["Sensitivity / Specificity", "ROC-AUC Curve", "Positive/Negative Predictive Values"],
+        "prediction model": ["Logistic Regression", "Random Forest / XGBoost", "C-Index / Calibration Plot"],
+        "systematic review": ["Forest Plot", "I² Heterogeneity Test", "Funnel Plot (Egger's Test)"]
+    }
+    return stats_map.get(goal_key, ["Descriptive Statistics", "Chi-Square Test", "Logistic Regression"])
+
+
 def generate_keywords(topic: str, field: str, goal: str) -> list[str]:
-    """Extracts meaningful topic keywords with case-insensitive deduplication and field enrichment."""
+    """Extracts keywords with deduplication and field enrichment."""
     raw_words = re.findall(r"[A-Za-z0-9\-]+", topic)
     extracted = []
     
@@ -290,12 +332,11 @@ def generate_keywords(topic: str, field: str, goal: str) -> list[str]:
 
 @lru_cache(maxsize=200)
 def analyze_research_topic(topic: str, goal: str, data_source: str) -> dict:
-    """Master analytical routine with LRU cache and empty-input safety guard."""
+    """Master analytical routine returning all components for Med Research Copilot."""
     clean_topic = (topic or "").strip()
     clean_goal = (goal or "").strip()
     clean_source = (data_source or "").strip()
 
-    # Safety Guard for empty or null input
     if not clean_topic:
         return {
             "field": "General Medicine",
@@ -309,13 +350,15 @@ def analyze_research_topic(topic: str, goal: str, data_source: str) -> dict:
             "research_category": "General Research",
             "keywords": [],
             "suggested_outcomes": FIELD_RULES["General Medicine"]["outcomes"],
+            "suggested_statistics": recommend_statistics(""),
         }
 
     field, confidence, candidate_fields = detect_specialty(clean_topic)
-    population, pop_source = detect_population(clean_source, field)
+    population, pop_source = detect_population(clean_topic, clean_source, field)
     rec_design, alt_designs, research_category = recommend_design(clean_goal, clean_source)
     keywords = generate_keywords(clean_topic, field, clean_goal)
     outcomes = FIELD_RULES.get(field, {}).get("outcomes", [])
+    suggested_stats = recommend_statistics(clean_goal)
 
     return {
         "field": field,
@@ -329,4 +372,5 @@ def analyze_research_topic(topic: str, goal: str, data_source: str) -> dict:
         "research_category": research_category,
         "keywords": keywords,
         "suggested_outcomes": outcomes,
+        "suggested_statistics": suggested_stats,
     }
