@@ -260,7 +260,6 @@ def render():
             "Data source automatically set to Published Literature."
         )
 
-    # التعديل الأول: استرجاع القيم من session_state
     disease = st.text_input(
         "Disease / Research Topic",
         value=st.session_state.get("disease", ""),
@@ -334,6 +333,7 @@ def render():
             "### 🤖 Research Detection"
         )
 
+        # التعديل الخامس: إزالة Recommended Design واقتصار العرض على Field و Population
         st.success(
             f"""
 Field:
@@ -341,15 +341,29 @@ Field:
 
 Population:
 {analysis['population']}
-
-Recommended Design:
-{analysis['recommended_design']}
 """
         )
 
-    if study_design == "Auto Detect" and analysis:
+    recommended_design = None
+    alternative_designs = []
 
-        study_design = analysis["recommended_design"]
+    if outcome:
+
+        recommended_design, alternative_designs = (
+            recommend_study_design(
+                data_source,
+                outcome,
+                default_design=study_design
+            )
+        )
+
+    # التعديل الثالث: الربط الشرطي الصحيح لمعالجة Auto Detect
+    if (
+        study_design == "Auto Detect"
+        and recommended_design
+    ):
+
+        study_design = recommended_design
 
         st.info(
             f"""
@@ -383,21 +397,6 @@ Allowed Designs:
 """
         )
 
-    recommended_design = None
-    alternative_designs = []
-
-    if outcome:
-
-        recommended_design, alternative_designs = (
-            recommend_study_design(
-                data_source,
-                outcome,
-                default_design=analysis["recommended_design"]
-                if analysis
-                else study_design
-            )
-        )
-
     study_period = st.text_input(
         "Study Period",
         value=st.session_state.get("study_period", ""),
@@ -423,7 +422,7 @@ Allowed Designs:
         height=120,
     )
 
-    # التعديل الثاني: إنشاء context أولاً
+    # التعديل الرابع: تحديث بناء الـ context بربط recommended_design بالمتغير المحلي المباشر
     context = {
         "research_type": research_type,
         "research_category": (
@@ -439,7 +438,7 @@ Allowed Designs:
         "objective": study_objective,
         "research_goal": research_goal,
         "study_design": study_design,
-        "recommended_design": analysis["recommended_design"] if analysis else "",
+        "recommended_design": recommended_design if recommended_design else "",
         "data_source": data_source,
         "disease": disease,
         "location": location,
@@ -447,7 +446,6 @@ Allowed Designs:
         "keywords": keywords,
     }
 
-    # التعديل الثاني: إجراء الفحص بعد تعريف context مباشرة
     validation = None
     if disease:
         validation = validate_research_idea(
@@ -457,8 +455,6 @@ Allowed Designs:
 
     if validation:
         context["context_quality_score"] = validation["score"]
-
-    # التعديل الرابع: إزالة st.session_state["research_context"] = context من هنا لتجنب الكتابة التلقائية over-writing
 
     if recommended_design:
 
@@ -649,9 +645,8 @@ O = {outcome}
         ):
 
             st.session_state["context_completed"] = True
-            st.session_state["research_context"] = context  # التعديل الرابع: حفظ Context فقط عند الضغط
+            st.session_state["research_context"] = context
 
-            # التعديل الثالث: حفظ جميع القيم في الـ Session State قبل إعادة التشغيل
             st.session_state["disease"] = disease
             st.session_state["population"] = target_population
             st.session_state["intervention"] = exposure_or_intervention
