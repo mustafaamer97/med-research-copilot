@@ -3,6 +3,10 @@ import streamlit as st
 from modules.protocol_builder import (
     generate_protocol
 )
+from modules.context_manager import (
+    get_context,
+    update_context
+)
 
 STUDY_DESIGNS = [
     "Randomized Controlled Trial (RCT)",
@@ -33,41 +37,67 @@ def render():
     )
 
     # ==================================
-    # Load Previous Steps
+    # Load Context Data
     # ==================================
 
-    research_context = st.session_state.get(
-        "research_context",
-        {}
-    )
-
-    selected_idea = st.session_state.get(
+    context = get_context()
+    research_context = context
+    selected_idea = context.get(
         "selected_research_idea",
         {}
     )
-
-    research_question = st.session_state.get(
-        "research_question",
+    research_question = context.get(
+        "research_question_data",
         {}
     )
-
-    literature = st.session_state.get(
-        "literature_search",
+    literature = context.get(
+        "retrieved_papers",
         []
     )
-
-    gap_analysis = st.session_state.get(
-        "research_gap_analysis",
-        {}
-    )
+    gap_analysis = {
+        "research_gaps": context.get(
+            "research_gaps",
+            []
+        )
+    }
 
     # ==================================
-    # Protocol Version
+    # Step Dependency Guard
+    # ==================================
+
+    if not literature:
+        st.warning(
+            "Please complete Step 4 first."
+        )
+        return
+
+    # ==================================
+    # Protocol Header Caption & Summary
     # ==================================
 
     st.caption(
-        f"Protocol Version: v{len(st.session_state.get('protocol_history', [])) + 1}"
+        "Protocol Builder"
     )
+
+    with st.expander(
+        "📋 Research Context",
+        expanded=True
+    ):
+        st.write(
+            f"**Disease:** {context.get('disease','')}"
+        )
+        st.write(
+            f"**Population:** {context.get('population','')}"
+        )
+        st.write(
+            f"**Outcome:** {context.get('outcome','')}"
+        )
+        st.write(
+            f"**Location:** {context.get('location','')}"
+        )
+        st.write(
+            f"**Study Design:** {context.get('study_design','')}"
+        )
 
     # ==================================
     # Tabs
@@ -255,6 +285,11 @@ Description:
             index=study_index
         )
 
+        # Sync selected design into context for downstream steps
+        update_context(
+            final_study_design=study_type
+        )
+
         col1, col2 = st.columns(2)
 
         with col1:
@@ -293,30 +328,17 @@ Description:
                     )
                 )
 
-            if (
-                "protocol_history"
-                not in st.session_state
-            ):
-
-                st.session_state[
-                    "protocol_history"
-                ] = []
-
-            st.session_state[
-                "protocol_history"
-            ].append(protocol)
-
-            st.session_state[
-                "research_protocol"
-            ] = protocol
-
-            st.session_state[
-                "protocol_completed"
-            ] = True
+            # Save state via Context Manager
+            update_context(
+                research_protocol=protocol,
+                protocol_completed=True,
+                final_study_design=study_type,
+                protocol_source="AI"
+            )
 
             st.rerun()
 
-        protocol = st.session_state.get(
+        protocol = context.get(
             "research_protocol"
         )
 
@@ -418,10 +440,10 @@ Description:
                 )
 
     # ==================================
-    # Completion
+    # Completion Indicator
     # ==================================
 
-    if st.session_state.get(
+    if context.get(
         "protocol_completed"
     ):
 
