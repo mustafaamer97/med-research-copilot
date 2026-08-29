@@ -118,18 +118,28 @@ def render():
         with st.spinner("Searching PubMed, Europe PMC and OpenAlex..."):
             search_query = query
 
+            # 2) تنظيف Auto Search ومنع المسافات الفارغة
             if search_mode == "Auto (Recommended)":
                 search_query = " ".join(
                     [
-                        disease,
-                        population,
-                        intervention,
-                        comparison,
-                        outcome,
-                        location,
-                        study_period
+                        x
+                        for x in [
+                            disease,
+                            population,
+                            intervention,
+                            comparison,
+                            outcome,
+                            location,
+                            study_period
+                        ]
+                        if x
                     ]
                 )
+
+            # 4) إضافة حماية من البحث الفارغ
+            if not search_query.strip():
+                st.warning("Search query is empty.")
+                st.stop()
 
             papers = search_all_sources(
                 search_query,
@@ -139,6 +149,9 @@ def render():
         st.session_state["literature_search"] = papers
         st.session_state["evidence_pool"] = papers
         st.session_state["selected_papers"] = papers
+        
+        # 5) تجهيز البيانات لـ Step 5 مباشرة
+        st.session_state["papers_for_extraction"] = papers
 
         st.session_state["search_metadata"] = {
             "query": search_query,
@@ -154,7 +167,9 @@ def render():
             "sources": ["PubMed", "Europe PMC", "OpenAlex"]
         }
 
+        # 3) حفظ query المعتمد في Context
         update_context(
+            master_query=search_query,
             evidence_count=len(papers),
             retrieved_papers=papers,
             literature_search_completed=True
@@ -175,11 +190,20 @@ def render():
     # Research Gap Analysis
     # ==========================================
 
-    analysis = st.session_state.get("research_gap_analysis")
+    # 1) منع إعادة حساب Research Gaps عند تغيير البحث عبر مفتاح ديناميكي
+    current_query = st.session_state.get(
+        "search_metadata",
+        {}
+    ).get(
+        "query",
+        ""
+    )
+    analysis_key = f"gap_{current_query}"
+    analysis = st.session_state.get(analysis_key)
 
     if not analysis:
         analysis = detect_research_gaps(papers)
-        st.session_state["research_gap_analysis"] = analysis
+        st.session_state[analysis_key] = analysis
 
         gap_results = analysis if isinstance(analysis, dict) else {}
         update_context(
@@ -217,7 +241,7 @@ def render():
         ]
 
     # ==========================================
-    # Dashboard (ختاماً وبطريقة مبسطة)
+    # Dashboard
     # ==========================================
 
     levels = {}
