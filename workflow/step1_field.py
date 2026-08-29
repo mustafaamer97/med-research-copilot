@@ -77,6 +77,19 @@ VALID_DESIGNS = {
     ],
 }
 
+# التحسين الثالث: الأهداف الافتراضية التلقائية بناءً على هدف البحث
+AUTO_OBJECTIVES = {
+    "Trend Analysis": "Evaluate temporal trends of the selected outcome over the study period.",
+    "Incidence": "Estimate disease incidence and demographic distribution in the target population.",
+    "Prevalence": "Estimate disease prevalence and associated clinical characteristics.",
+    "Risk Factors": "Identify clinical and environmental factors associated with the selected outcome.",
+    "Treatment Outcomes": "Assess treatment efficacy, safety, and therapeutic outcomes.",
+    "Survival Analysis": "Evaluate long-term survival rates and identify predictors of mortality.",
+    "Diagnostic Accuracy": "Evaluate sensitivity, specificity, and overall diagnostic performance.",
+    "Prediction Model": "Develop and validate a predictive risk model for the primary outcome.",
+    "Systematic Review": "Synthesize available literature to summarize evidence on the research topic.",
+}
+
 
 def render_feasibility(validation):
     st.markdown("---")
@@ -109,7 +122,6 @@ def render_feasibility(validation):
                 st.write(f"• {note}")
 
 
-# التعديل السادس: إضافة confidence و confidence_level لقاموس context
 def build_context(analysis, form_data):
     return {
         "research_type": form_data["research_type"],
@@ -192,7 +204,6 @@ def render():
 
         recommended_design = analysis.get("recommended_design")
 
-        # التعديل الأول والرابع: عرض Research Category و Confidence Level
         st.markdown("### 🤖 Research Detection")
         col_det_1, col_det_2 = st.columns([3, 1])
         with col_det_1:
@@ -209,7 +220,6 @@ def render():
             st.metric("Confidence", f"{conf_val}%")
             st.caption(f"Level: {conf_lvl}")
 
-    # التعديل الثاني: Population الذكي الافتراضي مع إرشادات
     auto_population = analysis["population"] if analysis and analysis.get("population") else ""
     target_population = st.text_input(
         "Target Population",
@@ -234,7 +244,6 @@ def render():
         placeholder="Sana'a, Yemen"
     )
 
-    # التعديل الثالث: Outcome Suggestions ذكية وتفاعلية
     suggested_outcomes = analysis.get("suggested_outcomes", []) if analysis else []
     outcome_options = suggested_outcomes + ["Other..."] if suggested_outcomes else ["Other..."]
     
@@ -260,9 +269,11 @@ def render():
     else:
         outcome = selected_outcome_option
 
+    # التحسين الثالث: تطبيق Auto Objective بناءً على Goal في حال عدم وجود هدف مدخل
+    default_auto_obj = AUTO_OBJECTIVES.get(research_goal, "")
     study_objective = st.text_area(
         "Study Objective",
-        value=saved_context.get("objective", "")
+        value=saved_context.get("objective", default_auto_obj)
     )
 
     available_designs = VALID_DESIGNS.get(data_source, VALID_DESIGNS["Mixed Sources"])
@@ -341,14 +352,14 @@ Allowed Designs: {", ".join(available_designs)}
 
     validation = None
     if disease and outcome and design_is_valid:
-        validation = validate_research_idea(disease, context)
+        # التحسين الأول: تعديل الاستدعاء ليمرر context فقط
+        validation = validate_research_idea(context)
 
     if validation:
         context["context_quality_score"] = validation["score"]
 
     render_feasibility(validation)
 
-    # التعديل الثامن: إثراء بطاقة الملخص النهائية بالبيانات الجديدة
     st.markdown("---")
     st.subheader("📋 Final Research Context Card")
     st.info(
@@ -374,13 +385,21 @@ Allowed Designs: {", ".join(available_designs)}
 """
     )
 
-    required_fields = [disease, target_population, outcome, study_period, keywords]
+    # الحقول المطلوبة لشرط الحفظ
+    required_fields = [disease, target_population, outcome, study_period, keywords, study_objective]
     if research_type == "Primary Research":
         required_fields.append(location)
 
-    # التعديل الخامس: حساب وإظهار شريط جاهزية البحث (Readiness Score)
-    completed_fields = sum(1 for x in required_fields if str(x).strip())
-    readiness_percentage = round((completed_fields / len(required_fields)) * 100)
+    # التحسين الرابع: حساب دقيق وموزون لـ Readiness Score
+    # 80% للحقول الإلزامية الأساسية و 20% للحقول الاختيارية المفيدة (PICO completeness)
+    core_completed = sum(1 for x in required_fields if str(x).strip())
+    core_score = (core_completed / len(required_fields)) * 80
+
+    optional_fields = [exposure_or_intervention, comparison]
+    optional_completed = sum(1 for x in optional_fields if str(x).strip())
+    optional_score = (optional_completed / len(optional_fields)) * 20
+
+    readiness_percentage = round(core_score + optional_score)
     
     st.markdown("### 📊 Step 1 Completion Progress")
     st.progress(readiness_percentage / 100)
@@ -390,7 +409,6 @@ Allowed Designs: {", ".join(available_designs)}
 
     if can_save:
         if st.button("💾 Save Research Context", use_container_width=True, type="primary"):
-            # التعديل السابع: حفظ study_period وبقية الحقول في session_state
             st.session_state["context_completed"] = True
             st.session_state["research_context"] = context
             st.session_state["disease"] = disease
@@ -404,6 +422,10 @@ Allowed Designs: {", ".join(available_designs)}
             st.session_state["study_period"] = study_period
             st.session_state["keywords"] = keywords
 
+            # التحسين الثاني: حفظ Confidence و Confidence Level في session_state
+            st.session_state["confidence"] = context.get("confidence", 0)
+            st.session_state["confidence_level"] = context.get("confidence_level", "Unknown")
+
             st.toast("Research Context Saved", icon="✅")
             st.rerun()
     else:
@@ -412,7 +434,7 @@ Allowed Designs: {", ".join(available_designs)}
         elif not valid_period:
             st.warning("Cannot save: Study Period format must be YYYY-YYYY.")
         else:
-            st.warning("Please complete Disease, Target Population, Location, Outcome, Study Period and Keywords to continue.")
+            st.warning("Please complete Disease, Target Population, Location, Outcome, Study Objective, Study Period and Keywords to continue.")
 
     if st.session_state.get("context_completed"):
         st.markdown("---")
