@@ -9,44 +9,34 @@ from modules.medical_knowledge_engine import (
 
 
 STUDY_DESIGNS = [
-
     "Auto Detect",
-
     "Cross-Sectional Study",
     "Case-Control Study",
     "Prospective Cohort Study",
     "Retrospective Cohort Study",
     "Nested Case-Control Study",
     "Case-Cohort Study",
-
     "Randomized Controlled Trial (RCT)",
     "Cluster Randomized Trial",
     "Pragmatic Clinical Trial",
     "Adaptive Clinical Trial",
-
     "Diagnostic Accuracy Study",
     "Prediction Model Study",
     "Prognostic Study",
-
     "Survey Study",
     "Ecological Study",
     "Registry-Based Study",
-
     "Interrupted Time Series",
     "Before-After Study",
-
     "Case Report",
     "Case Series",
-
     "Systematic Review",
     "Meta-Analysis",
     "Network Meta-Analysis",
     "Scoping Review",
     "Umbrella Review",
-
     "Qualitative Study",
     "Mixed Methods Study",
-
     "Health Services Research",
     "Implementation Study",
     "Quality Improvement Study",
@@ -64,7 +54,6 @@ DATA_SOURCES = [
 ]
 
 VALID_DESIGNS = {
-
     "Registry Database": [
         "Auto Detect",
         "Registry-Based Study",
@@ -74,7 +63,6 @@ VALID_DESIGNS = {
         "Retrospective Cohort Study",
         "Interrupted Time Series",
     ],
-
     "Hospital Records": [
         "Auto Detect",
         "Cross-Sectional Study",
@@ -82,21 +70,18 @@ VALID_DESIGNS = {
         "Retrospective Cohort Study",
         "Case Series",
     ],
-
     "Electronic Health Records (EHR)": [
         "Auto Detect",
         "Retrospective Cohort Study",
         "Prediction Model Study",
         "Diagnostic Accuracy Study",
     ],
-
     "Survey / Questionnaire": [
         "Auto Detect",
         "Survey Study",
         "Cross-Sectional Study",
         "Mixed Methods Study",
     ],
-
     "Published Literature": [
         "Auto Detect",
         "Systematic Review",
@@ -104,9 +89,7 @@ VALID_DESIGNS = {
         "Network Meta-Analysis",
         "Scoping Review",
     ],
-
     "Mixed Sources": STUDY_DESIGNS,
-
 }
 
 
@@ -154,39 +137,6 @@ def render():
         placeholder="Cancer, Diabetes, Stroke..."
     )
 
-    target_population = st.text_input(
-        "Target Population",
-        value=saved_context.get("population", ""),
-        placeholder="Breast cancer patients"
-    )
-
-    exposure_or_intervention = st.text_input(
-        "Exposure / Intervention",
-        value=saved_context.get("intervention", "")
-    )
-
-    comparison = st.text_input(
-        "Comparator",
-        value=saved_context.get("comparison", "")
-    )
-
-    location = st.text_input(
-        "Study Location",
-        value=saved_context.get("location", ""),
-        placeholder="Sana'a, Yemen"
-    )
-
-    outcome = st.text_input(
-        "Primary Outcome",
-        value=saved_context.get("outcome", ""),
-        placeholder="Incidence, Mortality, Survival..."
-    )
-
-    study_objective = st.text_area(
-        "Study Objective",
-        value=saved_context.get("objective", "")
-    )
-
     research_goal = st.selectbox(
         "Research Goal",
         [
@@ -200,11 +150,6 @@ def render():
             "Prediction Model",
             "Systematic Review",
         ]
-    )
-
-    study_design = st.selectbox(
-        "Study Design",
-        STUDY_DESIGNS
     )
 
     analysis = None
@@ -235,6 +180,59 @@ Population:
 
         recommended_design = analysis.get("recommended_design")
         alternative_designs = analysis.get("alternative_designs", [])
+
+    # استخدام التنبؤ الذكي للـ Target Population تلقائياً إن وجد
+    target_population = st.text_input(
+        "Target Population",
+        value=saved_context.get(
+            "population",
+            analysis["population"] if analysis and analysis.get("population") else ""
+        ),
+        placeholder="Breast cancer patients"
+    )
+
+    exposure_or_intervention = st.text_input(
+        "Exposure / Intervention",
+        value=saved_context.get("intervention", "")
+    )
+
+    comparison = st.text_input(
+        "Comparator",
+        value=saved_context.get("comparison", "")
+    )
+
+    location = st.text_input(
+        "Study Location",
+        value=saved_context.get("location", ""),
+        placeholder="Sana'a, Yemen"
+    )
+
+    outcome = st.text_input(
+        "Primary Outcome",
+        value=saved_context.get("outcome", ""),
+        placeholder="Incidence, Mortality, Survival..."
+    )
+
+    study_objective = st.text_area(
+        "Study Objective",
+        value=saved_context.get("objective", "")
+    )
+
+    # تحديد التصميم الافتراضي الذكي: التكيف تلقائياً مع recommendation أو القيمة المحفوظة
+    default_design = saved_context.get("study_design")
+    if not default_design:
+        default_design = recommended_design if recommended_design else "Auto Detect"
+
+    # تحديد المؤشر الافتراضي للقائمة (Index)
+    default_index = 0
+    if default_design in STUDY_DESIGNS:
+        default_index = STUDY_DESIGNS.index(default_design)
+
+    study_design = st.selectbox(
+        "Study Design",
+        STUDY_DESIGNS,
+        index=default_index
+    )
 
     if (
         study_design == "Auto Detect"
