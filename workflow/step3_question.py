@@ -32,21 +32,28 @@ def render():
         or ""
     )
 
+    # 6. Location Update
     default_location = (
         idea_data.get("location")
+        or idea_data.get("study_location")
         or idea_data.get("context", {}).get("location")
         or ""
     )
 
+    # 2. Outcome Update
     default_outcome = (
-        idea_data.get("outcome")
+        idea_data.get("primary_outcome")
+        or idea_data.get("outcome")
         or idea_data.get("context", {}).get("outcome")
         or ""
     )
 
-    default_period = idea_data.get(
-        "period",
-        ""
+    # 5. Period Update
+    default_period = (
+        idea_data.get("period")
+        or idea_data.get("study_period")
+        or idea_data.get("context", {}).get("study_period")
+        or ""
     )
 
     if idea_data:
@@ -73,9 +80,11 @@ def render():
         {}
     )
 
-    default_population = context.get(
-        "population",
-        ""
+    # 1. Population Update
+    default_population = (
+        idea_data.get("population")
+        or context.get("population")
+        or ""
     )
 
     # 2. Population default without hardcoded disease prefix
@@ -86,25 +95,27 @@ def render():
         value=population_default
     )
 
-    # 3. Auto-fill Intervention from Step 2
-    if idea_data:
-
-        intervention_default = idea_data.get(
-            "intervention",
-            ""
-        )
-
-    else:
-
-        intervention_default = ""
+    # 3. Intervention Update
+    intervention_default = (
+        idea_data.get("exposure_or_intervention")
+        or idea_data.get("intervention")
+        or ""
+    )
 
     intervention = st.text_input(
         "Intervention (I)",
         value=intervention_default
     )
 
+    # 4. Comparison Update
+    comparison_default = (
+        idea_data.get("comparison")
+        or ""
+    )
+
     comparison = st.text_input(
-        "Comparison (C)"
+        "Comparison (C)",
+        value=comparison_default
     )
 
     outcome = st.text_input(
