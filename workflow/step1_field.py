@@ -53,7 +53,6 @@ def recommend_study_design(
             ]
         )
 
-    # التعديل الثالث: تم استبدال "Literature Only" بـ "Published Literature"
     if data_source == "Published Literature":
 
         return (
@@ -261,36 +260,44 @@ def render():
             "Data source automatically set to Published Literature."
         )
 
+    # التعديل الأول: استرجاع القيم من session_state
     disease = st.text_input(
         "Disease / Research Topic",
+        value=st.session_state.get("disease", ""),
         placeholder="Cancer, Diabetes, Stroke..."
     )
 
     target_population = st.text_input(
         "Target Population",
+        value=st.session_state.get("population", ""),
         placeholder="Breast cancer patients"
     )
 
     exposure_or_intervention = st.text_input(
-        "Exposure / Intervention"
+        "Exposure / Intervention",
+        value=st.session_state.get("intervention", "")
     )
 
     comparison = st.text_input(
-        "Comparator"
+        "Comparator",
+        value=st.session_state.get("comparison", "")
     )
 
     location = st.text_input(
         "Study Location",
+        value=st.session_state.get("location", ""),
         placeholder="Sana'a, Yemen"
     )
 
     outcome = st.text_input(
         "Primary Outcome",
-        placeholder="Incidence, Mortality, Survival, Risk Factors..."
+        value=st.session_state.get("outcome", ""),
+        placeholder="Incidence, Mortality, Survival..."
     )
 
     study_objective = st.text_area(
-        "Study Objective"
+        "Study Objective",
+        value=st.session_state.get("study_objective", "")
     )
 
     research_goal = st.selectbox(
@@ -393,6 +400,7 @@ Allowed Designs:
 
     study_period = st.text_input(
         "Study Period",
+        value=st.session_state.get("study_period", ""),
         placeholder="2015-2025"
     )
 
@@ -408,25 +416,16 @@ Allowed Designs:
 
     keywords = st.text_area(
         "Keywords",
-        value=", ".join(
-            analysis["keywords"]
-        )
-        if analysis
-        else "",
+        value=st.session_state.get(
+            "keywords",
+            ", ".join(analysis["keywords"]) if analysis else ""
+        ),
         height=120,
     )
 
-    # التعديل الرابع: التحقق من وجود disease قبل إجراء الفحص
-    validation = None
-    if disease:
-        validation = validate_research_idea(
-            disease,
-            context
-        )
-
+    # التعديل الثاني: إنشاء context أولاً
     context = {
         "research_type": research_type,
-        # التعديل السادس: التأكد من وجود research_category
         "research_category": (
             analysis["research_category"]
             if analysis
@@ -448,41 +447,18 @@ Allowed Designs:
         "keywords": keywords,
     }
 
-    # التعديل الخامس: إضافة context_quality_score في حال وجود validation
+    # التعديل الثاني: إجراء الفحص بعد تعريف context مباشرة
+    validation = None
+    if disease:
+        validation = validate_research_idea(
+            disease,
+            context
+        )
+
     if validation:
-        context[
-            "context_quality_score"
-        ] = validation["score"]
+        context["context_quality_score"] = validation["score"]
 
-    st.session_state["research_context"] = context
-    st.session_state["research_type"] = research_type
-    st.session_state["disease"] = disease
-
-    # التعديل الأول: إضافة field مباشرة بعد disease
-    st.session_state["field"] = (
-        analysis["field"]
-        if analysis
-        else ""
-    )
-
-    st.session_state["population"] = target_population
-    st.session_state["intervention"] = exposure_or_intervention
-    st.session_state["comparison"] = comparison
-    st.session_state["outcome"] = outcome
-    st.session_state["study_design"] = study_design
-    st.session_state["data_source"] = data_source
-    st.session_state["study_objective"] = study_objective
-
-    # التعديل الثاني: تحديث قاموس pico بالكامل
-    st.session_state["pico"] = {
-        "population": target_population,
-        "intervention": exposure_or_intervention,
-        "comparison": comparison,
-        "outcome": outcome,
-        "topic": disease,
-        "goal": research_goal,
-        "study_design": study_design
-    }
+    # التعديل الرابع: إزالة st.session_state["research_context"] = context من هنا لتجنب الكتابة التلقائية over-writing
 
     if recommended_design:
 
@@ -673,8 +649,31 @@ O = {outcome}
         ):
 
             st.session_state["context_completed"] = True
+            st.session_state["research_context"] = context  # التعديل الرابع: حفظ Context فقط عند الضغط
 
-            st.session_state["research_context"] = context
+            # التعديل الثالث: حفظ جميع القيم في الـ Session State قبل إعادة التشغيل
+            st.session_state["disease"] = disease
+            st.session_state["population"] = target_population
+            st.session_state["intervention"] = exposure_or_intervention
+            st.session_state["comparison"] = comparison
+            st.session_state["outcome"] = outcome
+            st.session_state["location"] = location
+            st.session_state["study_period"] = study_period
+            st.session_state["keywords"] = keywords
+            st.session_state["study_objective"] = study_objective
+            st.session_state["research_type"] = research_type
+            st.session_state["field"] = analysis["field"] if analysis else ""
+            st.session_state["study_design"] = study_design
+            st.session_state["data_source"] = data_source
+            st.session_state["pico"] = {
+                "population": target_population,
+                "intervention": exposure_or_intervention,
+                "comparison": comparison,
+                "outcome": outcome,
+                "topic": disease,
+                "goal": research_goal,
+                "study_design": study_design
+            }
 
             st.success(
                 "Research context saved successfully."
