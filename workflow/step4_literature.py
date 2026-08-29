@@ -12,6 +12,11 @@ from modules.research_gap_detector import (
     detect_research_gaps
 )
 
+from modules.context_manager import (
+    get_context,
+    update_context
+)
+
 
 def render():
 
@@ -19,43 +24,44 @@ def render():
         "🔎 Literature Search & Evidence Review"
     )
 
-    question_data = st.session_state.get(
-        "research_question",
+    # 1) قراءة البيانات من Context
+    context = get_context()
+
+    # 5) إظهار ملخص الخطوات السابقة في بداية الصفحة
+    with st.expander(
+        "Research Summary",
+        expanded=False
+    ):
+        st.write(
+            f"Topic: {context.get('disease', '')}"
+        )
+        st.write(
+            f"Population: {context.get('population', '')}"
+        )
+        st.write(
+            f"Outcome: {context.get('outcome', '')}"
+        )
+        st.write(
+            f"Design: {context.get('study_design', '')}"
+        )
+        st.write(
+            f"Question: {context.get('research_question', '')}"
+        )
+
+    question_data = context.get(
+        "research_question_data",
         {}
-    )
+    ) if isinstance(context.get("research_question_data"), dict) else {}
 
     pico_data = question_data.get(
         "pico",
         {}
     )
 
-    population = pico_data.get(
-        "population",
-        ""
-    )
-
-    intervention = pico_data.get(
-        "intervention",
-        ""
-    )
-
-    comparison = pico_data.get(
-        "comparison",
-        ""
-    )
-
-    outcome = pico_data.get(
-        "outcome",
-        ""
-    )
-
-    if not question_data:
-
-        st.warning(
-            "Please complete Step 3 first."
-        )
-
-        return
+    population = context.get("population") or pico_data.get("population", "")
+    intervention = context.get("intervention") or pico_data.get("intervention", "")
+    comparison = context.get("comparison") or pico_data.get("comparison", "")
+    outcome = context.get("outcome") or pico_data.get("outcome", "")
 
     # ==========================================
     # Research Question
@@ -65,12 +71,13 @@ def render():
         "Research Question"
     )
 
-    st.info(
-        question_data.get(
-            "question",
-            "No research question found."
-        )
+    research_q = (
+        context.get("research_question") 
+        or question_data.get("question") 
+        or "No research question found."
     )
+
+    st.info(research_q)
 
     # ==========================================
     # PICO Framework
@@ -81,16 +88,29 @@ def render():
     )
 
     st.json(
-        pico_data
+        pico_data if pico_data else {
+            "population": population,
+            "intervention": intervention,
+            "comparison": comparison,
+            "outcome": outcome
+        }
     )
 
     # ==========================================
     # Search Queries
     # ==========================================
 
+    # 2) استخدام البحث المحفوظ من Step3
+    default_query = (
+        context.get("master_query")
+        or context.get("pubmed_query")
+        or question_data.get("master_query")
+        or ""
+    )
+
     pubmed_query = question_data.get(
         "pubmed_query",
-        ""
+        context.get("pubmed_query", "")
     )
 
     europe_pmc_query = question_data.get(
@@ -100,11 +120,6 @@ def render():
 
     openalex_query = question_data.get(
         "openalex_query",
-        ""
-    )
-
-    master_query = question_data.get(
-        "master_query",
         ""
     )
 
@@ -127,42 +142,38 @@ def render():
 
     tab1, tab2, tab3, tab4 = st.tabs(
         [
+            "Master Query",
             "PubMed",
             "Europe PMC",
-            "OpenAlex",
-            "Master Query"
+            "OpenAlex"
         ]
     )
 
     with tab1:
+        query = st.text_area(
+            "Search Query",
+            value=default_query,
+            height=120
+        )
 
+    with tab2:
         pubmed_query = st.text_area(
             "PubMed Query",
             value=pubmed_query,
             height=120
         )
 
-    with tab2:
-
+    with tab3:
         europe_pmc_query = st.text_area(
             "Europe PMC Query",
             value=europe_pmc_query,
             height=120
         )
 
-    with tab3:
-
+    with tab4:
         openalex_query = st.text_area(
             "OpenAlex Query",
             value=openalex_query,
-            height=120
-        )
-
-    with tab4:
-
-        master_query = st.text_area(
-            "Master Query",
-            value=master_query,
             height=120
         )
 
@@ -217,14 +228,14 @@ def render():
             "Searching PubMed, Europe PMC and OpenAlex..."
         ):
 
-            search_query = master_query
+            search_query = query
 
             if search_mode == "Auto (Recommended)":
 
                 search_query = (
-                    f"{master_query} "
+                    f"{query} "
                     f"{pico_query}"
-                )
+                ).strip()
 
             papers = search_all_sources(
                 search_query,
@@ -233,6 +244,10 @@ def render():
 
         st.session_state[
             "literature_search"
+        ] = papers
+
+        st.session_state[
+            "retrieved_papers"
         ] = papers
 
         st.session_state[
@@ -256,6 +271,13 @@ def render():
             ]
         }
 
+        # 3) حفظ نتائج البحث داخل Context
+        update_context(
+            evidence_count=len(papers),
+            retrieved_papers=papers,
+            literature_search_completed=True
+        )
+
         st.session_state[
             "literature_completed"
         ] = len(papers) > 0
@@ -268,7 +290,7 @@ def render():
 
     papers = st.session_state.get(
         "literature_search",
-        []
+        context.get("retrieved_papers", [])
     )
 
     if not papers:
@@ -293,14 +315,29 @@ def render():
             "research_gap_analysis"
         ] = analysis
 
+        # 4) حفظ إحصائيات الأدلة في Context
+        gap_results = analysis if isinstance(analysis, dict) else {}
+        update_context(
+            evidence_studies=gap_results.get(
+                "total_papers",
+                len(papers)
+            ),
+            research_gaps=gap_results.get(
+                "research_gaps",
+                []
+            ),
+            recent_evidence_percentage=gap_results.get(
+                "recent_evidence_percentage",
+                0
+            )
+        )
+
     st.subheader(
         "🎯 Research Gaps"
     )
 
-    for gap in analysis.get(
-        "research_gaps",
-        []
-    ):
+    gaps_list = analysis.get("research_gaps", []) if isinstance(analysis, dict) else []
+    for gap in gaps_list:
 
         st.warning(gap)
 
@@ -618,7 +655,7 @@ def render():
 
     if st.session_state.get(
         "literature_completed"
-    ):
+    ) or context.get("literature_search_completed"):
 
         st.success(
             "✅ Step 4 Completed"
