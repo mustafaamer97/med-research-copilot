@@ -201,27 +201,19 @@ def recommend_design(
     )
 
 
+# تم تحديث الدالة لتأخذ (data_source, goal) وتطبق الشروط المطلوبة
 def detect_research_category(
     data_source,
-    goal,
-    study_design
+    goal
 ):
 
     goal = goal.lower()
 
-    if study_design in [
-        "Systematic Review",
-        "Meta-Analysis",
-        "Network Meta-Analysis",
-        "Scoping Review",
-        "Umbrella Review"
-    ]:
-
+    if goal == "systematic review":
         return "Evidence Synthesis"
 
     if data_source == "Published Literature":
-
-        return "Secondary Research"
+        return "Evidence Synthesis"
 
     return "Primary Research"
 
@@ -249,14 +241,11 @@ def analyze_research_topic(
             data_source,
         ),
 
+        # تم تحديث استدعاء الدالة ليتطابق مع القاموس الجديد
         "research_category":
         detect_research_category(
             data_source,
-            goal,
-            recommend_design(
-                goal,
-                data_source
-            )
+            goal
         ),
 
         "keywords":
