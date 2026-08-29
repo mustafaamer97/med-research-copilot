@@ -42,6 +42,15 @@ def render():
 
             return
 
+        # التعديل 1: التحقق من اكتمال وحفظ Step 1
+        if not st.session_state.get(
+            "context_completed"
+        ):
+            st.warning(
+                "Please complete and save Step 1 first."
+            )
+            return
+
         st.info(
             f"""
 Field:
@@ -79,6 +88,16 @@ Location:
                     research_context=context
                 )
 
+            # التعديل 2: التعامل مع حالة الفشل أو عدم وجود أدلة
+            if ideas.get("status") != "success":
+                st.error(
+                    ideas.get(
+                        "message",
+                        "Unable to generate ideas."
+                    )
+                )
+                return
+
             st.session_state[
                 "generated_ideas"
             ] = ideas
@@ -91,10 +110,14 @@ Location:
                 "Suggested Research Ideas"
             )
 
-            st.write(
+            # التعديل 3: العرض باستخدام st.markdown
+            generated_text = (
                 st.session_state[
                     "generated_ideas"
                 ]["ideas"]
+            )
+            st.markdown(
+                generated_text
             )
 
             st.caption(
@@ -187,12 +210,52 @@ Location:
                     ),
 
                     "context":
-                    context
+                    context,
+
+                    # التعديل 4: إضافة مفاتيح السياق المباشرة لـ Step 3
+                    "disease":
+                    context.get(
+                        "disease",
+                        ""
+                    ),
+                    "population":
+                    context.get(
+                        "population",
+                        ""
+                    ),
+                    "outcome":
+                    context.get(
+                        "outcome",
+                        ""
+                    ),
+                    "study_design":
+                    context.get(
+                        "study_design",
+                        ""
+                    ),
+                    "data_source":
+                    context.get(
+                        "data_source",
+                        ""
+                    ),
+                    "field":
+                    context.get(
+                        "field",
+                        ""
+                    ),
                 }
 
                 st.session_state[
                     "idea_completed"
                 ] = True
+
+                # التعديل 5: إضافة selected_idea_title في session_state
+                st.session_state[
+                    "selected_idea_title"
+                ] = st.session_state.get(
+                    "generated_title",
+                    "AI Generated Research Idea"
+                )
 
                 st.session_state[
                     "current_step"
@@ -305,59 +368,92 @@ Description:
                     "• " + note
                 )
 
-        if st.button(
-            "Save Research Idea"
+        # التعديل 6: اشتراط وجود Title و Description و Disease قبل حفظ الفكرة اليدوية
+        if (
+            idea_title
+            and idea_description
+            and disease
         ):
+            if st.button(
+                "Save Research Idea"
+            ):
 
-            st.session_state[
-                "selected_research_idea"
-            ] = {
+                st.session_state[
+                    "selected_research_idea"
+                ] = {
 
-                "title":
-                idea_title,
+                    "title":
+                    idea_title,
 
-                "description":
-                idea_description,
+                    "description":
+                    idea_description,
 
-                "source":
-                "manual",
+                    "source":
+                    "manual",
 
-                "disease":
-                disease,
+                    "disease":
+                    disease,
 
-                "location":
-                location,
+                    "location":
+                    location,
 
-                "outcome":
-                outcome,
+                    "outcome":
+                    outcome,
 
-                "period":
-                period,
+                    "period":
+                    period,
 
-                "validation":
-                manual_validation,
+                    "validation":
+                    manual_validation,
 
-                "research_goal":
-                research_goal,
+                    "research_goal":
+                    research_goal,
 
-                "context":
-                st.session_state.get(
-                    "research_context",
-                    {}
+                    "context":
+                    st.session_state.get(
+                        "research_context",
+                        {}
+                    ),
+
+                    # التعديل 7: إضافة الحقول المطلوبة لـ Step 3 في القسم اليدوي
+                    "population":
+                    st.session_state.get(
+                        "population",
+                        ""
+                    ),
+                    "study_design":
+                    st.session_state.get(
+                        "study_design",
+                        ""
+                    ),
+                    "data_source":
+                    st.session_state.get(
+                        "data_source",
+                        ""
+                    ),
+                    "field":
+                    st.session_state.get(
+                        "field",
+                        ""
+                    ),
+                }
+
+                st.session_state[
+                    "idea_completed"
+                ] = True
+
+                # التعديل 5 أيضاً للفكرة اليدوية لضمان تعيين العنوان
+                st.session_state[
+                    "selected_idea_title"
+                ] = idea_title
+
+                st.session_state[
+                    "current_step"
+                ] = 3
+
+                st.success(
+                    "Research idea saved successfully."
                 )
-            }
-
-            st.session_state[
-                "idea_completed"
-            ] = True
-
-            st.session_state[
-                "current_step"
-            ] = 3
-
-            st.success(
-                "Research idea saved successfully."
-            )
 
     # ==================================
     # Completion Status
