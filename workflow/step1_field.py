@@ -112,6 +112,8 @@ VALID_DESIGNS = {
 
 def render():
 
+    saved_context = st.session_state.get("research_context", {})
+
     st.header("🧭 Research Context & Scope")
 
     st.write(
@@ -148,41 +150,41 @@ def render():
 
     disease = st.text_input(
         "Disease / Research Topic",
-        value=st.session_state.get("disease", ""),
+        value=saved_context.get("disease", ""),
         placeholder="Cancer, Diabetes, Stroke..."
     )
 
     target_population = st.text_input(
         "Target Population",
-        value=st.session_state.get("population", ""),
+        value=saved_context.get("population", ""),
         placeholder="Breast cancer patients"
     )
 
     exposure_or_intervention = st.text_input(
         "Exposure / Intervention",
-        value=st.session_state.get("intervention", "")
+        value=saved_context.get("intervention", "")
     )
 
     comparison = st.text_input(
         "Comparator",
-        value=st.session_state.get("comparison", "")
+        value=saved_context.get("comparison", "")
     )
 
     location = st.text_input(
         "Study Location",
-        value=st.session_state.get("location", ""),
+        value=saved_context.get("location", ""),
         placeholder="Sana'a, Yemen"
     )
 
     outcome = st.text_input(
         "Primary Outcome",
-        value=st.session_state.get("outcome", ""),
+        value=saved_context.get("outcome", ""),
         placeholder="Incidence, Mortality, Survival..."
     )
 
     study_objective = st.text_area(
         "Study Objective",
-        value=st.session_state.get("study_objective", "")
+        value=saved_context.get("objective", "")
     )
 
     research_goal = st.selectbox(
@@ -275,23 +277,13 @@ Allowed Designs:
 
     study_period = st.text_input(
         "Study Period",
-        value=st.session_state.get("study_period", ""),
+        value=saved_context.get("study_period", ""),
         placeholder="2015-2025"
     )
 
-    auto_keywords = []
-
-    for item in [
-        disease,
-        outcome,
-        research_goal,
-    ]:
-        if item:
-            auto_keywords.append(item)
-
     keywords = st.text_area(
         "Keywords",
-        value=st.session_state.get(
+        value=saved_context.get(
             "keywords",
             ", ".join(analysis["keywords"]) if analysis else ""
         ),
@@ -319,9 +311,17 @@ Allowed Designs:
         "location": location,
         "study_period": study_period,
         "keywords": keywords,
+        "pico": {
+            "population": target_population,
+            "intervention": exposure_or_intervention,
+            "comparison": comparison,
+            "outcome": outcome,
+            "topic": disease,
+            "goal": research_goal,
+            "study_design": study_design
+        }
     }
 
-    # التعديل الرابع: التحقق فقط عند توفر Disease و Outcome معاً لتقليل الضغط
     validation = None
     if disease and outcome:
         validation = validate_research_idea(
@@ -376,6 +376,9 @@ Selected:
 """
         )
 
+    # ==================================
+    # 1. Feasibility Assessment
+    # ==================================
     st.markdown("---")
 
     st.subheader(
@@ -422,55 +425,34 @@ Feasibility Level: LOW
 
                 st.write(f"• {note}")
 
+    # ==================================
+    # 2. Final Research Context Card
+    # ==================================
     st.markdown("---")
 
     st.subheader(
-        "Research Context Summary"
+        "📋 Final Research Context Card"
     )
 
     st.info(
         f"""
-**Research Type:** {research_type}
+**Disease / Topic:** {disease if disease else 'Not specified'}  
+**Research Type:** {research_type} | **Goal:** {research_goal}  
+**Data Source:** {data_source} | **Design:** {study_design}  
+**Location:** {location if location else 'Not specified'} | **Period:** {study_period if study_period else 'Not specified'}  
 
-**Target Population:** {target_population if target_population else 'Not specified'}
+---
 
-**Exposure / Intervention:** {exposure_or_intervention if exposure_or_intervention else 'Not specified'}
+#### 🧩 Preliminary PICO
+* **P (Population):** {target_population if target_population else 'Not specified'}
+* **I (Intervention / Exposure):** {exposure_or_intervention if exposure_or_intervention else 'Not specified'}
+* **C (Comparator):** {comparison if comparison else 'Not specified'}
+* **O (Outcome):** {outcome if outcome else 'Not specified'}
 
-**Comparator:** {comparison if comparison else 'Not specified'}
+---
 
-**Study Objective:** {study_objective if study_objective else 'Not specified'}
-
-**Research Goal:** {research_goal}
-
-**Study Design:** {study_design}
-
-**Data Source:** {data_source}
-
-**Disease / Topic:** {disease if disease else 'Not specified'}
-
-**Study Location:** {location if location else 'Not specified'}
-
-**Primary Outcome:** {outcome if outcome else 'Not specified'}
-
-**Study Period:** {study_period if study_period else 'Not specified'}
-
+**Objective:** {study_objective if study_objective else 'Not specified'}  
 **Keywords:** {keywords if keywords else 'Not specified'}
-"""
-    )
-
-    st.markdown("---")
-
-    st.subheader("🧩 Preliminary PICO")
-
-    st.info(
-        f"""
-P = {target_population}
-
-I = {exposure_or_intervention}
-
-C = {comparison}
-
-O = {outcome}
 """
     )
 
@@ -512,6 +494,9 @@ O = {outcome}
                 "Detected possible Neurology project."
             )
 
+    # ==================================
+    # 3. Save Button
+    # ==================================
     if all(str(x).strip() for x in required_fields):
 
         if st.button(
@@ -522,29 +507,6 @@ O = {outcome}
 
             st.session_state["context_completed"] = True
             st.session_state["research_context"] = context
-
-            st.session_state["disease"] = disease
-            st.session_state["population"] = target_population
-            st.session_state["intervention"] = exposure_or_intervention
-            st.session_state["comparison"] = comparison
-            st.session_state["outcome"] = outcome
-            st.session_state["location"] = location
-            st.session_state["study_period"] = study_period
-            st.session_state["keywords"] = keywords
-            st.session_state["study_objective"] = study_objective
-            st.session_state["research_type"] = research_type
-            st.session_state["field"] = analysis["field"] if analysis else ""
-            st.session_state["study_design"] = study_design
-            st.session_state["data_source"] = data_source
-            st.session_state["pico"] = {
-                "population": target_population,
-                "intervention": exposure_or_intervention,
-                "comparison": comparison,
-                "outcome": outcome,
-                "topic": disease,
-                "goal": research_goal,
-                "study_design": study_design
-            }
 
             st.success(
                 "Research context saved successfully."
