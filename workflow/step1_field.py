@@ -8,66 +8,6 @@ from modules.medical_knowledge_engine import (
 )
 
 
-def recommend_study_design(
-    data_source,
-    outcome,
-    default_design="Cross-Sectional Study"
-):
-
-    outcome = outcome.lower()
-
-    if data_source == "Registry Database":
-
-        if any(
-            x in outcome
-            for x in [
-                "trend",
-                "incidence",
-                "prevalence",
-                "distribution"
-            ]
-        ):
-
-            return (
-                "Retrospective Registry-Based Study",
-                [
-                    "Cross-Sectional Study",
-                    "Retrospective Cohort Study"
-                ]
-            )
-
-        return (
-            "Retrospective Cohort Study",
-            [
-                "Cross-Sectional Study"
-            ]
-        )
-
-    if data_source == "Hospital Records":
-
-        return (
-            "Retrospective Cohort Study",
-            [
-                "Case-Control Study",
-                "Cross-Sectional Study"
-            ]
-        )
-
-    if data_source == "Published Literature":
-
-        return (
-            "Systematic Review",
-            [
-                "Meta-Analysis"
-            ]
-        )
-
-    return (
-        default_design,
-        []
-    )
-
-
 MEDICAL_FIELDS = [
     "Cardiology",
     "Neurology",
@@ -320,6 +260,8 @@ def render():
     )
 
     analysis = None
+    recommended_design = None
+    alternative_designs = []
 
     if disease:
 
@@ -333,7 +275,6 @@ def render():
             "### 🤖 Research Detection"
         )
 
-        # التعديل الخامس: إزالة Recommended Design واقتصار العرض على Field و Population
         st.success(
             f"""
 Field:
@@ -344,20 +285,10 @@ Population:
 """
         )
 
-    recommended_design = None
-    alternative_designs = []
+        # استخراج التصميم الموصى به والأشكال البديلة مباشرة من قواميس تحليل المحرك
+        recommended_design = analysis.get("recommended_design")
+        alternative_designs = analysis.get("alternative_designs", [])
 
-    if outcome:
-
-        recommended_design, alternative_designs = (
-            recommend_study_design(
-                data_source,
-                outcome,
-                default_design=study_design
-            )
-        )
-
-    # التعديل الثالث: الربط الشرطي الصحيح لمعالجة Auto Detect
     if (
         study_design == "Auto Detect"
         and recommended_design
@@ -422,7 +353,6 @@ Allowed Designs:
         height=120,
     )
 
-    # التعديل الرابع: تحديث بناء الـ context بربط recommended_design بالمتغير المحلي المباشر
     context = {
         "research_type": research_type,
         "research_category": (
