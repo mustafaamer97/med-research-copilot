@@ -1,253 +1,247 @@
 import re
 
-SPECIALTY_MAP = {
-    "oncology": [
-        "cancer",
-        "tumor",
-        "tumour",
-        "neoplasm",
-        "leukemia",
-        "lymphoma",
-        "melanoma",
-        "carcinoma",
-        "sarcoma",
-    ],
-    "cardiology": [
-        "heart",
-        "cardiac",
-        "myocardial",
-        "coronary",
-        "heart failure",
-        "hypertension",
-    ],
-    "neurology": [
-        "stroke",
-        "epilepsy",
-        "brain",
-        "parkinson",
-        "alzheimer",
-        "neurological",
-    ],
-    "endocrinology": [
-        "diabetes",
-        "thyroid",
-        "endocrine",
-        "obesity",
-        "insulin",
-    ],
-    "pulmonology": [
-        "asthma",
-        "copd",
-        "lung disease",
-        "respiratory",
-    ],
-    "nephrology": [
-        "kidney",
-        "renal",
-        "ckd",
-        "dialysis",
-    ],
-    "gastroenterology": [
-        "hepatitis",
-        "liver",
-        "colon",
-        "gastric",
-        "ibd",
-    ],
-    "psychiatry": [
-        "depression",
-        "anxiety",
-        "mental health",
-        "psychiatric",
-    ],
-    "infectious diseases": [
-        "covid",
-        "infection",
-        "tuberculosis",
-        "hiv",
-        "malaria",
-    ],
+# ---------------------------------------------------------------------------
+# 1. Knowledge Base Configuration
+# ---------------------------------------------------------------------------
+
+FIELD_RULES = {
+    "Oncology": {
+        "keywords": [
+            "cancer", "tumor", "tumour", "neoplasm", "leukemia",
+            "lymphoma", "melanoma", "carcinoma", "sarcoma", "oncology"
+        ],
+        "default_population": "Patients diagnosed with malignant neoplasms",
+        "domain_keywords": ["Survival Rate", "Mortality", "Chemotherapy", "Oncology", "Tumor Markers"]
+    },
+    "Cardiology": {
+        "keywords": [
+            "heart", "cardiac", "myocardial", "coronary", "heart failure",
+            "hypertension", "arrhythmia", "atherosclerosis", "cardiology"
+        ],
+        "default_population": "Patients with cardiovascular conditions",
+        "domain_keywords": ["Cardiovascular Outcomes", "Mortality", "Ejection Fraction", "Hypertension", "Lipid Profile"]
+    },
+    "Neurology": {
+        "keywords": [
+            "stroke", "epilepsy", "brain", "parkinson", "alzheimer",
+            "neurological", "dementia", "seizure", "neurology"
+        ],
+        "default_population": "Patients with neurological disorders",
+        "domain_keywords": ["Cognitive Function", "Neurological Deficit", "Brain MRI", "Functional Recovery", "Seizure Frequency"]
+    },
+    "Endocrinology": {
+        "keywords": [
+            "diabetes", "thyroid", "endocrine", "obesity", "insulin",
+            "metabolic", "hyperthyroidism", "hypothyroidism", "endocrinology"
+        ],
+        "default_population": "Patients with endocrine and metabolic disorders",
+        "domain_keywords": ["HbA1c", "Glycemic Control", "Insulin Resistance", "Metabolic Syndrome", "Endocrine Function"]
+    },
+    "Pulmonology": {
+        "keywords": [
+            "asthma", "copd", "lung disease", "respiratory", "pneumonia",
+            "pulmonary", "bronchitis", "pulmonology"
+        ],
+        "default_population": "Patients with respiratory conditions",
+        "domain_keywords": ["Lung Function", "FEV1", "Exacerbation Rate", "Oxygen Saturation", "Respiratory Mechanics"]
+    },
+    "Nephrology": {
+        "keywords": [
+            "kidney", "renal", "ckd", "dialysis", "nephritis",
+            "creatinine", "nephrology"
+        ],
+        "default_population": "Patients with renal dysfunction or chronic kidney disease",
+        "domain_keywords": ["eGFR", "Serum Creatinine", "Proteinuria", "Dialysis Outcomes", "Renal Survival"]
+    },
+    "Gastroenterology": {
+        "keywords": [
+            "hepatitis", "liver", "colon", "gastric", "ibd",
+            "cirrhosis", "gastrointestinal", "gastroenterology"
+        ],
+        "default_population": "Patients with gastrointestinal or hepatic diseases",
+        "domain_keywords": ["Liver Enzymes", "Endoscopic Findings", "Mucosal Healing", "Gut Microbiota", "Disease Activity Index"]
+    },
+    "Psychiatry": {
+        "keywords": [
+            "depression", "anxiety", "mental health", "psychiatric",
+            "bipolar", "schizophrenia", "psychosis", "psychiatry"
+        ],
+        "default_population": "Patients with psychiatric conditions",
+        "domain_keywords": ["Symptom Severity", "Psychometric Scale", "Mental Health Score", "Treatment Response", "Relapse Rate"]
+    },
+    "Infectious Diseases": {
+        "keywords": [
+            "covid", "infection", "tuberculosis", "hiv", "malaria",
+            "sepsis", "bacterial", "viral", "antimicrobial", "infectious"
+        ],
+        "default_population": "Patients diagnosed with infectious diseases",
+        "domain_keywords": ["Viral Load", "Pathogen Clearance", "Infection Rate", "Antimicrobial Resistance", "Inflammatory Markers"]
+    },
 }
 
 GOAL_DESIGN_MAP = {
-    "trend analysis": "Retrospective Registry-Based Study",
-    "incidence": "Retrospective Registry-Based Study",
-    "prevalence": "Cross-Sectional Study",
-    "treatment outcomes": "Retrospective Cohort Study",
-    "survival analysis": "Retrospective Cohort Study",
-    "diagnostic accuracy": "Diagnostic Accuracy Study",
-    "prediction model": "Prediction Model Study",
-    "systematic review": "Systematic Review",
+    "trend analysis": {
+        "primary": "Retrospective Registry-Based Study",
+        "alternatives": ["Cross-Sectional Study", "Time-Series Analysis"],
+        "category": "Epidemiology"
+    },
+    "incidence": {
+        "primary": "Retrospective Cohort Study",
+        "alternatives": ["Prospective Cohort Study", "Registry-Based Study"],
+        "category": "Epidemiology"
+    },
+    "prevalence": {
+        "primary": "Cross-Sectional Study",
+        "alternatives": ["Epidemiological Survey", "Retrospective Registry-Based Study"],
+        "category": "Epidemiology"
+    },
+    "risk factors": {
+        "primary": "Case-Control Study",
+        "alternatives": ["Retrospective Cohort Study", "Cross-Sectional Study"],
+        "category": "Epidemiology"
+    },
+    "treatment outcomes": {
+        "primary": "Retrospective Cohort Study",
+        "alternatives": ["Prospective Cohort Study", "Randomized Controlled Trial"],
+        "category": "Primary Clinical Research"
+    },
+    "survival analysis": {
+        "primary": "Retrospective Cohort Study",
+        "alternatives": ["Prospective Cohort Study", "Survival Analysis Model"],
+        "category": "Primary Clinical Research"
+    },
+    "diagnostic accuracy": {
+        "primary": "Diagnostic Accuracy Study",
+        "alternatives": ["Cross-Sectional Study", "ROC Analysis Study"],
+        "category": "Diagnostic Research"
+    },
+    "prediction model": {
+        "primary": "Prediction Model Study",
+        "alternatives": ["Retrospective Cohort Study", "Machine Learning Validation"],
+        "category": "Prediction Research"
+    },
+    "systematic review": {
+        "primary": "Systematic Review and Meta-Analysis",
+        "alternatives": ["Scoping Review", "Narrative Review"],
+        "category": "Evidence Synthesis"
+    },
+}
+
+EHR_DATA_SOURCES = [
+    "Hospital Records",
+    "Electronic Health Records (EHR)",
+    "Registry Database",
+    "Clinical Database"
+]
+
+STOP_WORDS = {
+    "the", "and", "for", "with", "that", "this", "from", "involving",
+    "study", "analysis", "evaluation", "assessment", "patients", "among",
+    "using", "role", "effect", "impact", "association", "between"
 }
 
 
-def detect_specialty(topic):
+# ---------------------------------------------------------------------------
+# 2. Core Detection & Logic Functions
+# ---------------------------------------------------------------------------
 
+def detect_specialty(topic: str) -> tuple[str, int]:
+    """Detects medical specialty and calculates match confidence score."""
     text = topic.lower()
+    best_field = "General Medicine"
+    max_matches = 0
 
-    for specialty, keywords in SPECIALTY_MAP.items():
+    for field, data in FIELD_RULES.items():
+        matches = sum(1 for kw in data["keywords"] if kw in text)
+        if matches > max_matches:
+            max_matches = matches
+            best_field = field
 
-        for keyword in keywords:
+    if max_matches == 0:
+        confidence = 50
+    elif max_matches == 1:
+        confidence = 85
+    else:
+        confidence = min(98, 85 + (max_matches - 1) * 5)
 
-            if keyword in text:
-
-                return specialty.title()
-
-    return "General Medicine"
-
-
-def generate_keywords(topic):
-
-    words = re.findall(
-        r"[A-Za-z0-9\-]+",
-        topic
-    )
-
-    words = [
-        w.strip()
-        for w in words
-        if len(w) > 2
-    ]
-
-    unique_words = []
-
-    for word in words:
-
-        if word not in unique_words:
-
-            unique_words.append(word)
-
-    return unique_words[:15]
+    return best_field, confidence
 
 
-def detect_population(
-    topic,
-    data_source,
-):
+def detect_population(topic: str, data_source: str, field: str) -> str:
+    """Determines patient population dynamically based on field rules or data source."""
+    if field in FIELD_RULES:
+        return FIELD_RULES[field]["default_population"]
 
-    topic = topic.lower()
-
-    if any(
-        x in topic
-        for x in [
-            "cancer",
-            "tumor",
-            "neoplasm",
-        ]
-    ):
-        return (
-            "Patients diagnosed "
-            "with malignant neoplasms"
-        )
-
-    if "diabetes" in topic:
-
-        return (
-            "Patients with diabetes"
-        )
-
-    if "stroke" in topic:
-
-        return (
-            "Patients with stroke"
-        )
-
-    if data_source == "Survey / Questionnaire":
-
+    if data_source in ["Survey / Questionnaire", "Public Health Data"]:
         return "General Population"
 
-    return "Study Population"
+    return "Study Cohort / Hospital Patients"
 
 
-def recommend_design(
-    goal,
-    data_source,
-):
+def recommend_design(goal: str, data_source: str) -> tuple[str, list[str], str]:
+    """Recommends primary and alternative study designs alongside research category."""
+    goal_key = goal.lower().strip()
+    
+    if goal_key in GOAL_DESIGN_MAP:
+        mapping = GOAL_DESIGN_MAP[goal_key]
+        primary = mapping["primary"]
+        alternatives = list(mapping["alternatives"])
+        category = mapping["category"]
 
-    goal = goal.lower()
+        # Contextual modification based on data source
+        if goal_key == "risk factors" and data_source in EHR_DATA_SOURCES:
+            primary = "Retrospective Cohort Study"
+            alternatives = ["Case-Control Study", "Cross-Sectional Study"]
 
-    if goal == "risk factors":
+        return primary, alternatives, category
 
-        if data_source in [
-            "Hospital Records",
-            "Electronic Health Records (EHR)",
-            "Registry Database"
-        ]:
+    # Default fallbacks when goal is unrecognized
+    if data_source == "Published Literature" or goal_key == "systematic review":
+        return "Systematic Review and Meta-Analysis", ["Scoping Review", "Narrative Review"], "Evidence Synthesis"
 
-            return (
-                "Retrospective Cohort Study"
-            )
+    if data_source in EHR_DATA_SOURCES:
+        return "Retrospective Cohort Study", ["Case-Control Study", "Cross-Sectional Study"], "Primary Clinical Research"
 
-        return (
-            "Case-Control Study"
-        )
-
-    if goal in GOAL_DESIGN_MAP:
-
-        return GOAL_DESIGN_MAP[goal]
-
-    if data_source in [
-        "Registry Database",
-        "Hospital Records",
-        "Electronic Health Records (EHR)",
-    ]:
-
-        return (
-            "Retrospective Cohort Study"
-        )
-
-    return (
-        "Cross-Sectional Study"
-    )
+    return "Cross-Sectional Study", ["Case-Control Study", "Retrospective Cohort Study"], "Primary Clinical Research"
 
 
-# تم تحديث الدالة لتأخذ (data_source, goal) وتطبق الشروط المطلوبة
-def detect_research_category(
-    data_source,
-    goal
-):
+def generate_keywords(topic: str, field: str, goal: str) -> list[str]:
+    """Extracts meaningful topic keywords and enriches them with field-specific concepts."""
+    raw_words = re.findall(r"[A-Za-z0-9\-]+", topic)
+    extracted = []
+    
+    for word in raw_words:
+        w_lower = word.lower()
+        if len(w_lower) > 2 and w_lower not in STOP_WORDS and word not in extracted:
+            extracted.append(word.capitalize())
 
-    goal = goal.lower()
+    domain_additions = FIELD_RULES.get(field, {}).get("domain_keywords", [])
 
-    if goal == "systematic review":
-        return "Evidence Synthesis"
+    combined = []
+    for item in extracted + domain_additions + [goal.title()]:
+        if item and item not in combined:
+            combined.append(item)
 
-    if data_source == "Published Literature":
-        return "Evidence Synthesis"
-
-    return "Primary Research"
+    return combined[:10]
 
 
-def analyze_research_topic(
-    topic,
-    goal,
-    data_source,
-):
+# ---------------------------------------------------------------------------
+# 3. Main Master Function
+# ---------------------------------------------------------------------------
+
+def analyze_research_topic(topic: str, goal: str, data_source: str) -> dict:
+    """Master analytical routine for processing research topic parameters."""
+    field, confidence = detect_specialty(topic)
+    population = detect_population(topic, data_source, field)
+    rec_design, alt_designs, research_category = recommend_design(goal, data_source)
+    keywords = generate_keywords(topic, field, goal)
 
     return {
-
-        "field":
-        detect_specialty(topic),
-
-        "population":
-        detect_population(
-            topic,
-            data_source,
-        ),
-
-        "recommended_design":
-        recommend_design(
-            goal,
-            data_source,
-        ),
-
-        # تم تحديث استدعاء الدالة ليتطابق مع القاموس الجديد
-        "research_category":
-        detect_research_category(
-            data_source,
-            goal
-        ),
-
-        "keywords":
-        generate_keywords(topic),
+        "field": field,
+        "confidence": confidence,
+        "population": population,
+        "recommended_design": rec_design,
+        "alternative_designs": alt_designs,
+        "research_category": research_category,
+        "keywords": keywords,
     }
