@@ -6,6 +6,7 @@ from functools import lru_cache
 # ---------------------------------------------------------------------------
 
 DEFAULT_EVIDENCE_SYNTHESIS = "Systematic Review and Meta-Analysis"
+MAX_KEYWORDS = 15
 
 EHR_DATA_SOURCES = {
     "Hospital Records",
@@ -21,7 +22,7 @@ STOP_WORDS = {
 }
 
 # ---------------------------------------------------------------------------
-# 2. Knowledge Base Configuration
+# 2. Knowledge Base Configuration (with Medical Aliases & Acronyms)
 # ---------------------------------------------------------------------------
 
 FIELD_RULES = {
@@ -34,7 +35,8 @@ FIELD_RULES = {
     "Oncology": {
         "keywords": [
             "cancer", "tumor", "tumour", "neoplasm", "leukemia",
-            "lymphoma", "melanoma", "carcinoma", "sarcoma", "oncology"
+            "lymphoma", "melanoma", "carcinoma", "sarcoma", "oncology",
+            "nsclc", "sclc", "aml", "cml", "crc", "rcc", "hcc"
         ],
         "default_population": "Patients diagnosed with malignant neoplasms",
         "domain_keywords": ["Survival Rate", "Mortality", "Chemotherapy", "Oncology", "Tumor Markers"],
@@ -43,7 +45,8 @@ FIELD_RULES = {
     "Cardiology": {
         "keywords": [
             "heart", "cardiac", "myocardial", "coronary", "heart failure",
-            "hypertension", "arrhythmia", "atherosclerosis", "cardiology"
+            "hypertension", "arrhythmia", "atherosclerosis", "cardiology",
+            "hf", "chf", "hfref", "hfpef", "acs", "mi", "cad", "afib"
         ],
         "default_population": "Patients with cardiovascular conditions",
         "domain_keywords": ["Cardiovascular Outcomes", "Mortality", "Ejection Fraction", "Hypertension", "Lipid Profile"],
@@ -52,7 +55,8 @@ FIELD_RULES = {
     "Neurology": {
         "keywords": [
             "stroke", "epilepsy", "brain", "parkinson", "alzheimer",
-            "neurological", "dementia", "seizure", "neurology"
+            "neurological", "dementia", "seizure", "neurology",
+            "tgh", "tbi", "als", "ms", "ich", "sah"
         ],
         "default_population": "Patients with neurological disorders",
         "domain_keywords": ["Cognitive Function", "Neurological Deficit", "Brain MRI", "Functional Recovery", "Seizure Frequency"],
@@ -61,7 +65,8 @@ FIELD_RULES = {
     "Endocrinology": {
         "keywords": [
             "diabetes", "thyroid", "endocrine", "obesity", "insulin",
-            "metabolic", "hyperthyroidism", "hypothyroidism", "endocrinology"
+            "metabolic", "hyperthyroidism", "hypothyroidism", "endocrinology",
+            "t1dm", "t2dm", "dm", "dka", "pcos", "nash", "masld"
         ],
         "default_population": "Patients with endocrine and metabolic disorders",
         "domain_keywords": ["HbA1c", "Glycemic Control", "Insulin Resistance", "Metabolic Syndrome", "Endocrine Function"],
@@ -70,7 +75,8 @@ FIELD_RULES = {
     "Pulmonology": {
         "keywords": [
             "asthma", "copd", "lung disease", "respiratory", "pneumonia",
-            "pulmonary", "bronchitis", "pulmonology"
+            "pulmonary", "bronchitis", "pulmonology",
+            "ipf", "osa", "ards", "ali"
         ],
         "default_population": "Patients with respiratory conditions",
         "domain_keywords": ["Lung Function", "FEV1", "Exacerbation Rate", "Oxygen Saturation", "Respiratory Mechanics"],
@@ -79,7 +85,8 @@ FIELD_RULES = {
     "Nephrology": {
         "keywords": [
             "kidney", "renal", "ckd", "dialysis", "nephritis",
-            "creatinine", "nephrology"
+            "creatinine", "nephrology",
+            "esrd", "eskd", "aki", "ign", "fsgs"
         ],
         "default_population": "Patients with renal dysfunction or chronic kidney disease",
         "domain_keywords": ["eGFR", "Serum Creatinine", "Proteinuria", "Dialysis Outcomes", "Renal Survival"],
@@ -88,7 +95,8 @@ FIELD_RULES = {
     "Gastroenterology": {
         "keywords": [
             "hepatitis", "liver", "colon", "gastric", "ibd",
-            "cirrhosis", "gastrointestinal", "gastroenterology"
+            "cirrhosis", "gastrointestinal", "gastroenterology",
+            "uc", "cd", "gerd", "nafld", "hcv", "hbv"
         ],
         "default_population": "Patients with gastrointestinal or hepatic diseases",
         "domain_keywords": ["Liver Enzymes", "Endoscopic Findings", "Mucosal Healing", "Gut Microbiota", "Disease Activity Index"],
@@ -97,7 +105,8 @@ FIELD_RULES = {
     "Psychiatry": {
         "keywords": [
             "depression", "anxiety", "mental health", "psychiatric",
-            "bipolar", "schizophrenia", "psychosis", "psychiatry"
+            "bipolar", "schizophrenia", "psychosis", "psychiatry",
+            "mdd", "gad", "ptsd", "ocd", "bpd"
         ],
         "default_population": "Patients with psychiatric conditions",
         "domain_keywords": ["Symptom Severity", "Psychometric Scale", "Mental Health Score", "Treatment Response", "Relapse Rate"],
@@ -106,7 +115,8 @@ FIELD_RULES = {
     "Infectious Diseases": {
         "keywords": [
             "covid", "infection", "tuberculosis", "hiv", "malaria",
-            "sepsis", "bacterial", "viral", "antimicrobial", "infectious"
+            "sepsis", "bacterial", "viral", "antimicrobial", "infectious",
+            "tb", "aids", "mrsa", "vre", "amr"
         ],
         "default_population": "Patients diagnosed with infectious diseases",
         "domain_keywords": ["Viral Load", "Pathogen Clearance", "Infection Rate", "Antimicrobial Resistance", "Inflammatory Markers"],
@@ -166,11 +176,13 @@ GOAL_DESIGN_MAP = {
 # 3. Core Logic & Helper Functions
 # ---------------------------------------------------------------------------
 
-def detect_specialty(topic: str) -> tuple[str, int]:
-    """Detects medical specialty using word boundary regex and calculates match confidence score."""
+def detect_specialty(topic: str) -> tuple[str, int, list[tuple[str, int]]]:
+    """
+    Detects medical specialty using word boundary regex.
+    Returns: (best_field, confidence_score, candidate_fields)
+    """
     text = topic.lower()
-    best_field = "General Medicine"
-    max_matches = 0
+    scores = {}
 
     for field, data in FIELD_RULES.items():
         if field == "General Medicine":
@@ -178,22 +190,25 @@ def detect_specialty(topic: str) -> tuple[str, int]:
         
         matches = 0
         for kw in data["keywords"]:
-            # Use Regex word boundaries to avoid false substring matching (e.g., heart -> heartburn)
             if re.search(rf"\b{re.escape(kw)}\b", text):
                 matches += 1
                 
-        if matches > max_matches:
-            max_matches = matches
-            best_field = field
+        if matches > 0:
+            scores[field] = matches
 
-    if max_matches == 0:
-        confidence = 50
-    elif max_matches == 1:
+    if not scores:
+        return "General Medicine", 50, [("General Medicine", 0)]
+
+    # Sort fields by number of keyword matches
+    sorted_candidates = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    best_field, max_matches = sorted_candidates[0]
+
+    if max_matches == 1:
         confidence = 85
     else:
         confidence = min(98, 85 + (max_matches - 1) * 5)
 
-    return best_field, confidence
+    return best_field, confidence, sorted_candidates
 
 
 def get_confidence_level(score: int) -> str:
@@ -202,8 +217,10 @@ def get_confidence_level(score: int) -> str:
         return "Very High"
     if score >= 85:
         return "High"
+    if score >= 60:
+        return "Moderate"
         
-    return "Moderate"
+    return "Unknown"
 
 
 def detect_population(data_source: str, field: str) -> tuple[str, str]:
@@ -243,43 +260,68 @@ def recommend_design(goal: str, data_source: str) -> tuple[str, list[str], str]:
 
 
 def generate_keywords(topic: str, field: str, goal: str) -> list[str]:
-    """Extracts meaningful topic keywords and enriches them with field-specific concepts."""
+    """Extracts meaningful topic keywords with case-insensitive deduplication and field enrichment."""
     raw_words = re.findall(r"[A-Za-z0-9\-]+", topic)
     extracted = []
     
     for word in raw_words:
         w_lower = word.lower()
-        if len(w_lower) > 2 and w_lower not in STOP_WORDS and word not in extracted:
+        if len(w_lower) > 2 and w_lower not in STOP_WORDS:
             extracted.append(word.capitalize())
 
     domain_additions = FIELD_RULES.get(field, {}).get("domain_keywords", [])
 
     combined = []
+    seen = set()
+    
     for item in extracted + domain_additions + [goal.title()]:
-        if item and item not in combined:
-            combined.append(item)
+        if item:
+            key = item.lower()
+            if key not in seen:
+                combined.append(item)
+                seen.add(key)
 
-    MAX_KEYWORDS = 15
     return combined[:MAX_KEYWORDS]
 
 
 # ---------------------------------------------------------------------------
-# 4. Main Master Function (Cached)
+# 4. Main Master Function (Cached & Guarded)
 # ---------------------------------------------------------------------------
 
 @lru_cache(maxsize=200)
 def analyze_research_topic(topic: str, goal: str, data_source: str) -> dict:
-    """Master analytical routine with LRU cache optimization."""
-    field, confidence = detect_specialty(topic)
-    population, pop_source = detect_population(data_source, field)
-    rec_design, alt_designs, research_category = recommend_design(goal, data_source)
-    keywords = generate_keywords(topic, field, goal)
+    """Master analytical routine with LRU cache and empty-input safety guard."""
+    clean_topic = (topic or "").strip()
+    clean_goal = (goal or "").strip()
+    clean_source = (data_source or "").strip()
+
+    # Safety Guard for empty or null input
+    if not clean_topic:
+        return {
+            "field": "General Medicine",
+            "confidence": 0,
+            "confidence_level": "Unknown",
+            "candidate_fields": [("General Medicine", 0)],
+            "population": "General Patient Population",
+            "population_source": "default",
+            "recommended_design": "Cross-Sectional Study",
+            "alternative_designs": [],
+            "research_category": "General Research",
+            "keywords": [],
+            "suggested_outcomes": FIELD_RULES["General Medicine"]["outcomes"],
+        }
+
+    field, confidence, candidate_fields = detect_specialty(clean_topic)
+    population, pop_source = detect_population(clean_source, field)
+    rec_design, alt_designs, research_category = recommend_design(clean_goal, clean_source)
+    keywords = generate_keywords(clean_topic, field, clean_goal)
     outcomes = FIELD_RULES.get(field, {}).get("outcomes", [])
 
     return {
         "field": field,
         "confidence": confidence,
         "confidence_level": get_confidence_level(confidence),
+        "candidate_fields": candidate_fields,
         "population": population,
         "population_source": pop_source,
         "recommended_design": rec_design,
