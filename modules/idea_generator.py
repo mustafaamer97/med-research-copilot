@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 from ai.llm_engine import ask_ai
@@ -90,13 +91,18 @@ ALLOWED_DESIGNS = {
 def build_deterministic_meta(goal, population, design, outcome, topic=""):
     """
     Constructs accurate titles, questions, objectives, and PICO programmatically.
-    Uses hash-based selection for deterministic gap choices.
+    Uses MD5 hashing for stable, reproducible gap selection across restarts.
     """
     gap_category = goal if goal in GAP_TEMPLATES else "Risk Factors"
     templates = GAP_TEMPLATES[gap_category]
     
-    # Deterministic selection based on topic hash instead of random choice
-    gap_index = abs(hash(topic)) % len(templates) if topic else 0
+    # MD5 hash-based deterministic selection for consistent output across restarts
+    if topic:
+        topic_hash = int(hashlib.md5(topic.lower().encode("utf-8")).hexdigest(), 16)
+        gap_index = topic_hash % len(templates)
+    else:
+        gap_index = 0
+        
     suggested_gap = templates[gap_index]
     
     # Professional Title Generator
@@ -113,10 +119,10 @@ def build_deterministic_meta(goal, population, design, outcome, topic=""):
 
     # PICO Framework
     pico = {
-        "P (Population)": population,
-        "I (Intervention / Exposure)": "Primary exposure/risk factors under investigation",
-        "C (Comparison)": "Non-exposed or standard control group",
-        "O (Outcome)": outcome if outcome else "Primary clinical endpoints"
+        "P": population,
+        "I": "Primary exposure/risk factors under investigation",
+        "C": "Non-exposed or standard control group",
+        "O": outcome if outcome else "Primary clinical endpoints"
     }
 
     return {
@@ -130,15 +136,73 @@ def build_deterministic_meta(goal, population, design, outcome, topic=""):
 
 def validate_design_against_datasource(study_design, data_source):
     """
-    Rule Filter: Prevents incompatible designs based on unified Data Sources.
+    Rule Filter: Checks design compatibility and tracks corrections.
     """
     if not data_source or data_source not in ALLOWED_DESIGNS:
-        return study_design
+        return study_design, False
     
     allowed = ALLOWED_DESIGNS[data_source]
     if study_design not in allowed:
-        return allowed[0]  # Auto-correct to best valid design
-    return study_design
+        return allowed[0], True  # Auto-correct to first valid design
+    return study_design, False
+
+
+def build_fallback_ideas(meta, population, study_design, outcome, data_source):
+    """
+    Generates 3 robust deterministic fallback research ideas if LLM fails.
+    """
+    pico_obj = meta["pico"]
+    
+    return [
+        {
+            "id": 1,
+            "title": meta["title"],
+            "research_question": meta["research_question"],
+            "rationale": "High-priority baseline epidemiological investigation tailored to local setting.",
+            "research_gap": meta["suggested_gap"],
+            "study_design": study_design,
+            "target_population": population,
+            "main_outcome": outcome,
+            "objectives": meta["objectives"],
+            "pico": pico_obj,
+            "impact": "Establishes baseline evidence to inform local clinical decision-making.",
+            "scores": {"novelty": 82, "feasibility": 92, "clinical_importance": 85, "overall": 86}
+        },
+        {
+            "id": 2,
+            "title": f"Comparative Risk Assessment of {outcome} Subtypes in {population}",
+            "research_question": f"How do demographic and clinical subgroups differ regarding {outcome} risk in {population}?",
+            "rationale": "Comparative risk analysis identifies high-risk clinical sub-populations.",
+            "research_gap": "Lack of comparative subgroup stratification studies in the region.",
+            "study_design": study_design,
+            "target_population": population,
+            "main_outcome": outcome,
+            "objectives": [
+                f"Stratify {population} into distinct risk subgroups.",
+                f"Compare the odds of {outcome} across subgroups using multivariate modeling."
+            ],
+            "pico": pico_obj,
+            "impact": "Enables targeted risk stratification and personalized patient care.",
+            "scores": {"novelty": 85, "feasibility": 88, "clinical_importance": 87, "overall": 87}
+        },
+        {
+            "id": 3,
+            "title": f"Prognostic Indicators and Long-term {outcome} in {population}: A {study_design}",
+            "research_question": f"What prognostic markers are predictive of long-term {outcome} in {population}?",
+            "rationale": "Evaluating prognosis assists clinicians in long-term management and intervention planning.",
+            "research_gap": "Scarcity of long-term prognostic and clinical trajectory data in local health centers.",
+            "study_design": study_design,
+            "target_population": population,
+            "main_outcome": outcome,
+            "objectives": [
+                f"Track long-term trajectory of {outcome} in {population}.",
+                "Identify independent prognostic markers for early clinical intervention."
+            ],
+            "pico": pico_obj,
+            "impact": "Improves long-term patient survival outcomes and reduces disease burden.",
+            "scores": {"novelty": 88, "feasibility": 84, "clinical_importance": 90, "overall": 87}
+        }
+    ]
 
 
 def generate_research_ideas(research_context):
@@ -164,15 +228,16 @@ def generate_research_ideas(research_context):
     data_source = research_context.get("data_source", "Hospital Records")
     raw_design = research_context.get("study_design", "Retrospective Cohort Study")
     keywords = research_context.get("keywords", "")
+    confidence_level = research_context.get("confidence_level", "Moderate")
 
     # Data Source Compatibility Enforcement
-    study_design = validate_design_against_datasource(raw_design, data_source)
+    study_design, design_was_corrected = validate_design_against_datasource(raw_design, data_source)
 
-    # Deterministic metadata base (data_source parameter removed)
+    # Deterministic metadata base
     meta = build_deterministic_meta(research_goal, population, study_design, outcome, topic=topic)
 
-    # Dynamic Evidence Search & Gap Analysis
-    search_query = f"{topic} {field} {population} {outcome} {keywords}".strip()
+    # Clean & Focused Query for Search Engine
+    search_query = f"{topic} {outcome}".strip()
     papers = get_recent_evidence(search_query)
 
     if not papers:
@@ -184,19 +249,29 @@ def generate_research_ideas(research_context):
 
     gap_report = detect_research_gaps(papers)
 
-    # Token Optimization: Reduced to top 10 and removed abstracts
+    # Token Optimization: Top 10 papers metadata only
     evidence_text = ""
     for paper in papers[:10]:
-        evidence_text += f"""- Title: {paper.get('title','N/A')} | Year: {paper.get('year','N/A')} | Type: {paper.get('publication_type','N/A')}
-"""
+        evidence_text += f"- Title: {paper.get('title','N/A')} | Year: {paper.get('year','N/A')} | Type: {paper.get('publication_type','N/A')}\n"
 
-    gap_text = f"""Total Studies: {gap_report.get('total_papers',0)}
-Top Keywords: {', '.join(gap_report.get('top_keywords',[]))}
-Identified Gaps: {', '.join(gap_report.get('research_gaps',[]))}
+    # Robust handling for top_keywords (Strings or Tuples)
+    raw_keywords = gap_report.get("top_keywords", [])
+    formatted_keywords = [
+        kw[0] if isinstance(kw, (tuple, list)) else str(kw)
+        for kw in raw_keywords
+    ]
+
+    gap_text = f"""Total Studies: {gap_report.get('total_papers', 0)}
+Top Keywords: {', '.join(formatted_keywords)}
+Identified Gaps: {', '.join(gap_report.get('research_gaps', []))}
 Sub-region Specific Gap: {meta['suggested_gap']}
 """
 
-    # Top 3 Structured Ideas Prompt
+    # Format objectives & PICO cleanly for Prompt without json.dumps
+    base_objectives_str = "\n".join([f"- {obj}" for obj in meta["objectives"]])
+    base_pico_str = f"P: {meta['pico']['P']}\nI: {meta['pico']['I']}\nC: {meta['pico']['C']}\nO: {meta['pico']['O']}"
+
+    # Prompt Setup
     prompt = f"""
 You are an expert medical research methodology advisor.
 
@@ -204,7 +279,7 @@ Your task is to generate top 3 actionable, highly publishable research ideas der
 
 CORE PARAMETERS (MUST COMPLY):
 - Medical Field: {field}
-- Topic/Condition: {topic}
+- Topic/Condition: {topic} (Classification Confidence: {confidence_level})
 - Research Goal: {research_goal}
 - Target Population: {population}
 - Primary Outcome: {outcome}
@@ -214,8 +289,10 @@ CORE PARAMETERS (MUST COMPLY):
 
 DETERMINISTIC BASELINES (USE & REFINE):
 - Base Research Question: {meta['research_question']}
-- Base Objectives: {json.dumps(meta['objectives'])}
-- Base PICO Framework: {json.dumps(meta['pico'])}
+Base Objectives:
+{base_objectives_str}
+Base PICO Framework:
+{base_pico_str}
 
 LITERATURE EVIDENCE BASE:
 {evidence_text}
@@ -244,18 +321,17 @@ Each object MUST contain:
     - "clinical_importance": Int (0-100)
     - "overall": Int (Weighted score out of 100)
 
-RULES:
-- Idea 1 must focus on primary epidemiology/prevalence or predictors.
+RULES FOR THE 3 IDEAS:
+- Idea 1 must focus on primary epidemiology/prevalence or baseline predictors.
 - Idea 2 must focus on comparative risks or clinical subtypes.
 - Idea 3 must focus on prognosis, survival, or long-term outcomes.
 - Never invent PMIDs, DOIs, or fabricated statistical samples.
 - Strictly keep designs practical for {location} using {data_source}.
 """
 
-    # Call AI without duplicate user_input parameter
     response = ask_ai(prompt)
 
-    # Parsing & Filtering JSON Output
+    # Parsing & Validation of JSON Output
     try:
         if isinstance(response, str):
             clean_json = response.strip().lstrip("```json").rstrip("```").strip()
@@ -263,34 +339,15 @@ RULES:
         else:
             ideas_list = response
 
-        # Enforce list type and limit to top 3
-        if not isinstance(ideas_list, list):
-            raise ValueError("LLM response is not a valid JSON array.")
+        # Enforce list type and strict length check (Must be at least 3 ideas)
+        if not isinstance(ideas_list, list) or len(ideas_list) < 3:
+            raise ValueError("LLM response did not contain at least 3 valid ideas.")
 
         ideas_list = ideas_list[:3]
 
     except Exception:
-        # Fallback if LLM output fails standard parsing
-        ideas_list = [{
-            "id": 1,
-            "title": meta["title"],
-            "research_question": meta["research_question"],
-            "rationale": "High relevance study tailored to local health priority.",
-            "research_gap": meta["suggested_gap"],
-            "study_design": study_design,
-            "target_population": population,
-            "main_outcome": outcome,
-            "objectives": meta["objectives"],
-            "pico": meta["pico"],
-            "impact": "Direct improvement in local evidence-based clinical decision making.",
-            "scores": {"novelty": 85, "feasibility": 90, "clinical_importance": 88, "overall": 88}
-        }]
-
-    # Auto-sort ideas by overall score descending
-    ideas_list.sort(
-        key=lambda x: x.get("scores", {}).get("overall", 0),
-        reverse=True
-    )
+        # Fallback to 3 structured deterministic ideas on failure
+        ideas_list = build_fallback_ideas(meta, population, study_design, outcome, data_source)
 
     return {
         "status": "success",
@@ -299,6 +356,7 @@ RULES:
         "evidence_count": len(papers),
         "gap_analysis": gap_report,
         "deterministic_meta": meta,
+        "design_corrected": design_was_corrected,
         "evidence_text": evidence_text,  # Clean UI pass-through
         "gap_text": gap_text            # Clean UI pass-through
     }
