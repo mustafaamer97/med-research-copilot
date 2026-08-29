@@ -166,7 +166,7 @@ Large Effect = 0.8
     ):
 
         try:
-            # 10) إضافة study_type للدالة
+            # 10) الاستدعاء المعدّل ليشمل study_type
             n = calculate_sample_size(
                 study_type=study_type,
                 effect_size=effect_size,
