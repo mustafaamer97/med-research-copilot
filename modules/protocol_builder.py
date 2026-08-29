@@ -21,14 +21,30 @@ Medical Field:
 Target Population:
 {research_context.get("population", "")}
 
+Location:
+{research_context.get("location", "")}
+
+Study Period:
+{research_context.get("study_period", "")}
+
+Study Design:
+{research_context.get("study_design", "")}
+
+Research Goal:
+{research_context.get("research_goal", "")}
+
 Data Source:
 {research_context.get("data_source", "")}
+
+Evidence Base:
+{research_context.get("evidence_count", 0)} studies
 
 Keywords:
 {research_context.get("keywords", "")}
 """
 
     question_text = ""
+    pico_text = ""
 
     if research_question:
 
@@ -38,6 +54,22 @@ Research Question:
 
 Search Keywords:
 {research_question.get("keywords", "")}
+"""
+
+        pico = research_question.get("pico", {})
+
+        pico_text = f"""
+Population:
+{pico.get("population", "")}
+
+Intervention:
+{pico.get("intervention", "")}
+
+Comparison:
+{pico.get("comparison", "")}
+
+Outcome:
+{pico.get("outcome", "")}
 """
 
     gap_text = ""
@@ -58,6 +90,8 @@ Search Keywords:
         keyword_text = ", ".join(
             [
                 item[0]
+                if isinstance(item, (list, tuple))
+                else str(item)
                 for item in keywords[:10]
             ]
         )
@@ -90,6 +124,12 @@ RESEARCH QUESTION
 ===================================
 
 {question_text}
+
+===================================
+PICO FRAMEWORK
+===================================
+
+{pico_text}
 
 ===================================
 DETECTED RESEARCH GAPS
@@ -159,6 +199,9 @@ Requirements:
 
 - Academic style
 - Evidence-based methodology
+- Adapt methodology to the selected study design
+- If observational, use exposure/risk-factor language
+- If RCT, use intervention language
 - Suitable for IRB submission
 - Suitable for journal publication
 - Explicitly explain how the proposed study addresses the detected research gaps
