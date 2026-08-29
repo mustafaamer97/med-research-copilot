@@ -8,37 +8,6 @@ from modules.medical_knowledge_engine import (
 )
 
 
-MEDICAL_FIELDS = [
-    "Cardiology",
-    "Neurology",
-    "Oncology",
-    "Endocrinology",
-    "Gastroenterology",
-    "Pulmonology",
-    "Nephrology",
-    "Infectious Diseases",
-    "Psychiatry",
-    "Dermatology",
-    "Pediatrics",
-    "Obstetrics & Gynecology",
-    "General Surgery",
-    "Orthopedic Surgery",
-    "Neurosurgery",
-    "Urology",
-    "Ophthalmology",
-    "Otolaryngology (ENT)",
-    "Emergency Medicine",
-    "Public Health",
-]
-
-TARGET_POPULATIONS = [
-    "Adults",
-    "Children",
-    "Elderly",
-    "Pregnant Women",
-    "General Population",
-]
-
 STUDY_DESIGNS = [
 
     "Auto Detect",
@@ -138,29 +107,6 @@ VALID_DESIGNS = {
 
     "Mixed Sources": STUDY_DESIGNS,
 
-}
-
-FIELD_KEYWORD_HINTS = {
-    "Cardiology": "heart failure, NT-proBNP, ejection fraction, mortality",
-    "Neurology": "stroke, epilepsy, cognition, MRI",
-    "Oncology": "survival, chemotherapy, tumor markers",
-    "Endocrinology": "diabetes, HbA1c, insulin resistance",
-    "Gastroenterology": "IBD, colonoscopy, liver disease",
-    "Pulmonology": "COPD, asthma, spirometry",
-    "Nephrology": "CKD, dialysis, eGFR",
-    "Infectious Diseases": "COVID-19, sepsis, antimicrobial resistance",
-    "Psychiatry": "depression, anxiety, quality of life",
-    "Dermatology": "psoriasis, eczema, skin lesions",
-    "Pediatrics": "growth, vaccination, childhood disease",
-    "Obstetrics & Gynecology": "pregnancy outcomes, infertility",
-    "General Surgery": "postoperative complications, wound infection",
-    "Orthopedic Surgery": "fractures, arthroplasty, outcomes",
-    "Neurosurgery": "brain tumors, spinal surgery",
-    "Urology": "prostate cancer, kidney stones",
-    "Ophthalmology": "glaucoma, cataract, visual acuity",
-    "Otolaryngology (ENT)": "hearing loss, sinusitis",
-    "Emergency Medicine": "triage, trauma, emergency care",
-    "Public Health": "prevalence, risk factors, screening",
 }
 
 
@@ -285,7 +231,6 @@ Population:
 """
         )
 
-        # استخراج التصميم الموصى به والأشكال البديلة مباشرة من قواميس تحليل المحرك
         recommended_design = analysis.get("recommended_design")
         alternative_designs = analysis.get("alternative_designs", [])
 
@@ -376,8 +321,9 @@ Allowed Designs:
         "keywords": keywords,
     }
 
+    # التعديل الرابع: التحقق فقط عند توفر Disease و Outcome معاً لتقليل الضغط
     validation = None
-    if disease:
+    if disease and outcome:
         validation = validate_research_idea(
             disease,
             context
