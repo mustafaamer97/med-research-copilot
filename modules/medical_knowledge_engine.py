@@ -1,17 +1,44 @@
 import re
+from functools import lru_cache
 
 # ---------------------------------------------------------------------------
-# 1. Knowledge Base Configuration
+# 1. Constants & Configuration Sets
+# ---------------------------------------------------------------------------
+
+DEFAULT_EVIDENCE_SYNTHESIS = "Systematic Review and Meta-Analysis"
+
+EHR_DATA_SOURCES = {
+    "Hospital Records",
+    "Electronic Health Records (EHR)",
+    "Registry Database",
+    "Clinical Database"
+}
+
+STOP_WORDS = {
+    "the", "and", "for", "with", "that", "this", "from", "involving",
+    "study", "analysis", "evaluation", "assessment", "patients", "among",
+    "using", "role", "effect", "impact", "association", "between"
+}
+
+# ---------------------------------------------------------------------------
+# 2. Knowledge Base Configuration
 # ---------------------------------------------------------------------------
 
 FIELD_RULES = {
+    "General Medicine": {
+        "keywords": [],
+        "default_population": "General Patient Population",
+        "domain_keywords": ["Clinical Outcomes", "Mortality", "Morbidity"],
+        "outcomes": ["Overall Mortality", "Readmission Rate", "Length of Stay"]
+    },
     "Oncology": {
         "keywords": [
             "cancer", "tumor", "tumour", "neoplasm", "leukemia",
             "lymphoma", "melanoma", "carcinoma", "sarcoma", "oncology"
         ],
         "default_population": "Patients diagnosed with malignant neoplasms",
-        "domain_keywords": ["Survival Rate", "Mortality", "Chemotherapy", "Oncology", "Tumor Markers"]
+        "domain_keywords": ["Survival Rate", "Mortality", "Chemotherapy", "Oncology", "Tumor Markers"],
+        "outcomes": ["Overall Survival (OS)", "Progression-Free Survival (PFS)", "Cancer-Specific Mortality"]
     },
     "Cardiology": {
         "keywords": [
@@ -19,7 +46,8 @@ FIELD_RULES = {
             "hypertension", "arrhythmia", "atherosclerosis", "cardiology"
         ],
         "default_population": "Patients with cardiovascular conditions",
-        "domain_keywords": ["Cardiovascular Outcomes", "Mortality", "Ejection Fraction", "Hypertension", "Lipid Profile"]
+        "domain_keywords": ["Cardiovascular Outcomes", "Mortality", "Ejection Fraction", "Hypertension", "Lipid Profile"],
+        "outcomes": ["Major Adverse Cardiovascular Events (MACE)", "30-Day Mortality", "Heart Failure Hospitalization"]
     },
     "Neurology": {
         "keywords": [
@@ -27,7 +55,8 @@ FIELD_RULES = {
             "neurological", "dementia", "seizure", "neurology"
         ],
         "default_population": "Patients with neurological disorders",
-        "domain_keywords": ["Cognitive Function", "Neurological Deficit", "Brain MRI", "Functional Recovery", "Seizure Frequency"]
+        "domain_keywords": ["Cognitive Function", "Neurological Deficit", "Brain MRI", "Functional Recovery", "Seizure Frequency"],
+        "outcomes": ["Modified Rankin Scale (mRS) Score", "Stroke Recurrence", "Cognitive Decline Rate"]
     },
     "Endocrinology": {
         "keywords": [
@@ -35,7 +64,8 @@ FIELD_RULES = {
             "metabolic", "hyperthyroidism", "hypothyroidism", "endocrinology"
         ],
         "default_population": "Patients with endocrine and metabolic disorders",
-        "domain_keywords": ["HbA1c", "Glycemic Control", "Insulin Resistance", "Metabolic Syndrome", "Endocrine Function"]
+        "domain_keywords": ["HbA1c", "Glycemic Control", "Insulin Resistance", "Metabolic Syndrome", "Endocrine Function"],
+        "outcomes": ["HbA1c Reduction", "Hypoglycemic Events", "Microvascular Complications"]
     },
     "Pulmonology": {
         "keywords": [
@@ -43,7 +73,8 @@ FIELD_RULES = {
             "pulmonary", "bronchitis", "pulmonology"
         ],
         "default_population": "Patients with respiratory conditions",
-        "domain_keywords": ["Lung Function", "FEV1", "Exacerbation Rate", "Oxygen Saturation", "Respiratory Mechanics"]
+        "domain_keywords": ["Lung Function", "FEV1", "Exacerbation Rate", "Oxygen Saturation", "Respiratory Mechanics"],
+        "outcomes": ["Annual Exacerbation Rate", "FEV1 Decline", "All-Cause Mortality"]
     },
     "Nephrology": {
         "keywords": [
@@ -51,7 +82,8 @@ FIELD_RULES = {
             "creatinine", "nephrology"
         ],
         "default_population": "Patients with renal dysfunction or chronic kidney disease",
-        "domain_keywords": ["eGFR", "Serum Creatinine", "Proteinuria", "Dialysis Outcomes", "Renal Survival"]
+        "domain_keywords": ["eGFR", "Serum Creatinine", "Proteinuria", "Dialysis Outcomes", "Renal Survival"],
+        "outcomes": ["ESRD Progression", "eGFR Decline Rate", "Cardiovascular Mortality in CKD"]
     },
     "Gastroenterology": {
         "keywords": [
@@ -59,7 +91,8 @@ FIELD_RULES = {
             "cirrhosis", "gastrointestinal", "gastroenterology"
         ],
         "default_population": "Patients with gastrointestinal or hepatic diseases",
-        "domain_keywords": ["Liver Enzymes", "Endoscopic Findings", "Mucosal Healing", "Gut Microbiota", "Disease Activity Index"]
+        "domain_keywords": ["Liver Enzymes", "Endoscopic Findings", "Mucosal Healing", "Gut Microbiota", "Disease Activity Index"],
+        "outcomes": ["Endoscopic Remission", "Sustained Virologic Response (SVR)", "Cirrhosis Decompensation"]
     },
     "Psychiatry": {
         "keywords": [
@@ -67,7 +100,8 @@ FIELD_RULES = {
             "bipolar", "schizophrenia", "psychosis", "psychiatry"
         ],
         "default_population": "Patients with psychiatric conditions",
-        "domain_keywords": ["Symptom Severity", "Psychometric Scale", "Mental Health Score", "Treatment Response", "Relapse Rate"]
+        "domain_keywords": ["Symptom Severity", "Psychometric Scale", "Mental Health Score", "Treatment Response", "Relapse Rate"],
+        "outcomes": ["Symptom Remission Rate", "Relapse Rate", "Treatment Adherence"]
     },
     "Infectious Diseases": {
         "keywords": [
@@ -75,7 +109,8 @@ FIELD_RULES = {
             "sepsis", "bacterial", "viral", "antimicrobial", "infectious"
         ],
         "default_population": "Patients diagnosed with infectious diseases",
-        "domain_keywords": ["Viral Load", "Pathogen Clearance", "Infection Rate", "Antimicrobial Resistance", "Inflammatory Markers"]
+        "domain_keywords": ["Viral Load", "Pathogen Clearance", "Infection Rate", "Antimicrobial Resistance", "Inflammatory Markers"],
+        "outcomes": ["Pathogen Clearance Time", "30-Day Mortality", "Infection Recurrence Rate"]
     },
 }
 
@@ -121,38 +156,32 @@ GOAL_DESIGN_MAP = {
         "category": "Prediction Research"
     },
     "systematic review": {
-        "primary": "Systematic Review and Meta-Analysis",
+        "primary": DEFAULT_EVIDENCE_SYNTHESIS,
         "alternatives": ["Scoping Review", "Narrative Review"],
         "category": "Evidence Synthesis"
     },
 }
 
-EHR_DATA_SOURCES = [
-    "Hospital Records",
-    "Electronic Health Records (EHR)",
-    "Registry Database",
-    "Clinical Database"
-]
-
-STOP_WORDS = {
-    "the", "and", "for", "with", "that", "this", "from", "involving",
-    "study", "analysis", "evaluation", "assessment", "patients", "among",
-    "using", "role", "effect", "impact", "association", "between"
-}
-
-
 # ---------------------------------------------------------------------------
-# 2. Core Detection & Logic Functions
+# 3. Core Logic & Helper Functions
 # ---------------------------------------------------------------------------
 
 def detect_specialty(topic: str) -> tuple[str, int]:
-    """Detects medical specialty and calculates match confidence score."""
+    """Detects medical specialty using word boundary regex and calculates match confidence score."""
     text = topic.lower()
     best_field = "General Medicine"
     max_matches = 0
 
     for field, data in FIELD_RULES.items():
-        matches = sum(1 for kw in data["keywords"] if kw in text)
+        if field == "General Medicine":
+            continue
+        
+        matches = 0
+        for kw in data["keywords"]:
+            # Use Regex word boundaries to avoid false substring matching (e.g., heart -> heartburn)
+            if re.search(rf"\b{re.escape(kw)}\b", text):
+                matches += 1
+                
         if matches > max_matches:
             max_matches = matches
             best_field = field
@@ -167,15 +196,25 @@ def detect_specialty(topic: str) -> tuple[str, int]:
     return best_field, confidence
 
 
-def detect_population(topic: str, data_source: str, field: str) -> str:
-    """Determines patient population dynamically based on field rules or data source."""
-    if field in FIELD_RULES:
-        return FIELD_RULES[field]["default_population"]
+def get_confidence_level(score: int) -> str:
+    """Returns human-readable text category for confidence score."""
+    if score >= 95:
+        return "Very High"
+    if score >= 85:
+        return "High"
+        
+    return "Moderate"
 
-    if data_source in ["Survey / Questionnaire", "Public Health Data"]:
-        return "General Population"
 
-    return "Study Cohort / Hospital Patients"
+def detect_population(data_source: str, field: str) -> tuple[str, str]:
+    """Determines patient population and returns its source (detected vs default)."""
+    if field in FIELD_RULES and field != "General Medicine":
+        return FIELD_RULES[field]["default_population"], "detected"
+
+    if data_source in {"Survey / Questionnaire", "Public Health Data"}:
+        return "General Population", "detected"
+
+    return FIELD_RULES["General Medicine"]["default_population"], "default"
 
 
 def recommend_design(goal: str, data_source: str) -> tuple[str, list[str], str]:
@@ -188,16 +227,14 @@ def recommend_design(goal: str, data_source: str) -> tuple[str, list[str], str]:
         alternatives = list(mapping["alternatives"])
         category = mapping["category"]
 
-        # Contextual modification based on data source
         if goal_key == "risk factors" and data_source in EHR_DATA_SOURCES:
             primary = "Retrospective Cohort Study"
             alternatives = ["Case-Control Study", "Cross-Sectional Study"]
 
         return primary, alternatives, category
 
-    # Default fallbacks when goal is unrecognized
     if data_source == "Published Literature" or goal_key == "systematic review":
-        return "Systematic Review and Meta-Analysis", ["Scoping Review", "Narrative Review"], "Evidence Synthesis"
+        return DEFAULT_EVIDENCE_SYNTHESIS, ["Scoping Review", "Narrative Review"], "Evidence Synthesis"
 
     if data_source in EHR_DATA_SOURCES:
         return "Retrospective Cohort Study", ["Case-Control Study", "Cross-Sectional Study"], "Primary Clinical Research"
@@ -222,26 +259,32 @@ def generate_keywords(topic: str, field: str, goal: str) -> list[str]:
         if item and item not in combined:
             combined.append(item)
 
-    return combined[:10]
+    MAX_KEYWORDS = 15
+    return combined[:MAX_KEYWORDS]
 
 
 # ---------------------------------------------------------------------------
-# 3. Main Master Function
+# 4. Main Master Function (Cached)
 # ---------------------------------------------------------------------------
 
+@lru_cache(maxsize=200)
 def analyze_research_topic(topic: str, goal: str, data_source: str) -> dict:
-    """Master analytical routine for processing research topic parameters."""
+    """Master analytical routine with LRU cache optimization."""
     field, confidence = detect_specialty(topic)
-    population = detect_population(topic, data_source, field)
+    population, pop_source = detect_population(data_source, field)
     rec_design, alt_designs, research_category = recommend_design(goal, data_source)
     keywords = generate_keywords(topic, field, goal)
+    outcomes = FIELD_RULES.get(field, {}).get("outcomes", [])
 
     return {
         "field": field,
         "confidence": confidence,
+        "confidence_level": get_confidence_level(confidence),
         "population": population,
+        "population_source": pop_source,
         "recommended_design": rec_design,
         "alternative_designs": alt_designs,
         "research_category": research_category,
         "keywords": keywords,
+        "suggested_outcomes": outcomes,
     }
