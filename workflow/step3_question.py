@@ -1,5 +1,9 @@
 import streamlit as st
 
+from modules.context_manager import (
+    get_context,
+    update_context
+)
 from modules.pico_builder import (
     build_pico
 )
@@ -75,10 +79,7 @@ def render():
     # Defaults from Step 1 & Step 2
     # =========================
 
-    context = st.session_state.get(
-        "research_context",
-        {}
-    )
+    context = get_context()
 
     # 1. Population Update
     default_population = (
@@ -462,6 +463,37 @@ def render():
                 st.session_state[
                     "question_completed"
                 ] = True
+
+                update_context(
+
+                    research_question=
+                    result["question"],
+
+                    pubmed_query=
+                    result.get(
+                        "pubmed_query",
+                        ""
+                    ),
+
+                    europe_pmc_query=
+                    result.get(
+                        "europe_pmc_query",
+                        ""
+                    ),
+
+                    openalex_query=
+                    result.get(
+                        "openalex_query",
+                        ""
+                    ),
+
+                    master_query=
+                    result.get(
+                        "master_query",
+                        ""
+                    )
+
+                )
 
                 st.success(
                     "Research Question saved successfully."
