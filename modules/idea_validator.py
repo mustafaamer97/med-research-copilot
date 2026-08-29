@@ -396,6 +396,15 @@ def validate_manual_idea(
             "Research description is incomplete."
         )
 
+    # التحقق المضاف: خصم نقاط وإضافة ملاحظة إذا كان الوصف قصيرًا جدًا
+    if len(description) < 50:
+
+        score -= 10
+
+        notes.append(
+            "Research description is too short."
+        )
+
     score = max(
         0,
         score
