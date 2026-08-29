@@ -195,7 +195,7 @@ def render():
 
             return
 
-        # Passing study_design with fallback to recommended_design
+        # Passing study_design with fallback to recommended_design, along with research_goal
         result = build_pico(
             population,
             intervention,
@@ -207,7 +207,8 @@ def render():
                     "recommended_design",
                     ""
                 )
-            )
+            ),
+            context.get("research_goal", "")
         )
 
         if "error" in result:
