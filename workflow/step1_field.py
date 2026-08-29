@@ -33,7 +33,6 @@ DATA_SOURCES = [
     "Mixed Sources",
 ]
 
-# 1. تخصيص التصاميم المسموحة فقط لكل مصدر بيانات
 VALID_DESIGNS = {
     "Registry Database": [
         "Registry-Based Study",
@@ -90,7 +89,6 @@ def render_feasibility(validation):
     score = validation.get("score", 0)
     level = validation.get("feasibility", "Unknown").upper()
 
-    # 7. إضافة Quality Badge البصرية
     if score >= 90:
         st.success(f"🟢 Excellent Research Context (Score: {score}/100)")
     elif score >= 75:
@@ -111,7 +109,7 @@ def render_feasibility(validation):
                 st.write(f"• {note}")
 
 
-# 4. تبسيط دالة Context Builder عبر تمرير قاموس البيانات
+# التعديل السادس: إضافة confidence و confidence_level لقاموس context
 def build_context(analysis, form_data):
     return {
         "research_type": form_data["research_type"],
@@ -132,6 +130,8 @@ def build_context(analysis, form_data):
         "location": form_data["location"],
         "study_period": form_data["study_period"],
         "keywords": form_data["keywords"],
+        "confidence": analysis["confidence"] if analysis and "confidence" in analysis else 0,
+        "confidence_level": analysis["confidence_level"] if analysis and "confidence_level" in analysis else "Unknown",
         "pico": {
             "population": form_data["target_population"],
             "intervention": form_data["exposure_or_intervention"],
@@ -192,17 +192,31 @@ def render():
 
         recommended_design = analysis.get("recommended_design")
 
+        # التعديل الأول والرابع: عرض Research Category و Confidence Level
         st.markdown("### 🤖 Research Detection")
-        st.success(f"**Field:** {analysis['field']}\n\n**Recommended Design:** {recommended_design}")
+        col_det_1, col_det_2 = st.columns([3, 1])
+        with col_det_1:
+            st.success(
+                f"""
+**Field:** {analysis['field']}  
+**Research Category:** {analysis['research_category']}  
+**Recommended Design:** {recommended_design}
+"""
+            )
+        with col_det_2:
+            conf_val = analysis.get("confidence", 0)
+            conf_lvl = analysis.get("confidence_level", "Unknown")
+            st.metric("Confidence", f"{conf_val}%")
+            st.caption(f"Level: {conf_lvl}")
 
+    # التعديل الثاني: Population الذكي الافتراضي مع إرشادات
+    auto_population = analysis["population"] if analysis and analysis.get("population") else ""
     target_population = st.text_input(
         "Target Population",
-        value=saved_context.get(
-            "population",
-            analysis["population"] if analysis and analysis.get("population") else ""
-        ),
+        value=saved_context.get("population", auto_population),
         placeholder="Breast cancer patients"
     )
+    st.caption("Auto-detected population. You may edit if needed.")
 
     exposure_or_intervention = st.text_input(
         "Exposure / Intervention",
@@ -220,21 +234,39 @@ def render():
         placeholder="Sana'a, Yemen"
     )
 
-    outcome = st.text_input(
-        "Primary Outcome",
-        value=saved_context.get("outcome", ""),
-        placeholder="Incidence, Mortality, Survival..."
+    # التعديل الثالث: Outcome Suggestions ذكية وتفاعلية
+    suggested_outcomes = analysis.get("suggested_outcomes", []) if analysis else []
+    outcome_options = suggested_outcomes + ["Other..."] if suggested_outcomes else ["Other..."]
+    
+    saved_outcome = saved_context.get("outcome", "")
+    
+    if saved_outcome and saved_outcome in suggested_outcomes:
+        outcome_default_idx = outcome_options.index(saved_outcome)
+    else:
+        outcome_default_idx = len(outcome_options) - 1
+
+    selected_outcome_option = st.selectbox(
+        "Primary Outcome (Select or Enter Custom)",
+        outcome_options,
+        index=outcome_default_idx
     )
+
+    if selected_outcome_option == "Other...":
+        outcome = st.text_input(
+            "Specify Custom Primary Outcome",
+            value=saved_outcome if saved_outcome not in suggested_outcomes else "",
+            placeholder="Incidence, Mortality, Survival..."
+        )
+    else:
+        outcome = selected_outcome_option
 
     study_objective = st.text_area(
         "Study Objective",
         value=saved_context.get("objective", "")
     )
 
-    # 1. تصفية خيارات Design بناءً على المصدر المحدد فقط
     available_designs = VALID_DESIGNS.get(data_source, VALID_DESIGNS["Mixed Sources"])
 
-    # 2. التعيين المباشر والنظيف بدون locals()
     selected_design = saved_context.get("study_design", recommended_design if recommended_design in available_designs else available_designs[0])
     study_design = selected_design
 
@@ -259,7 +291,6 @@ Allowed Designs: {", ".join(available_designs)}
 """
         )
 
-    # 5. التحقق البرمجي من صيغة Study Period
     study_period = st.text_input(
         "Study Period",
         value=saved_context.get("study_period", ""),
@@ -276,7 +307,6 @@ Allowed Designs: {", ".join(available_designs)}
         else ""
     )
 
-    # 6. إدارة الكلمات المفتاحية بنظافة بدون temp_keywords
     col_kw_1, col_kw_2 = st.columns([4, 1])
     with col_kw_1:
         current_keywords = saved_context.get("keywords", default_keywords)
@@ -318,14 +348,16 @@ Allowed Designs: {", ".join(available_designs)}
 
     render_feasibility(validation)
 
+    # التعديل الثامن: إثراء بطاقة الملخص النهائية بالبيانات الجديدة
     st.markdown("---")
     st.subheader("📋 Final Research Context Card")
     st.info(
         f"""
 **Disease / Topic:** {disease if disease else 'Not specified'}  
-**Research Type:** {research_type} | **Goal:** {research_goal}  
-**Data Source:** {data_source} | **Design:** {study_design}  
+**Research Type:** {research_type} | **Category:** {context.get('research_category', 'N/A')}  
+**Goal:** {research_goal} | **Data Source:** {data_source} | **Design:** {study_design}  
 **Location:** {location if location else 'Not specified'} | **Period:** {study_period if study_period else 'Not specified'}  
+**Detection Confidence:** {context.get('confidence', 0)}% ({context.get('confidence_level', 'N/A')}) | **Context Quality Score:** {context.get('context_quality_score', 'N/A')}/100  
 
 ---
 
@@ -346,11 +378,19 @@ Allowed Designs: {", ".join(available_designs)}
     if research_type == "Primary Research":
         required_fields.append(location)
 
+    # التعديل الخامس: حساب وإظهار شريط جاهزية البحث (Readiness Score)
+    completed_fields = sum(1 for x in required_fields if str(x).strip())
+    readiness_percentage = round((completed_fields / len(required_fields)) * 100)
+    
+    st.markdown("### 📊 Step 1 Completion Progress")
+    st.progress(readiness_percentage / 100)
+    st.write(f"**Research Readiness:** {readiness_percentage}%")
+
     can_save = all(str(x).strip() for x in required_fields) and design_is_valid and valid_period
 
     if can_save:
         if st.button("💾 Save Research Context", use_container_width=True, type="primary"):
-            # 3. حفظ كامل الحقول المهمة في session_state لتيسير الوصول لها في باقي الخطوات
+            # التعديل السابع: حفظ study_period وبقية الحقول في session_state
             st.session_state["context_completed"] = True
             st.session_state["research_context"] = context
             st.session_state["disease"] = disease
@@ -361,6 +401,7 @@ Allowed Designs: {", ".join(available_designs)}
             st.session_state["data_source"] = data_source
             st.session_state["outcome"] = outcome
             st.session_state["location"] = location
+            st.session_state["study_period"] = study_period
             st.session_state["keywords"] = keywords
 
             st.toast("Research Context Saved", icon="✅")
