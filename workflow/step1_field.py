@@ -53,7 +53,8 @@ def recommend_study_design(
             ]
         )
 
-    if data_source == "Literature Only":
+    # التعديل الثالث: تم استبدال "Literature Only" بـ "Published Literature"
+    if data_source == "Published Literature":
 
         return (
             "Systematic Review",
@@ -415,8 +416,17 @@ Allowed Designs:
         height=120,
     )
 
+    # التعديل الرابع: التحقق من وجود disease قبل إجراء الفحص
+    validation = None
+    if disease:
+        validation = validate_research_idea(
+            disease,
+            context
+        )
+
     context = {
         "research_type": research_type,
+        # التعديل السادس: التأكد من وجود research_category
         "research_category": (
             analysis["research_category"]
             if analysis
@@ -438,9 +448,23 @@ Allowed Designs:
         "keywords": keywords,
     }
 
+    # التعديل الخامس: إضافة context_quality_score في حال وجود validation
+    if validation:
+        context[
+            "context_quality_score"
+        ] = validation["score"]
+
     st.session_state["research_context"] = context
     st.session_state["research_type"] = research_type
     st.session_state["disease"] = disease
+
+    # التعديل الأول: إضافة field مباشرة بعد disease
+    st.session_state["field"] = (
+        analysis["field"]
+        if analysis
+        else ""
+    )
+
     st.session_state["population"] = target_population
     st.session_state["intervention"] = exposure_or_intervention
     st.session_state["comparison"] = comparison
@@ -449,21 +473,16 @@ Allowed Designs:
     st.session_state["data_source"] = data_source
     st.session_state["study_objective"] = study_objective
 
+    # التعديل الثاني: تحديث قاموس pico بالكامل
     st.session_state["pico"] = {
-
         "population": target_population,
-
         "intervention": exposure_or_intervention,
-
         "comparison": comparison,
-
-        "outcome": outcome
+        "outcome": outcome,
+        "topic": disease,
+        "goal": research_goal,
+        "study_design": study_design
     }
-
-    validation = validate_research_idea(
-        disease,
-        context
-    )
 
     if recommended_design:
 
@@ -515,7 +534,7 @@ Selected:
         "Research Feasibility Assessment"
     )
 
-    if validation["feasibility"] == "High":
+    if validation and validation["feasibility"] == "High":
 
         st.success(
             f"""
@@ -525,7 +544,7 @@ Feasibility Level: HIGH
 """
         )
 
-    elif validation["feasibility"] == "Moderate":
+    elif validation and validation["feasibility"] == "Moderate":
 
         st.warning(
             f"""
@@ -535,7 +554,7 @@ Feasibility Level: MODERATE
 """
         )
 
-    else:
+    elif validation:
 
         st.error(
             f"""
@@ -545,7 +564,7 @@ Feasibility Level: LOW
 """
         )
 
-    if validation["notes"]:
+    if validation and validation["notes"]:
 
         with st.expander(
             "Why was this score assigned?"
