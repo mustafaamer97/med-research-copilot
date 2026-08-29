@@ -1,6 +1,9 @@
 import re
 import streamlit as st
 
+from modules.context_manager import (
+    update_context
+)
 from modules.idea_validator import validate_research_idea
 from modules.medical_knowledge_engine import analyze_research_topic
 
@@ -410,7 +413,7 @@ Allowed Designs: {", ".join(available_designs)}
     if can_save:
         if st.button("💾 Save Research Context", use_container_width=True, type="primary"):
             st.session_state["context_completed"] = True
-            st.session_state["research_context"] = context
+            update_context(**context)
             st.session_state["disease"] = disease
             st.session_state["population"] = target_population
             st.session_state["study_design"] = study_design
