@@ -1,503 +1,451 @@
 import streamlit as st
 
+from modules.protocol_builder import (
+    generate_protocol
+)
 from modules.context_manager import (
     get_context,
     update_context
 )
-from modules.pico_builder import (
-    build_pico
-)
+
+STUDY_DESIGNS = [
+    "Randomized Controlled Trial (RCT)",
+    "Pragmatic Clinical Trial",
+    "Prospective Cohort Study",
+    "Retrospective Cohort Study",
+    "Case-Control Study",
+    "Nested Case-Control Study",
+    "Cross-Sectional Study",
+    "Diagnostic Accuracy Study",
+    "Prediction Model Study",
+    "Prognostic Study",
+    "Survey Study",
+    "Case Report",
+    "Case Series",
+    "Systematic Review",
+    "Meta-Analysis",
+    "Scoping Review",
+    "Umbrella Review",
+    "Network Meta-Analysis",
+]
 
 
 def render():
 
     st.header(
-        "🧬 Research Question Builder"
+        "📋 Research Protocol Builder"
     )
 
-    st.info(
-        "Build a structured PICO research question."
-    )
+    # ==================================
+    # Load Context Data
+    # ==================================
 
-    # =========================
-    # Display Selected Idea
-    # =========================
-
-    idea_data = st.session_state.get(
+    context = get_context()
+    research_context = context
+    selected_idea = context.get(
         "selected_research_idea",
         {}
     )
+    research_question = context.get(
+        "research_question_data",
+        {}
+    )
+    literature = context.get(
+        "retrieved_papers",
+        []
+    )
+    gap_analysis = {
+        "research_gaps": context.get(
+            "research_gaps",
+            []
+        )
+    }
 
-    # 1. Extracted Data from Step 2 (Flexible context fallback)
-    default_topic = (
-        idea_data.get("context", {}).get("disease")
-        or idea_data.get("disease")
-        or idea_data.get("topic")
-        or ""
+    # ==================================
+    # Step Dependency Guard
+    # ==================================
+
+    if not literature:
+        st.warning(
+            "Please complete Step 4 first."
+        )
+        return
+
+    # ==================================
+    # Protocol Header Caption & Summary
+    # ==================================
+
+    st.caption(
+        "Protocol Builder"
     )
 
-    # 6. Location Update
-    default_location = (
-        idea_data.get("location")
-        or idea_data.get("study_location")
-        or idea_data.get("context", {}).get("location")
-        or ""
+    with st.expander(
+        "📋 Research Context",
+        expanded=True
+    ):
+        st.write(
+            f"**Disease:** {context.get('disease','')}"
+        )
+        st.write(
+            f"**Population:** {context.get('population','')}"
+        )
+        st.write(
+            f"**Outcome:** {context.get('outcome','')}"
+        )
+        st.write(
+            f"**Location:** {context.get('location','')}"
+        )
+        st.write(
+            f"**Study Design:** {context.get('study_design','')}"
+        )
+
+    # ==================================
+    # Tabs
+    # ==================================
+
+    tab1, tab2, tab3, tab4 = st.tabs(
+        [
+            "Context",
+            "Idea",
+            "Evidence",
+            "Protocol Builder"
+        ]
     )
 
-    # 2. Outcome Update
-    default_outcome = (
-        idea_data.get("primary_outcome")
-        or idea_data.get("outcome")
-        or idea_data.get("context", {}).get("outcome")
-        or ""
-    )
+    # ==================================
+    # Context Tab
+    # ==================================
 
-    # 5. Period Update
-    default_period = (
-        idea_data.get("period")
-        or idea_data.get("study_period")
-        or idea_data.get("context", {}).get("study_period")
-        or ""
-    )
+    with tab1:
 
-    if idea_data:
+        st.subheader(
+            "Research Context"
+        )
 
-        with st.expander(
-            "Selected Research Idea",
-            expanded=True
-        ):
+        if research_context:
 
-            st.markdown(
+            st.info(
                 f"""
-### {idea_data.get('title', '')}
+Field: {research_context.get('field','')}
 
-{idea_data.get('description', '')}
+Population: {research_context.get('population','')}
+
+Study Design: {research_context.get('study_design','')}
+
+Data Source: {research_context.get('data_source','')}
 """
             )
 
-    # =========================
-    # Defaults from Step 1 & Step 2
-    # =========================
+        if research_question:
 
-    context = get_context()
-
-    # 1. Population Update
-    default_population = (
-        idea_data.get("population")
-        or context.get("population")
-        or ""
-    )
-
-    # 2. Population default without hardcoded disease prefix
-    population_default = default_population
-
-    population = st.text_input(
-        "Population (P)",
-        value=population_default
-    )
-
-    # 3. Intervention Update
-    intervention_default = (
-        idea_data.get("exposure_or_intervention")
-        or idea_data.get("intervention")
-        or ""
-    )
-
-    intervention = st.text_input(
-        "Intervention (I)",
-        value=intervention_default
-    )
-
-    # 4. Comparison Update
-    comparison_default = (
-        idea_data.get("comparison")
-        or ""
-    )
-
-    comparison = st.text_input(
-        "Comparison (C)",
-        value=comparison_default
-    )
-
-    outcome = st.text_input(
-        "Outcome (O)",
-        value=default_outcome
-    )
-
-    # =========================
-    # Study Context
-    # =========================
-
-    st.subheader(
-        "Study Context"
-    )
-
-    c1, c2 = st.columns(2)
-
-    with c1:
-
-        # 4. Display Topic instead of hardcoded Disease
-        st.write(
-            f"**Research Topic:** {default_topic}"
-        )
-
-        st.write(
-            f"**Location:** {default_location}"
-        )
-
-    with c2:
-
-        st.write(
-            f"**Outcome:** {default_outcome}"
-        )
-
-        st.write(
-            f"**Period:** {default_period}"
-        )
-
-    missing_context = []
-
-    if not default_topic:
-
-        missing_context.append(
-            "Topic"
-        )
-
-    if not default_location:
-
-        missing_context.append(
-            "Location"
-        )
-
-    if not default_period:
-
-        missing_context.append(
-            "Period"
-        )
-
-    if missing_context:
-
-        st.warning(
-            "Missing context: "
-            + ", ".join(missing_context)
-        )
-
-    # =========================
-    # Generate Question
-    # =========================
-
-    if st.button(
-        "Generate Research Question",
-        use_container_width=True
-    ):
-
-        if not population.strip():
-
-            st.warning(
-                "Population is required."
+            st.subheader(
+                "Research Question"
             )
 
-            return
-
-        if not outcome.strip():
-
-            st.warning(
-                "Outcome is required."
+            st.success(
+                research_question.get(
+                    "question",
+                    ""
+                )
             )
 
-            return
+    # ==================================
+    # Idea Tab
+    # ==================================
 
-        # Passing study_design with fallback to recommended_design, along with research_goal
-        result = build_pico(
-            population,
-            intervention,
-            comparison,
-            outcome,
-            context.get(
+    with tab2:
+
+        if selected_idea:
+
+            st.subheader(
+                "Research Idea"
+            )
+
+            st.info(
+                f"""
+Title:
+{selected_idea.get('title','')}
+
+Description:
+{selected_idea.get('description','')}
+"""
+            )
+
+    # ==================================
+    # Evidence Tab
+    # ==================================
+
+    with tab3:
+
+        st.subheader(
+            "Evidence Summary"
+        )
+
+        st.metric(
+            "Retrieved Papers",
+            len(literature)
+        )
+
+        st.metric(
+            "Evidence Used",
+            len(literature)
+        )
+
+        if literature:
+
+            for paper in literature[:10]:
+
+                st.caption(
+                    f"""
+{paper.get('year','')} |
+{paper.get('evidence_level','Unknown')} |
+{paper.get('source','Unknown')}
+
+{paper.get('title','')}
+"""
+                )
+
+        if gap_analysis:
+
+            st.subheader(
+                "Research Gap Analysis"
+            )
+
+            top_keywords = gap_analysis.get(
+                "top_keywords",
+                []
+            )
+
+            if top_keywords:
+
+                st.write(
+                    "Most Common Literature Keywords"
+                )
+
+                st.write(
+                    ", ".join(
+                        [
+                            item[0]
+                            for item in top_keywords[:10]
+                        ]
+                    )
+                )
+
+            if gap_analysis.get(
+                "research_gaps"
+            ):
+
+                with st.expander(
+                    "Research Gaps Used in Protocol"
+                ):
+
+                    for gap in gap_analysis[
+                        "research_gaps"
+                    ]:
+
+                        st.write(
+                            f"• {gap}"
+                        )
+
+    # ==================================
+    # Protocol Builder Tab
+    # ==================================
+
+    with tab4:
+
+        default_idea = selected_idea.get(
+            "description",
+            ""
+        )
+
+        idea = st.text_area(
+            "Research Idea",
+            value=default_idea,
+            height=180
+        )
+
+        default_study_design = (
+            research_context.get(
                 "study_design",
-                context.get(
-                    "recommended_design",
-                    ""
-                )
-            ),
-            context.get("research_goal", "")
+                STUDY_DESIGNS[0]
+            )
         )
 
-        if "error" in result:
+        study_index = 0
 
-            st.error(
-                result["error"]
+        if default_study_design in STUDY_DESIGNS:
+
+            study_index = STUDY_DESIGNS.index(
+                default_study_design
             )
 
-        else:
-
-            location = idea_data.get(
-                "location",
-                ""
-            )
-
-            period = idea_data.get(
-                "period",
-                ""
-            )
-
-            outcome_text = outcome
-
-            # =========================
-            # PubMed Query
-            # =========================
-
-            pubmed_query_parts = []
-
-            if default_topic.strip():
-
-                pubmed_query_parts.append(
-                    f'("{default_topic}"[Title/Abstract])'
-                )
-
-            if location:
-
-                pubmed_query_parts.append(
-                    f'("{location}"[Title/Abstract])'
-                )
-
-            if outcome_text:
-
-                pubmed_query_parts.append(
-                    f'("{outcome_text}"[Title/Abstract])'
-                )
-
-            if period:
-
-                pubmed_query_parts.append(
-                    f'("{period}"[Title/Abstract])'
-                )
-
-            pubmed_query = " AND ".join(
-                pubmed_query_parts
-            )
-
-            # =========================
-            # Europe PMC Query
-            # =========================
-
-            europe_pmc_query = " AND ".join(
-                [
-                    x
-                    for x in [
-                        default_topic,
-                        location,
-                        outcome_text,
-                        period
-                    ]
-                    if x
-                ]
-            )
-
-            # =========================
-            # OpenAlex Query
-            # =========================
-
-            openalex_query = " ".join(
-                [
-                    x
-                    for x in [
-                        default_topic,
-                        location,
-                        outcome_text,
-                        period
-                    ]
-                    if x
-                ]
-            )
-
-            # =========================
-            # Master Query
-            # =========================
-
-            master_query = " ".join(
-                [
-                    x
-                    for x in [
-                        default_topic,
-                        location,
-                        intervention,
-                        comparison,
-                        outcome_text,
-                        population
-                    ]
-                    if x
-                ]
-            )
-
-            if not pubmed_query:
-
-                st.error(
-                    "Unable to generate search query."
-                )
-
-                return
-
-            result[
-                "pubmed_query"
-            ] = pubmed_query
-
-            result[
-                "europe_pmc_query"
-            ] = europe_pmc_query
-
-            result[
-                "openalex_query"
-            ] = openalex_query
-
-            result[
-                "master_query"
-            ] = master_query
-
-            st.session_state[
-                "generated_question"
-            ] = result
-
-    # =========================
-    # Display Result
-    # =========================
-
-    result = st.session_state.get(
-        "generated_question"
-    )
-
-    if result:
-
-        st.subheader(
-            "Research Question"
+        study_type = st.selectbox(
+            "Study Design",
+            STUDY_DESIGNS,
+            index=study_index
         )
 
-        st.success(
-            result["question"]
-        )
-
-        st.subheader(
-            "Literature Search Strategy"
-        )
-
-        tab1, tab2, tab3 = st.tabs(
-            [
-                "PubMed",
-                "Europe PMC",
-                "OpenAlex"
-            ]
-        )
-
-        with tab1:
-
-            st.code(
-                result.get(
-                    "pubmed_query",
-                    ""
-                ),
-                language="text"
-            )
-
-        with tab2:
-
-            st.code(
-                result.get(
-                    "europe_pmc_query",
-                    ""
-                ),
-                language="text"
-            )
-
-        with tab3:
-
-            st.code(
-                result.get(
-                    "openalex_query",
-                    ""
-                ),
-                language="text"
-            )
-
-        st.markdown(
-            "### Master Search Query"
-        )
-
-        st.code(
-            result.get(
-                "master_query",
-                ""
-            ),
-            language="text"
+        # Sync selected design into context for downstream steps
+        update_context(
+            final_study_design=study_type
         )
 
         col1, col2 = st.columns(2)
 
         with col1:
 
-            if st.button(
-                "💾 Save Research Question",
+            generate_btn = st.button(
+                "📋 Generate Protocol",
                 use_container_width=True,
                 type="primary"
-            ):
-
-                pico_data = {
-                    "population": population,
-                    "intervention": intervention,
-                    "comparison": comparison,
-                    "outcome": outcome,
-                    "study_design": context.get(
-                        "study_design",
-                        context.get(
-                            "recommended_design",
-                            ""
-                        )
-                    )
-                }
-
-                question_data = {
-                    **result,
-                    "pico": pico_data,
-                    "context": context
-                }
-
-                st.session_state[
-                    "research_question"
-                ] = question_data
-
-                st.session_state[
-                    "question_completed"
-                ] = True
-
-                update_context(
-                    research_question=result.get("question", ""),
-                    research_question_data=question_data,
-                    pico=pico_data,
-                    master_query=result.get("master_query", "")
-                )
-
-                st.success(
-                    "Research Question saved successfully."
-                )
-
-                st.rerun()
+            )
 
         with col2:
 
-            st.download_button(
-                "⬇️ Download Question",
-                data=result["question"],
-                file_name="research_question.txt",
+            regenerate_btn = st.button(
+                "🔄 Regenerate Protocol",
                 use_container_width=True
             )
 
-    # =========================
-    # Completion Status
-    # =========================
+        if generate_btn or regenerate_btn:
 
-    if st.session_state.get(
-        "question_completed"
+            with st.spinner(
+                "Building protocol..."
+            ):
+
+                protocol = generate_protocol(
+                    research_idea=idea,
+                    study_type=study_type,
+                    research_context=research_context,
+                    research_question=research_question,
+                    research_gaps=gap_analysis.get(
+                        "research_gaps",
+                        []
+                    ),
+                    keywords=gap_analysis.get(
+                        "top_keywords",
+                        []
+                    )
+                )
+
+            # Save exact state via Context Manager
+            update_context(
+                research_protocol=protocol,
+                protocol_completed=True,
+                final_study_design=study_type
+            )
+
+            st.rerun()
+
+        protocol = context.get(
+            "research_protocol"
+        )
+
+        if protocol:
+
+            st.subheader(
+                "Generated Protocol"
+            )
+
+            # ==================================
+            # Protocol Structure
+            # ==================================
+
+            st.subheader(
+                "Protocol Structure"
+            )
+
+            sections = [
+
+                "Background",
+
+                "Objectives",
+
+                "Methods",
+
+                "Population",
+
+                "Outcomes",
+
+                "Variables",
+
+                "Statistics",
+
+                "Ethics",
+
+                "Expected Impact"
+            ]
+
+            cols = st.columns(3)
+
+            for idx, section in enumerate(
+                sections
+            ):
+
+                with cols[idx % 3]:
+
+                    st.success(
+                        f"✓ {section}"
+                    )
+
+            st.divider()
+
+            st.markdown(
+                protocol
+            )
+
+            st.download_button(
+                "⬇️ Download Protocol",
+                data=protocol,
+                file_name="research_protocol.md",
+                use_container_width=True
+            )
+
+            with st.expander(
+                "Protocol Quality Checklist",
+                expanded=True
+            ):
+
+                st.checkbox(
+                    "Research Question Defined",
+                    value=bool(
+                        research_question
+                    ),
+                    disabled=True
+                )
+
+                st.checkbox(
+                    "Literature Search Completed",
+                    value=len(
+                        literature
+                    ) > 0,
+                    disabled=True
+                )
+
+                st.checkbox(
+                    "Research Gaps Identified",
+                    value=bool(
+                        gap_analysis
+                    ),
+                    disabled=True
+                )
+
+                st.checkbox(
+                    "Study Design Selected",
+                    value=bool(
+                        study_type
+                    ),
+                    disabled=True
+                )
+
+    # ==================================
+    # Completion Indicator
+    # ==================================
+
+    if context.get(
+        "protocol_completed"
     ):
 
         st.success(
-            "✅ Step 3 Completed"
+            "✅ Step 5 Completed"
         )
