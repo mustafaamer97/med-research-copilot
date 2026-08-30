@@ -4,85 +4,86 @@ def generate_references(
 ):
 
     references = []
+    seen = set()
 
     for i, paper in enumerate(
         literature,
         start=1
     ):
 
+        doi = str(
+            paper.get("doi", "")
+        ).strip()
+
+        if doi:
+
+            if doi in seen:
+                continue
+
+            seen.add(doi)
+
         authors = paper.get(
             "authors",
-            "Unknown Authors"
+            []
         )
 
-        title = paper.get(
-            "title",
-            "Untitled"
+        if isinstance(
+            authors,
+            list
+        ):
+
+            if len(authors) > 6:
+
+                authors = (
+                    ", ".join(authors[:6])
+                    + ", et al"
+                )
+
+            else:
+
+                authors = ", ".join(authors)
+
+        if not authors:
+            authors = "Unknown Authors"
+
+        title = (
+            paper.get("title", "")
+            or "Untitled"
         )
 
-        journal = paper.get(
-            "journal",
-            "Unknown Journal"
+        journal = (
+            paper.get("journal", "")
+            or "Unknown Journal"
         )
 
-        year = paper.get(
-            "year",
-            ""
+        year = (
+            paper.get("year", "")
+            or ""
         )
 
-        doi = paper.get(
-            "doi",
-            ""
+        pmid = str(
+            paper.get("pmid", "")
+        ).strip()
+
+        reference = (
+            f"[{i}] "
+            f"{authors}. "
+            f"{title}. "
+            f"{journal}. "
+            f"{year}."
         )
 
-        pmid = paper.get(
-            "pmid",
-            ""
-        )
+        if doi:
 
-        if style == "Vancouver":
-
-            reference = (
-                f"[{i}] "
-                f"{authors}. "
-                f"{title}. "
-                f"{journal}. "
-                f"{year}."
+            reference += (
+                f" DOI: {doi}."
             )
 
-            if doi:
+        if pmid:
 
-                reference += (
-                    f" DOI: {doi}."
-                )
-
-            elif pmid:
-
-                reference += (
-                    f" PMID: {pmid}."
-                )
-
-        else:
-
-            reference = (
-                f"[{i}] "
-                f"{authors}. "
-                f"{title}. "
-                f"{journal}. "
-                f"{year}."
+            reference += (
+                f" PMID: {pmid}."
             )
-
-            if doi:
-
-                reference += (
-                    f" DOI: {doi}."
-                )
-
-            elif pmid:
-
-                reference += (
-                    f" PMID: {pmid}."
-                )
 
         references.append(
             reference
@@ -90,4 +91,5 @@ def generate_references(
 
     return "\n".join(
         references
+    )        references
     )
