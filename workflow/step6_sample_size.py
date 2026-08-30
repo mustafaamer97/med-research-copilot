@@ -20,9 +20,9 @@ def render():
         "📊 Sample Size & Statistical Power"
     )
 
-    # 2) الحصول على Context بدلاً من session_state المباشر
+    # 2) الحصول على Context باستخدام get_context()
     context = get_context()
-    research_context = context
+    research_context = get_context()
 
     # 3) تحديد نوع الدراسة الافتراضي من Step5 أولاً
     default_study = (
@@ -166,7 +166,6 @@ Large Effect = 0.8
     ):
 
         try:
-            # 10) الاستدعاء المعدّل ليشمل study_type
             n = calculate_sample_size(
                 study_type=study_type,
                 effect_size=effect_size,
@@ -219,7 +218,7 @@ Total sample size: {total_n}
                 use_container_width=True
             )
 
-            # 6 & 7) حفظ النتائج وتحديث الـ Context بدون الاعتماد المباشر على session_state
+            # حفظ الخطة وتحديث Context بعد نجاح الحساب
             sample_plan = {
                 "study_type": study_type,
                 "effect_size": effect_size,
@@ -231,12 +230,39 @@ Total sample size: {total_n}
 
             update_context(
                 sample_size_plan=sample_plan,
+                sample_size_per_group=n,
+                total_sample_size=total_n,
+                power=power,
+                alpha=alpha,
+                effect_size=effect_size,
                 sample_size_completed=True,
                 target_sample_size=total_n
             )
 
         except Exception as e:
             st.error(str(e))
+
+    # ==================================
+    # Protocol Info Display
+    # ==================================
+    protocol = st.session_state.get(
+        "research_protocol",
+        ""
+    )
+
+    if protocol:
+        current_total_n = context.get("total_sample_size", 0)
+        st.info(
+            f"""
+Protocol Generated ✅
+
+Recommended Design:
+{study_type}
+
+Suggested Total Sample:
+{current_total_n}
+"""
+        )
 
     # 8) قراءة الخطة الحالية من context
     plan = context.get(
