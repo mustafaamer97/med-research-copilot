@@ -151,7 +151,7 @@ Large Effect = 0.8
         step=0.05
     )
 
-    # 1) التحقق من إكمال الخطوة الخامسة لمنع القفز المباشر
+    # التحقق من إكمال الخطوة الخامسة لمنع القفز المباشر
     protocol_completed = context.get("protocol_completed", False) or bool(
         st.session_state.get("research_protocol")
     )
@@ -221,7 +221,7 @@ Total sample size: {total_n}
                 use_container_width=True
             )
 
-            # 2) إضافة مصدر التقدير evidence_count وبقية الـ Metadata
+            # إضافة مصدر التقدير evidence_count وبقية الـ Metadata
             sample_plan = {
                 "study_type": study_type,
                 "effect_size": effect_size,
@@ -237,7 +237,7 @@ Total sample size: {total_n}
                 )
             }
 
-            # 3) إضافة المفتاح الواضح sample_size_recommendation
+            # التحديث الشامل للـ Context وإضافة protocol_completed=True
             update_context(
                 sample_size_plan=sample_plan,
                 sample_size_recommendation=sample_plan,
@@ -248,7 +248,8 @@ Total sample size: {total_n}
                 effect_size=effect_size,
                 final_study_design=study_type,
                 sample_size_completed=True,
-                target_sample_size=total_n
+                target_sample_size=total_n,
+                protocol_completed=True
             )
 
             # حفظ الخطة داخل session_state للتوافق
