@@ -1,37 +1,63 @@
-FORBIDDEN_TERMS = [
+import re
 
-    # References
-    "invent doi",
-    "invent pmid",
-    "fake reference",
-    "fabricate citation",
-    "fabricate reference",
+FORBIDDEN_PATTERNS = [
 
-    # Statistics
-    "invent statistical result",
-    "fake p-value",
-    "fake sample size",
+    # Fake references
+    r"invent.*doi",
+    r"invent.*pmid",
+    r"fake.*reference",
+    r"fabricate.*citation",
+    r"fabricate.*reference",
+    r"create.*fake.*reference",
+
+    # Fake statistics
+    r"invent.*statistical",
+    r"fake.*p[\-\s]?value",
+    r"fabricate.*result",
+    r"create.*fake.*result",
+    r"invent.*sample\s*size",
 
     # Research misconduct
-    "make up data",
-    "fabricate data",
-    "generate fake dataset",
-    "create fake results",
+    r"make\s*up.*data",
+    r"fabricate.*data",
+    r"generate.*fake.*dataset",
+    r"create.*fake.*dataset",
+    r"fake.*clinical.*trial",
+    r"invent.*clinical.*trial",
 
     # Publications
-    "invent study",
-    "invent clinical trial",
-    "fake publication"
+    r"invent.*study",
+    r"fake.*publication",
+    r"fabricate.*paper",
+
+    # Ethics violations
+    r"bypass.*irb",
+    r"skip.*ethics",
+    r"fake.*consent",
+    r"fabricate.*consent",
+
+    # Fraudulent reporting
+    r"change.*p[\-\s]?value",
+    r"adjust.*result.*significant",
+    r"make.*result.*significant",
 ]
 
 
-def validate_prompt(prompt):
+def validate_prompt(prompt: str) -> bool:
+    """
+    Returns True if prompt is allowed.
+    Returns False if prompt contains potentially
+    fraudulent research instructions.
+    """
 
-    text = prompt.lower()
+    if not prompt:
+        return True
 
-    for term in FORBIDDEN_TERMS:
+    text = prompt.lower().strip()
 
-        if term in text:
+    for pattern in FORBIDDEN_PATTERNS:
+
+        if re.search(pattern, text):
             return False
 
     return True
