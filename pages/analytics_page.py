@@ -196,7 +196,7 @@ def render():
             )
 
             st.subheader("Academic Report")
-            st.write(report_text)
+            st.markdown(report_text)
 
     # =========================
     # Correlation Analysis
@@ -257,7 +257,7 @@ def render():
             )
 
             st.subheader("Academic Report")
-            st.write(report_text)
+            st.markdown(report_text)
 
     # =========================
     # Categorical Association
@@ -318,7 +318,7 @@ def render():
             )
 
             st.subheader("Academic Report")
-            st.write(report_text)
+            st.markdown(report_text)
 
     # =========================
     # Regression Analysis
@@ -401,7 +401,7 @@ def render():
                 )
 
                 st.subheader("Academic Report")
-                st.write(report_text)
+                st.markdown(report_text)
 
                 with st.expander("Model Summary"):
                     st.text(result["summary"])
