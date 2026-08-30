@@ -43,6 +43,16 @@ def generate_academic_report(
                 "No statistically significant association was observed between the variables."
             )
 
+        # Interpretation of Odds Ratio
+        if odds_ratio > 1:
+            report.append(
+                "Exposure may increase the odds of outcome."
+            )
+        elif odds_ratio < 1:
+            report.append(
+                "Exposure may have a protective effect."
+            )
+
         # Publication-Ready Paragraph
         report.append(
             f"Fisher's Exact Test showed "
@@ -188,6 +198,65 @@ def generate_academic_report(
             "Odds ratios greater than 1 indicate increased odds of the outcome."
         )
 
+    # ANOVA
+    elif (
+        test_name == "ANOVA"
+        and isinstance(result_df, pd.DataFrame)
+    ):
+
+        p_value = float(
+            result_df["p-unc"].iloc[0]
+        )
+
+        f_value = float(
+            result_df["F"].iloc[0]
+        )
+
+        report.append(
+            f"F Statistic: {f_value:.3f}"
+        )
+
+        report.append(
+            f"P-value: {p_value:.4f}"
+        )
+
+        if "np2" in result_df.columns:
+
+            eta = float(
+                result_df["np2"].iloc[0]
+            )
+
+            report.append(
+                f"Eta Squared: {eta:.3f}"
+            )
+
+        if p_value < 0.05:
+
+            report.append(
+                "A statistically significant difference was observed between the group means."
+            )
+
+        else:
+
+            report.append(
+                "No statistically significant difference was observed between the group means."
+            )
+
+    # Tukey HSD
+    elif test_name == "Tukey HSD":
+
+        report.append(
+            "Post-hoc pairwise comparison performed using Tukey HSD."
+        )
+
+        significant = result_df[
+            result_df["reject"] == True
+        ]
+
+        report.append(
+            f"Significant pairwise comparisons: {len(significant)}"
+        )
+
     # Correlation Analysis (r)
     elif isinstance(result_df, pd.DataFrame) and "r" in result_df.columns:
 
@@ -206,6 +275,12 @@ def generate_academic_report(
         report.append(
             f"P-value: {p_value:.4f}"
         )
+
+        if "CI95%" in result_df.columns:
+
+            report.append(
+                f"95% CI: {result_df['CI95%'].iloc[0]}"
+            )
 
         abs_r = abs(r)
 
@@ -287,6 +362,17 @@ def generate_academic_report(
                 f"Effect Size Interpretation: {interpretation}"
             )
 
+        # Rank-Biserial Correlation (Mann-Whitney)
+        if "RBC" in result_df.columns:
+
+            rbc = float(
+                result_df["RBC"].iloc[0]
+            )
+
+            report.append(
+                f"Rank-Biserial Correlation: {rbc:.3f}"
+            )
+
         # 95% Confidence Interval
         if "CI95%" in result_df.columns:
 
@@ -341,13 +427,12 @@ def generate_academic_report(
     # Kruskal-Wallis Test
     elif test_name == "Kruskal-Wallis":
 
-        statistic = result_df[
-            "Statistic"
-        ]
-
-        p_value = result_df[
-            "P-value"
-        ]
+        if isinstance(result_df, dict):
+            statistic = float(result_df["Statistic"])
+            p_value = float(result_df["P-value"])
+        else:
+            statistic = float(result_df["Statistic"].iloc[0])
+            p_value = float(result_df["P-value"].iloc[0])
 
         report.append(
             f"Kruskal-Wallis Statistic: {statistic:.3f}"
@@ -368,5 +453,13 @@ def generate_academic_report(
             report.append(
                 "No statistically significant difference was observed among the groups."
             )
+
+    # Unified Conclusion Footer
+    report.append(
+        "\n---\n"
+        "This interpretation should be considered "
+        "alongside clinical relevance, effect size, "
+        "confidence intervals, and study limitations."
+    )
 
     return "\n\n".join(report)
