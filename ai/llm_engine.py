@@ -2,7 +2,7 @@ import os
 import streamlit as st
 import google.generativeai as genai
 from ai.system_prompt import SYSTEM_PROMPT
-from ai.ai_guardrails import validate_prompt
+from ai.ai_guardrails import validate_prompt, validate_response
 
 # جلب API Key آلياً سواء من Streamlit Secrets أو من المتغيرات المحلية
 api_key = st.secrets.get("GEMINI_API_KEY") if "GEMINI_API_KEY" in st.secrets else os.getenv("GEMINI_API_KEY")
@@ -18,8 +18,7 @@ FALLBACK_MODEL = "gemini-3.5-flash"
 def ask_ai(prompt: str, user_input: str = "") -> str:
     """
     إرسال الطلب إلى Gemini مع تطبيق Guardrails
-    على مدخل المستخدم فقط وليس على
-    Evidence Context القادم من PubMed.
+    على مدخل المستخدم وفحص الرد علمياً لمنع الهلوسة.
     """
 
     if not api_key:
@@ -47,7 +46,15 @@ def ask_ai(prompt: str, user_input: str = "") -> str:
             prompt
         )
 
-        return response.text
+        response_text = response.text
+
+        if not validate_response(response_text):
+            return (
+                "AI Safety Error: "
+                "Response failed scientific validation."
+            )
+
+        return response_text
 
     except Exception as e:
 
@@ -62,7 +69,15 @@ def ask_ai(prompt: str, user_input: str = "") -> str:
                 prompt
             )
 
-            return response.text
+            response_text = response.text
+
+            if not validate_response(response_text):
+                return (
+                    "AI Safety Error: "
+                    "Response failed scientific validation."
+                )
+
+            return response_text
 
         except Exception as fallback_error:
 
