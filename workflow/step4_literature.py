@@ -167,11 +167,10 @@ def render():
             "sources": ["PubMed", "Europe PMC", "OpenAlex"]
         }
 
-        # 3) حفظ query المعتمد في Context
+        # 3) حفظ البيانات المطلوبة في Context
         update_context(
-            master_query=search_query,
-            evidence_count=len(papers),
             retrieved_papers=papers,
+            evidence_count=len(papers),
             literature_search_completed=True
         )
 
