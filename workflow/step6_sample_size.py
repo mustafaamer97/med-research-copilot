@@ -1,7 +1,7 @@
 import plotly.express as px
 import streamlit as st
 
-# 1) استيراد إدارة Context Manager
+# استيراد إدارة Context Manager
 from modules.context_manager import (
     get_context,
     update_context
@@ -12,6 +12,9 @@ from research_analytics.power_curve import (
 from research_analytics.sample_size_engine import (
     calculate_sample_size
 )
+from research_analytics.study_design_mapper import (
+    get_recommended_statistics
+)
 
 
 def render():
@@ -20,18 +23,17 @@ def render():
         "📊 Sample Size & Statistical Power"
     )
 
-    # 2) الحصول على Context باستخدام get_context()
+    # 1) الحصول على Context
     context = get_context()
-    research_context = get_context()
 
-    # 3) تحديد نوع الدراسة الافتراضي من Step5 أولاً
+    # تحديد نوع الدراسة الافتراضي من Step5 أولاً
     default_study = (
         context.get("final_study_design")
         or context.get("study_design")
         or "RCT"
     )
 
-    # 4) إضافة Research Summary
+    # إضافة Research Summary
     with st.expander(
         "📋 Research Summary",
         expanded=True
@@ -91,26 +93,10 @@ before starting the study.
         "Suggested Statistical Analysis"
     )
 
-    if study_type == "RCT":
-        st.write("• Intention-To-Treat Analysis")
-        st.write("• T-Test")
-        st.write("• ANOVA")
-        st.write("• Effect Size")
-
-    elif study_type == "Cohort":
-        st.write("• Kaplan-Meier Analysis")
-        st.write("• Cox Regression")
-        st.write("• Hazard Ratios")
-
-    elif study_type == "Case-Control":
-        st.write("• Odds Ratios")
-        st.write("• Chi-Square Test")
-        st.write("• Logistic Regression")
-
-    elif study_type == "Cross-Sectional":
-        st.write("• Descriptive Statistics")
-        st.write("• Chi-Square Test")
-        st.write("• Logistic Regression")
+    for item in get_recommended_statistics(
+        study_type
+    ):
+        st.write(f"• {item}")
 
     # ==================================
     # Effect Size Guide
@@ -130,9 +116,15 @@ Large Effect = 0.8
 """
     )
 
-    # 5) اقتراح حجم الأثر بناءً على Evidence Count
-    suggested_effect = 0.5
-    if context.get("evidence_count", 0) > 20:
+    # حماية قيمة suggested_effect وجلبها من Context أو اقتراحها
+    suggested_effect = context.get(
+        "suggested_effect_size",
+        0.5
+    )
+    if (
+        not context.get("suggested_effect_size")
+        and context.get("evidence_count", 0) > 20
+    ):
         suggested_effect = 0.3
 
     effect_size = st.number_input(
@@ -159,15 +151,26 @@ Large Effect = 0.8
         step=0.05
     )
 
+    # 1) التحقق من إكمال الخطوة الخامسة لمنع القفز المباشر
+    protocol_completed = context.get("protocol_completed", False) or bool(
+        st.session_state.get("research_protocol")
+    )
+
+    if not protocol_completed:
+        st.warning(
+            "⚠️ Please complete Step 5 (Protocol Builder) first to enable sample size calculation."
+        )
+
     if st.button(
         "Calculate Sample Size",
+        disabled=not protocol_completed,
         type="primary",
         use_container_width=True
     ):
 
         try:
+            # حساب حجم العينة
             n = calculate_sample_size(
-                study_type=study_type,
                 effect_size=effect_size,
                 alpha=alpha,
                 power=power
@@ -218,40 +221,66 @@ Total sample size: {total_n}
                 use_container_width=True
             )
 
-            # حفظ الخطة وتحديث Context بعد نجاح الحساب
+            # 2) إضافة مصدر التقدير evidence_count وبقية الـ Metadata
             sample_plan = {
                 "study_type": study_type,
                 "effect_size": effect_size,
                 "alpha": alpha,
                 "power": power,
                 "per_group": n,
-                "total_sample": total_n
+                "total_sample": total_n,
+                "calculation_method": "TTestIndPower",
+                "allocation_ratio": 1,
+                "evidence_count": context.get(
+                    "evidence_count",
+                    0
+                )
             }
 
+            # 3) إضافة المفتاح الواضح sample_size_recommendation
             update_context(
                 sample_size_plan=sample_plan,
+                sample_size_recommendation=sample_plan,
                 sample_size_per_group=n,
                 total_sample_size=total_n,
                 power=power,
                 alpha=alpha,
                 effect_size=effect_size,
+                final_study_design=study_type,
                 sample_size_completed=True,
                 target_sample_size=total_n
             )
+
+            # حفظ الخطة داخل session_state للتوافق
+            st.session_state["sample_size_plan"] = sample_plan
+            st.session_state["sample_size_completed"] = True
+
+            # إعادة تحميل الصفحة لتحديث واجهة المستخدم
+            st.rerun()
 
         except Exception as e:
             st.error(str(e))
 
     # ==================================
-    # Protocol Info Display
+    # قراءة الخطة الحالية
     # ==================================
+
+    plan = context.get(
+        "sample_size_plan"
+    ) or st.session_state.get(
+        "sample_size_plan"
+    )
+
     protocol = st.session_state.get(
         "research_protocol",
         ""
     )
 
     if protocol:
-        current_total_n = context.get("total_sample_size", 0)
+        current_total_n = (
+            context.get("total_sample_size")
+            or (plan.get("total_sample", 0) if plan else 0)
+        )
         st.info(
             f"""
 Protocol Generated ✅
@@ -264,19 +293,16 @@ Suggested Total Sample:
 """
         )
 
-    # 8) قراءة الخطة الحالية من context
-    plan = context.get(
-        "sample_size_plan"
-    )
-
     if plan:
         st.subheader(
             "Current Sample Size Plan"
         )
         st.json(plan)
 
-    # 9) التحقق من الإكمال باستخدام context
+    # التحقق من الإكمال
     if context.get(
+        "sample_size_completed"
+    ) or st.session_state.get(
         "sample_size_completed"
     ):
         st.success(
