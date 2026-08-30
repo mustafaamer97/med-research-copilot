@@ -440,59 +440,39 @@ def render():
                 type="primary"
             ):
 
-                st.session_state[
-                    "research_question"
-                ] = {
-                    **result,
-                    "pico": {
-                        "population": population,
-                        "intervention": intervention,
-                        "comparison": comparison,
-                        "outcome": outcome,
-                        "study_design": context.get(
-                            "study_design",
-                            context.get(
-                                "recommended_design",
-                                ""
-                            )
+                pico_data = {
+                    "population": population,
+                    "intervention": intervention,
+                    "comparison": comparison,
+                    "outcome": outcome,
+                    "study_design": context.get(
+                        "study_design",
+                        context.get(
+                            "recommended_design",
+                            ""
                         )
-                    },
+                    )
+                }
+
+                question_data = {
+                    **result,
+                    "pico": pico_data,
                     "context": context
                 }
+
+                st.session_state[
+                    "research_question"
+                ] = question_data
 
                 st.session_state[
                     "question_completed"
                 ] = True
 
                 update_context(
-
-                    research_question=
-                    result["question"],
-
-                    pubmed_query=
-                    result.get(
-                        "pubmed_query",
-                        ""
-                    ),
-
-                    europe_pmc_query=
-                    result.get(
-                        "europe_pmc_query",
-                        ""
-                    ),
-
-                    openalex_query=
-                    result.get(
-                        "openalex_query",
-                        ""
-                    ),
-
-                    master_query=
-                    result.get(
-                        "master_query",
-                        ""
-                    )
-
+                    research_question=result.get("question", ""),
+                    research_question_data=question_data,
+                    pico=pico_data,
+                    master_query=result.get("master_query", "")
                 )
 
                 st.success(
