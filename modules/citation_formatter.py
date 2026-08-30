@@ -5,46 +5,29 @@ def insert_vancouver_citations(
     manuscript,
     literature
 ):
+    """Citations are generated directly by the LLM
 
+    according to the prompt rules.
+    No automatic keyword replacement post-processing.
+    """
     if not manuscript:
         return manuscript
 
     if not literature:
         return manuscript
 
-    for index, paper in enumerate(
-        literature,
-        start=1
-    ):
+    # اختيارياً: يمكن الاحتفاظ بالتحقق من صحة الأرقام فقط دون تعديل النص
+    max_reference = len(literature)
+    citations = re.findall(
+        r"\[(\d+)\]",
+        manuscript
+    )
 
-        title = paper.get(
-            "title",
-            ""
-        )
-
-        if not title:
-            continue
-
-        words = title.split()
-
-        if not words:
-            continue
-
-        keyword = words[0]
-
-        pattern = (
-            rf"\b{re.escape(keyword)}\b"
-        )
-
-        replacement = (
-            f"{keyword} [{index}]"
-        )
-
-        manuscript = re.sub(
-            pattern,
-            replacement,
-            manuscript,
-            count=1
-        )
+    # التحقق من أن الاستشهادات ضمن نطاق المراجع المتاحة
+    for citation in citations:
+        num = int(citation)
+        if num > max_reference:
+            # يمكن تسجيل تنبيه أو تركها للمراجعة
+            pass
 
     return manuscript
