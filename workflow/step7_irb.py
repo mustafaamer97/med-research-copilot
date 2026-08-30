@@ -1,5 +1,9 @@
 import streamlit as st
 
+from modules.context_manager import (
+    get_context,
+    update_context
+)
 from modules.ethics_builder import (
     generate_ethics_package
 )
@@ -11,32 +15,53 @@ def render():
         "🛡️ Ethics & IRB Preparation"
     )
 
+    # جلب السياق الكامل من Context Manager
+    context = get_context()
+
+    # ==================================
+    # Research Summary
+    # ==================================
+
+    with st.expander(
+        "📋 Research Summary",
+        expanded=True
+    ):
+        st.write(
+            f"**Disease:** {context.get('disease', '')}"
+        )
+        st.write(
+            f"**Population:** {context.get('population', '')}"
+        )
+        st.write(
+            f"**Outcome:** {context.get('outcome', '')}"
+        )
+        st.write(
+            f"**Sample Size:** {context.get('total_sample_size', '')}"
+        )
+        st.write(
+            f"**Study Design:** {context.get('final_study_design') or context.get('study_design') or 'Clinical Study'}"
+        )
+
     research_question = (
-        st.session_state.get(
-            "research_question",
+        context.get(
+            "research_question_data",
             {}
         )
     )
 
-    research_context = (
-        st.session_state.get(
-            "research_context",
-            {}
-        )
-    )
-
-    protocol = (
-        st.session_state.get(
-            "research_protocol",
-            ""
-        )
+    protocol = context.get(
+        "research_protocol",
+        ""
     )
 
     study_type = (
-        research_context.get(
-            "study_design",
-            "Clinical Study"
+        context.get(
+            "final_study_design"
         )
+        or context.get(
+            "study_design"
+        )
+        or "Clinical Study"
     )
 
     # ==================================
@@ -279,12 +304,29 @@ def render():
             "irb_completed"
         ] = True
 
+        # حفظ البيانات في الـ Context Manager
+        update_context(
+            ethics_package=ethics_package,
+            ethics_summary={
+                "study_type": study_type,
+                "risk": study_risk,
+                "recommended_risk": recommended_risk,
+                "consent": informed_consent,
+                "vulnerable_population": vulnerable_population,
+                "irb_readiness": score
+            },
+            irb_completed=True,
+            irb_readiness=score,
+            risk_level=study_risk
+        )
+
         st.rerun()
 
     ethics_package = (
         st.session_state.get(
             "ethics_package"
         )
+        or context.get("ethics_package")
     )
 
     if ethics_package:
@@ -304,8 +346,11 @@ def render():
             use_container_width=True
         )
 
-    if st.session_state.get(
-        "irb_completed"
+    if (
+        context.get("irb_completed")
+        or st.session_state.get(
+            "irb_completed"
+        )
     ):
 
         st.success(
