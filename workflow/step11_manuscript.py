@@ -141,12 +141,11 @@ def render():
                 protocol=protocol,
                 proposal=proposal,
                 literature=literature,
-                statistics_results=statistics_report,
-                sample_size_plan=sample_size_plan,
-                data_collection_plan=data_collection_plan,
-                ethics_summary=ethics_summary,
-                data_dictionary=data_dictionary,
-                target_journal=st.session_state.get("target_journal", "")
+                statistics_results=statistics_results,
+                statistics_report=statistics_report,
+                statistics_test=statistics_test,
+                sample_size_plan=st.session_state.get("sample_size_plan"),
+                ethics_summary=st.session_state.get("ethics_summary"),
             )
 
         st.session_state["research_manuscript"] = manuscript
