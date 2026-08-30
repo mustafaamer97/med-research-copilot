@@ -1,13 +1,19 @@
-from scipy.stats import fisher_exact, kruskal
+from scipy.stats import chi2_contingency, fisher_exact, kruskal
 import pandas as pd
 import pingouin as pg
 from statsmodels.stats.multicomp import (
-    pairwise_tukeyhsd
+    pairwise_tukeyhsd,
 )
 
 
-def run_ttest(df, group_col, outcome_col):
+def validate_columns(df, *columns):
+    """التحقق من وجود الأعمدة في DataFrame لمنع KeyError"""
+    for col in columns:
+        if col and col not in df.columns:
+            raise ValueError(f"Column '{col}' not found.")
 
+
+def run_ttest(df, group_col, outcome_col):
     if not pd.api.types.is_numeric_dtype(df[outcome_col]):
         raise ValueError("Outcome variable must be numeric.")
 
@@ -19,11 +25,17 @@ def run_ttest(df, group_col, outcome_col):
     g1 = df[df[group_col] == groups[0]][outcome_col].dropna()
     g2 = df[df[group_col] == groups[1]][outcome_col].dropna()
 
-    return pg.ttest(g1, g2, paired=False)
+    result = pg.ttest(g1, g2, paired=False)
+
+    return {
+        "T": result["T"].iloc[0],
+        "p_value": result["p-val"].iloc[0],
+        "cohens_d": result["cohen-d"].iloc[0],
+        "CI95": result["CI95%"].iloc[0],
+    }
 
 
 def run_mannwhitney(df, group_col, outcome_col):
-
     if not pd.api.types.is_numeric_dtype(df[outcome_col]):
         raise ValueError("Outcome variable must be numeric.")
 
@@ -39,181 +51,94 @@ def run_mannwhitney(df, group_col, outcome_col):
 
 
 def run_anova(df, group_col, outcome_col):
-
     if not pd.api.types.is_numeric_dtype(df[outcome_col]):
         raise ValueError("Outcome variable must be numeric.")
 
-    result = pg.anova(
-        data=df,
-        dv=outcome_col,
-        between=group_col
-    )
+    groups = df[group_col].dropna().unique()
+
+    if len(groups) < 3:
+        raise ValueError("ANOVA requires at least 3 groups.")
+
+    result = pg.anova(data=df, dv=outcome_col, between=group_col)
 
     return result
 
 
-def run_kruskal(
-    df,
-    group_col,
-    outcome_col
-):
+def run_kruskal(df, group_col, outcome_col):
+    groups = df[group_col].dropna().unique()
 
-    groups = (
-        df[group_col]
-        .dropna()
-        .unique()
-    )
+    if len(groups) < 3:
+        raise ValueError("Kruskal-Wallis requires at least 3 groups.")
 
     samples = []
 
     for group in groups:
+        samples.append(df[df[group_col] == group][outcome_col].dropna())
 
-        samples.append(
-            df[
-                df[group_col] == group
-            ][outcome_col]
-            .dropna()
-        )
+    statistic, p_value = kruskal(*samples)
 
-    statistic, p_value = kruskal(
-        *samples
-    )
-
-    return {
-        "Statistic": statistic,
-        "P-value": p_value
-    }
+    return {"Statistic": statistic, "P-value": p_value}
 
 
-def run_tukey_posthoc(
-    df,
-    group_col,
-    outcome_col
-):
-
+def run_tukey_posthoc(df, group_col, outcome_col):
     tukey = pairwise_tukeyhsd(
-        endog=df[outcome_col],
-        groups=df[group_col],
-        alpha=0.05
+        endog=df[outcome_col], groups=df[group_col], alpha=0.05
     )
 
     result_df = pd.DataFrame(
-        tukey.summary().data[1:],
-        columns=tukey.summary().data[0]
+        tukey.summary().data[1:], columns=tukey.summary().data[0]
     )
 
     return result_df
 
 
-def run_pearson_correlation(
-    df,
-    variable_1,
-    variable_2
-):
+def run_pearson_correlation(df, variable_1, variable_2):
+    if not pd.api.types.is_numeric_dtype(df[variable_1]):
+        raise ValueError(f"{variable_1} must be numeric.")
 
-    if not pd.api.types.is_numeric_dtype(
-        df[variable_1]
-    ):
-        raise ValueError(
-            f"{variable_1} must be numeric."
-        )
+    if not pd.api.types.is_numeric_dtype(df[variable_2]):
+        raise ValueError(f"{variable_2} must be numeric.")
 
-    if not pd.api.types.is_numeric_dtype(
-        df[variable_2]
-    ):
-        raise ValueError(
-            f"{variable_2} must be numeric."
-        )
+    data = df[[variable_1, variable_2]].dropna()
 
-    data = df[
-        [variable_1, variable_2]
-    ].dropna()
-
-    result = pg.corr(
-        data[variable_1],
-        data[variable_2],
-        method="pearson"
-    )
+    result = pg.corr(data[variable_1], data[variable_2], method="pearson")
 
     return result
 
 
-def run_spearman_correlation(
-    df,
-    variable_1,
-    variable_2
-):
+def run_spearman_correlation(df, variable_1, variable_2):
+    if not pd.api.types.is_numeric_dtype(df[variable_1]):
+        raise ValueError(f"{variable_1} must be numeric.")
 
-    if not pd.api.types.is_numeric_dtype(
-        df[variable_1]
-    ):
-        raise ValueError(
-            f"{variable_1} must be numeric."
-        )
+    if not pd.api.types.is_numeric_dtype(df[variable_2]):
+        raise ValueError(f"{variable_2} must be numeric.")
 
-    if not pd.api.types.is_numeric_dtype(
-        df[variable_2]
-    ):
-        raise ValueError(
-            f"{variable_2} must be numeric."
-        )
+    data = df[[variable_1, variable_2]].dropna()
 
-    data = df[
-        [variable_1, variable_2]
-    ].dropna()
-
-    result = pg.corr(
-        data[variable_1],
-        data[variable_2],
-        method="spearman"
-    )
+    result = pg.corr(data[variable_1], data[variable_2], method="spearman")
 
     return result
 
 
-def run_chi_square(
-    df,
-    variable_1,
-    variable_2
-):
+def run_chi_square(df, variable_1, variable_2):
+    contingency_table = pd.crosstab(df[variable_1], df[variable_2])
 
-    contingency_table = pd.crosstab(
-        df[variable_1],
-        df[variable_2]
-    )
+    chi2, p, dof, expected = chi2_contingency(contingency_table)
 
-    result = pg.chi2_independence(
-        contingency_table
-    )
-
-    return result
+    return {"chi2": chi2, "p_value": p, "degrees_of_freedom": dof}
 
 
-def run_fisher_exact(
-    df,
-    variable_1,
-    variable_2
-):
-
-    contingency_table = pd.crosstab(
-        df[variable_1],
-        df[variable_2]
-    )
+def run_fisher_exact(df, variable_1, variable_2):
+    contingency_table = pd.crosstab(df[variable_1], df[variable_2])
 
     if contingency_table.shape != (2, 2):
-
         raise ValueError(
             "Fisher Exact Test requires a 2x2 contingency table."
         )
 
-    odds_ratio, p_value = fisher_exact(
-        contingency_table
-    )
+    odds_ratio, p_value = fisher_exact(contingency_table)
 
-    return {
-        "odds_ratio": odds_ratio,
-        "p_value": p_value
-    }
+    return {"odds_ratio": odds_ratio, "p_value": p_value}
 
 
 def run_analysis(
@@ -222,81 +147,36 @@ def run_analysis(
     group_col=None,
     outcome_col=None,
     variable_1=None,
-    variable_2=None
+    variable_2=None,
 ):
+    # 4. فحص وجود الأعمدة أولاً قبل البدء
+    validate_columns(df, group_col, outcome_col, variable_1, variable_2)
 
     if test_name == "Independent t-test":
-
-        return run_ttest(
-            df,
-            group_col,
-            outcome_col
-        )
+        return run_ttest(df, group_col, outcome_col)
 
     if test_name == "Mann-Whitney U Test":
-
-        return run_mannwhitney(
-            df,
-            group_col,
-            outcome_col
-        )
+        return run_mannwhitney(df, group_col, outcome_col)
 
     if test_name == "ANOVA":
-
-        return run_anova(
-            df,
-            group_col,
-            outcome_col
-        )
+        return run_anova(df, group_col, outcome_col)
 
     if test_name == "Kruskal-Wallis":
-
-        return run_kruskal(
-            df,
-            group_col,
-            outcome_col
-        )
+        return run_kruskal(df, group_col, outcome_col)
 
     if test_name == "Tukey HSD":
-
-        return run_tukey_posthoc(
-            df,
-            group_col,
-            outcome_col
-        )
+        return run_tukey_posthoc(df, group_col, outcome_col)
 
     if test_name == "Pearson Correlation":
-
-        return run_pearson_correlation(
-            df,
-            variable_1,
-            variable_2
-        )
+        return run_pearson_correlation(df, variable_1, variable_2)
 
     if test_name == "Spearman Correlation":
-
-        return run_spearman_correlation(
-            df,
-            variable_1,
-            variable_2
-        )
+        return run_spearman_correlation(df, variable_1, variable_2)
 
     if test_name == "Chi-Square Test":
-
-        return run_chi_square(
-            df,
-            variable_1,
-            variable_2
-        )
+        return run_chi_square(df, variable_1, variable_2)
 
     if test_name == "Fisher Exact Test":
+        return run_fisher_exact(df, variable_1, variable_2)
 
-        return run_fisher_exact(
-            df,
-            variable_1,
-            variable_2
-        )
-
-    raise ValueError(
-        f"Unsupported test: {test_name}"
-    )
+    raise ValueError(f"Unsupported test: {test_name}")
