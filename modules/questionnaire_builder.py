@@ -18,7 +18,7 @@ def generate_questionnaire(
     protocol = protocol or ""
     data_dictionary = data_dictionary or {}
 
-    # 2. تحويل قائمة الفجوات البحثية إلى نص منسق على شكل نقاط
+    # 2. تحويل قائمة الفجوات البحثية إلى نص منسق
     gaps_text = (
         "\n".join(f"- {gap}" for gap in research_gaps)
         if research_gaps
@@ -76,13 +76,14 @@ REQUIREMENTS
 6. Coding Scheme
 7. Variable Type
 8. Recommended Data Format
+9. Required vs Optional Fields
+10. Allowed Values for Categorical Variables
 
-Guidelines:
-- Use the provided data dictionary whenever available.
-- Generate questions directly linked to the listed variables.
-- Do not invent unnecessary variables.
+Use the provided data dictionary whenever available.
 
-For every question, include:
+Generate questions directly linked to the listed variables.
+
+For every question include:
 - Variable Name
 - Question Text
 - Data Type
