@@ -1,8 +1,7 @@
+import pandas as pd
 import streamlit as st
-
-from modules.questionnaire_builder import (
-    generate_questionnaire
-)
+from modules.context_manager import get_context, update_context
+from modules.questionnaire_builder import generate_questionnaire
 
 COLLECTION_METHODS = [
     "Survey",
@@ -16,11 +15,18 @@ COLLECTION_METHODS = [
 ]
 
 
-def render():
+def infer_variable_type(variable: str) -> str:
+    """استنتاج نوع المتغير تلقائياً بناءً على اسمه."""
+    var_lower = variable.lower()
+    if var_lower in ["sex", "gender", "smoking"]:
+        return "Categorical"
+    if any(x in var_lower for x in ["death", "mortality", "admission"]):
+        return "Binary"
+    return "Numeric"
 
-    st.header(
-        "📝 Data Collection Plan"
-    )
+
+def render():
+    st.header("📝 Data Collection Plan")
 
     st.info(
         """
@@ -29,20 +35,23 @@ before starting recruitment.
 """
     )
 
-    research_context = st.session_state.get(
-        "research_context",
-        {}
-    )
+    context = get_context()
 
-    research_question = st.session_state.get(
-        "research_question",
-        {}
-    )
+    # 1. معالجة نوع research_question للأمان
+    research_question = context.get("research_question_data") or {}
+    protocol = context.get("research_protocol", "")
+    sample_plan = context.get("sample_size_plan", {})
 
-    protocol = st.session_state.get(
-        "research_protocol",
-        ""
-    )
+    # ملء ملخص البحث تلقائياً من Context
+    with st.expander("📋 Research Summary", expanded=True):
+        st.write(f"**Population:** {context.get('population', 'N/A')}")
+        st.write(f"**Outcome:** {context.get('outcome', 'N/A')}")
+        st.write(f"**Study Design:** {context.get('final_study_design', 'N/A')}")
+        st.write(
+            f"**Target Sample Size:** {context.get('total_sample_size', sample_plan.get('total_sample', 'N/A'))}"
+        )
+
+    st.markdown("---")
 
     variables = st.text_area(
         "Variables to Collect",
@@ -55,50 +64,38 @@ Blood Pressure
 HbA1c
 Mortality
 Hospital Admission
-"""
+""",
     )
 
-    collection_method = st.selectbox(
-        "Collection Method",
-        COLLECTION_METHODS
-    )
+    collection_method = st.selectbox("Collection Method", COLLECTION_METHODS)
 
     estimated_duration = st.number_input(
         "Estimated Data Collection Duration (Months)",
         min_value=1,
         max_value=120,
-        value=6
+        value=6,
     )
 
-    sample_plan = st.session_state.get(
-        "sample_size_plan",
-        {}
+    default_sample_size = context.get(
+        "total_sample_size", sample_plan.get("total_sample", 100)
     )
 
-    default_sample_size = sample_plan.get(
-        "total_sample",
-        100
-    )
+    try:
+        default_sample_size = int(default_sample_size)
+    except (ValueError, TypeError):
+        default_sample_size = 100
 
     expected_sample_size = st.number_input(
-        "Expected Sample Size",
-        min_value=1,
-        value=int(default_sample_size)
+        "Expected Sample Size", min_value=1, value=default_sample_size
     )
 
     # ==================================
     # Variable Classification
     # ==================================
 
-    st.subheader(
-        "Variable Classification"
-    )
+    st.subheader("Variable Classification")
 
-    variable_list = [
-        v.strip()
-        for v in variables.split("\n")
-        if v.strip()
-    ]
+    variable_list = [v.strip() for v in variables.split("\n") if v.strip()]
 
     demographics = []
     outcomes = []
@@ -106,49 +103,22 @@ Hospital Admission
     confounders = []
 
     for var in variable_list:
-
         lower = var.lower()
 
-        if lower in [
-            "age",
-            "sex",
-            "gender"
-        ]:
-
+        if lower in ["age", "sex", "gender"]:
             demographics.append(var)
-
         elif any(
-            x in lower
-            for x in [
-                "mortality",
-                "death",
-                "admission",
-                "outcome"
-            ]
+            x in lower for x in ["mortality", "death", "admission", "outcome"]
         ):
-
             outcomes.append(var)
-
-        elif any(
-            x in lower
-            for x in [
-                "bmi",
-                "smoking",
-                "treatment",
-                "exposure"
-            ]
-        ):
-
+        elif any(x in lower for x in ["bmi", "smoking", "treatment", "exposure"]):
             exposures.append(var)
-
         else:
-
             confounders.append(var)
 
     c1, c2 = st.columns(2)
 
     with c1:
-
         st.write("### Demographics")
         st.write(demographics)
 
@@ -156,7 +126,6 @@ Hospital Admission
         st.write(exposures)
 
     with c2:
-
         st.write("### Outcome Variables")
         st.write(outcomes)
 
@@ -164,166 +133,149 @@ Hospital Admission
         st.write(confounders)
 
     # ==================================
-    # Feasibility Score
+    # Summary Metrics (الإضافة الذكية)
+    # ==================================
+
+    st.markdown("---")
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Total Variables", len(variable_list))
+    m2.metric("Outcomes", len(outcomes))
+    m3.metric("Exposures", len(exposures))
+
+    # ==================================
+    # Feasibility Score & Risk Assessment
     # ==================================
 
     score = 100
 
     if len(variable_list) > 20:
-
         score -= 20
 
     if expected_sample_size > 1000:
-
         score -= 30
 
     if estimated_duration > 24:
-
         score -= 20
 
-    st.subheader(
-        "Data Collection Feasibility"
-    )
+    missing_risk = "Low"
+    if len(variable_list) > 30:
+        missing_risk = "High"
+    elif len(variable_list) > 15:
+        missing_risk = "Moderate"
 
-    st.progress(
-        score / 100
-    )
+    st.subheader("Data Collection Feasibility & Risk")
 
-    if score >= 80:
+    col_score, col_risk = st.columns(2)
 
-        st.success(
-            "Easy Study"
-        )
+    with col_score:
+        st.write("**Feasibility Score**")
+        st.progress(max(0, score) / 100)
+        if score >= 80:
+            st.success("Easy Study")
+        elif score >= 50:
+            st.warning("Moderate Complexity")
+        else:
+            st.error("Complex Study")
 
-    elif score >= 50:
-
-        st.warning(
-            "Moderate Complexity"
-        )
-
-    else:
-
-        st.error(
-            "Complex Study"
-        )
+    with col_risk:
+        st.metric("Missing Data Risk", missing_risk)
 
     st.markdown("---")
 
     if st.button(
-        "💾 Save Collection Plan",
-        use_container_width=True,
-        type="primary"
+        "💾 Save Collection Plan", use_container_width=True, type="primary"
     ):
-
-        st.session_state[
-            "data_collection_plan"
-        ] = {
-
-            "variables":
-            variables,
-
-            "method":
-            collection_method,
-
-            "duration_months":
-            estimated_duration,
-
-            "expected_sample_size":
-            expected_sample_size,
-
-            "demographics":
-            demographics,
-
-            "outcomes":
-            outcomes,
-
-            "exposures":
-            exposures,
-
-            "confounders":
-            confounders,
-
-            "feasibility_score":
-            score
+        # 5. حفظ Metadata موسعة داخل الخطة
+        plan = {
+            "variables": variables,
+            "number_of_variables": len(variable_list),
+            "method": collection_method,
+            "collection_method": collection_method,
+            "duration_months": estimated_duration,
+            "study_duration_months": estimated_duration,
+            "expected_sample_size": expected_sample_size,
+            "demographics": demographics,
+            "outcomes": outcomes,
+            "exposures": exposures,
+            "confounders": confounders,
+            "feasibility_score": score,
+            "missing_data_risk": missing_risk,
         }
 
-        # ==================================
-        # Data Dictionary
-        # ==================================
-
+        # 3. حفظ Classification المباشر داخل Data Dictionary
         dictionary = []
-
         for variable in variable_list:
+            if variable in outcomes:
+                category = "Outcome"
+            elif variable in exposures:
+                category = "Exposure"
+            elif variable in demographics:
+                category = "Demographic"
+            else:
+                category = "Confounder"
 
             dictionary.append(
                 {
-                    "Variable":
-                    variable,
-
-                    "Type":
-                    "Numeric",
-
-                    "Required":
-                    "Yes"
+                    "Variable": variable,
+                    "Type": infer_variable_type(variable),
+                    "Category": category,
+                    "Required": "Yes",
                 }
             )
 
-        st.session_state[
-            "data_dictionary"
-        ] = dictionary
+        # 4. حفظ عدد المتغيرات والشحنة الإحصائية الكاملة في Context
+        update_context(
+            data_collection_plan=plan,
+            data_dictionary=dictionary,
+            data_collection_completed=True,
+            number_of_variables=len(variable_list),
+            primary_outcomes=outcomes,
+            exposure_variables=exposures,
+            confounders=confounders,
+        )
 
-        st.session_state[
-            "data_collection_completed"
-        ] = True
+        st.success("Data collection plan saved successfully.")
 
-        st.success(
-            "Data collection plan saved successfully."
+    # إنشاء وتنزيل ملف Blank Dataset (CRF)
+    if variable_list:
+        crf = pd.DataFrame(columns=variable_list)
+        st.download_button(
+            "⬇️ Download Blank Dataset (CRF)",
+            data=crf.to_csv(index=False),
+            file_name="blank_dataset.csv",
+            mime="text/csv",
+            use_container_width=True,
         )
 
     # ==================================
     # Generate Questionnaire
     # ==================================
 
-    if st.button(
-        "📝 Generate Questionnaire",
-        use_container_width=True
-    ):
-
-        with st.spinner(
-            "Generating questionnaire..."
-        ):
-
+    st.markdown("---")
+    if st.button("📝 Generate Questionnaire", use_container_width=True):
+        with st.spinner("Generating questionnaire..."):
             questionnaire = generate_questionnaire(
-                research_context,
-                research_question,
-                protocol
+                research_context=context,
+                research_question=research_question,
+                protocol=protocol,
+                sample_size_plan=sample_plan,
+                research_gaps=context.get("research_gaps", []),
             )
 
-        st.session_state[
-            "research_questionnaire"
-        ] = questionnaire
-
+        update_context(research_questionnaire=questionnaire)
         st.rerun()
 
-    questionnaire = st.session_state.get(
-        "research_questionnaire"
-    )
+    questionnaire = context.get("research_questionnaire")
 
     if questionnaire:
-
-        st.subheader(
-            "Generated Questionnaire"
-        )
-
-        st.markdown(
-            questionnaire
-        )
+        st.subheader("Generated Questionnaire")
+        st.markdown(questionnaire)
 
         st.download_button(
             "⬇️ Download Questionnaire",
             data=questionnaire,
             file_name="research_questionnaire.md",
-            use_container_width=True
+            use_container_width=True,
         )
 
         # ==================================
@@ -332,23 +284,11 @@ Hospital Admission
 
         st.markdown("---")
 
-        if st.button(
-            "🚀 Prepare Google Form",
-            use_container_width=True
-        ):
+        if st.button("🚀 Prepare Google Form", use_container_width=True):
+            update_context(google_form_ready=True)
+            st.success("Questionnaire prepared for Google Forms integration.")
 
-            st.session_state[
-                "google_form_ready"
-            ] = True
-
-            st.success(
-                "Questionnaire prepared for Google Forms integration."
-            )
-
-        if st.session_state.get(
-            "google_form_ready"
-        ):
-
+        if context.get("google_form_ready"):
             st.info(
                 """
 Google Forms integration is configured.
@@ -360,46 +300,22 @@ into a Google Form automatically.
             )
 
     # ==================================
-    # Data Dictionary
+    # Data Dictionary Display
     # ==================================
 
-    if st.session_state.get(
-        "data_dictionary"
-    ):
-
-        st.subheader(
-            "Data Dictionary"
-        )
-
-        st.dataframe(
-            st.session_state[
-                "data_dictionary"
-            ],
-            use_container_width=True
-        )
+    saved_dict = context.get("data_dictionary")
+    if saved_dict:
+        st.subheader("Data Dictionary")
+        st.dataframe(saved_dict, use_container_width=True)
 
     # ==================================
     # Current Plan Display
     # ==================================
 
-    if st.session_state.get(
-        "data_collection_plan"
-    ):
+    saved_plan = context.get("data_collection_plan")
+    if saved_plan:
+        st.subheader("Current Collection Plan")
+        st.json(saved_plan)
 
-        st.subheader(
-            "Current Collection Plan"
-        )
-
-        st.json(
-            st.session_state[
-                "data_collection_plan"
-            ]
-        )
-
-    if st.session_state.get(
-        "data_collection_completed"
-    ):
-
-        st.success(
-            "✅ Step 8 Completed"
-        )
+    if context.get("data_collection_completed"):
+        st.success("✅ Step 8 Completed")
