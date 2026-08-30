@@ -72,9 +72,8 @@ def render():
 
     with c1:
 
-        st.metric(
-            "Study Type",
-            study_type
+        st.info(
+            f"**Study Type:** {study_type}"
         )
 
     with c2:
@@ -235,21 +234,25 @@ def render():
             "Preparing IRB package..."
         ):
 
-            ethics_package = (
-                generate_ethics_package(
-                    research_question=
-                    research_question.get(
-                        "question",
-                        ""
-                    ),
-                    study_type=
-                    study_type,
-                    risk_level=
-                    study_risk,
-                    informed_consent=
-                    informed_consent,
-                    vulnerable_population=
-                    vulnerable_population
+            ethics_package = generate_ethics_package(
+                research_question=
+                research_question.get(
+                    "question",
+                    ""
+                ),
+                study_type=study_type,
+                risk_level=study_risk,
+                informed_consent=informed_consent,
+                vulnerable_population=vulnerable_population,
+                protocol=protocol,
+                sample_size_plan=context.get(
+                    "sample_size_plan",
+                    {}
+                ),
+                research_context=context,
+                research_gaps=context.get(
+                    "research_gaps",
+                    []
                 )
             )
 
