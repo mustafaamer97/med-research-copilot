@@ -128,6 +128,31 @@ def _requires_comparison(research_goal):
 
 
 # ============================================================
+# التعديل 1: دالة الكشف عن الدراسات الرصدية
+# ============================================================
+
+def is_observational_design(study_design):
+    """
+    Detect observational studies.
+    """
+    observational_keywords = [
+        "cohort",
+        "case-control",
+        "cross-sectional",
+        "observational",
+        "registry",
+        "case series",
+        "prognostic",
+        "prediction"
+    ]
+    study_design = str(study_design).lower()
+    return any(
+        keyword in study_design
+        for keyword in observational_keywords
+    )
+
+
+# ============================================================
 # Research Question Builder
 # ============================================================
 
@@ -201,30 +226,47 @@ def build_research_question(
         return question
 
     # --------------------------------------------------------
-    # Risk Factors
+    # التعديل 2: تحديث قسم Risk Factors بناءً على طبيعة الدراسة
     # --------------------------------------------------------
 
     if research_goal == "Risk Factors":
-
-        if intervention and comparison:
-
+        observational = is_observational_design(
+            study_design
+        )
+        if observational:
+            if intervention and comparison:
+                return (
+                    f"Among {population}, is "
+                    f"{intervention} associated with "
+                    f"{outcome} compared with "
+                    f"{comparison}?"
+                )
+            if intervention:
+                return (
+                    f"Among {population}, is "
+                    f"{intervention} associated with "
+                    f"{outcome}?"
+                )
             return (
-                f"What factors, including {intervention}, "
-                f"are associated with {outcome} among "
-                f"{population} compared with {comparison}?"
+                f"What risk factors are associated "
+                f"with {outcome} among {population}?"
             )
-
-        if intervention:
-
+        else:
+            if intervention and comparison:
+                return (
+                    f"In {population}, what is the effect "
+                    f"of {intervention} compared with "
+                    f"{comparison} on {outcome}?"
+                )
+            if intervention:
+                return (
+                    f"In {population}, what is the effect "
+                    f"of {intervention} on {outcome}?"
+                )
             return (
-                f"Is {intervention} associated with "
+                f"What factors influence "
                 f"{outcome} among {population}?"
             )
-
-        return (
-            f"What factors are associated with "
-            f"{outcome} among {population}?"
-        )
 
     # --------------------------------------------------------
     # Treatment Outcomes
@@ -487,6 +529,17 @@ def build_pico(
             comparison = ""
 
     # --------------------------------------------------------
+    # التعديل 3: تحديد إطار العمل (PECO أو PICO) وتحديث الـ Return
+    # --------------------------------------------------------
+
+    if is_observational_design(
+        study_design
+    ):
+        pico_framework = "PECO"
+    else:
+        pico_framework = "PICO"
+
+    # --------------------------------------------------------
     # Generate appropriate research question
     # --------------------------------------------------------
 
@@ -552,6 +605,7 @@ def build_pico(
         "question": question,
         "keywords": keywords,
         "pico": pico,
+        "framework": pico_framework,
         "study_design": study_design,
         "research_goal": research_goal,
     }
