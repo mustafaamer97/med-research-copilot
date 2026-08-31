@@ -128,9 +128,9 @@ Location:
                 "Generated using evidence retrieval, research gap analysis, and medical research methodology rules."
             )
 
+            # [التعديل المطلوبة رقم 1]
             validation = validate_idea_quality(
-                context,
-                st.session_state["generated_ideas"]["ideas"]
+                context
             )
 
             st.subheader(
@@ -224,32 +224,11 @@ Location:
                     )
                 }
 
-                # تحديث الـ context المضاف حديثاً
+                # [التعديل المطلوب رقم 2]
                 update_context(
-                    idea_title=selected_idea.get(
-                        "title",
-                        ""
-                    ),
-                    idea_rationale=selected_idea.get(
-                        "rationale",
-                        ""
-                    ),
-                    population=selected_idea.get(
-                        "population",
-                        ""
-                    ),
-                    exposure_or_intervention=selected_idea.get(
-                        "exposure_or_intervention",
-                        ""
-                    ),
-                    comparison=selected_idea.get(
-                        "comparison",
-                        ""
-                    ),
-                    primary_outcome=selected_idea.get(
-                        "primary_outcome",
-                        ""
-                    )
+                    selected_research_idea=selected_idea,
+                    idea_title=selected_idea.get("title", ""),
+                    idea_rationale=selected_idea.get("rationale", "")
                 )
 
                 st.session_state[
@@ -436,32 +415,11 @@ Description:
                     )
                 }
 
-                # تحديث الـ context المضاف حديثاً
+                # [التعديل المطلوب رقم 3]
                 update_context(
-                    idea_title=selected_idea.get(
-                        "title",
-                        ""
-                    ),
-                    idea_rationale=selected_idea.get(
-                        "rationale",
-                        ""
-                    ),
-                    population=selected_idea.get(
-                        "population",
-                        ""
-                    ),
-                    exposure_or_intervention=selected_idea.get(
-                        "exposure_or_intervention",
-                        ""
-                    ),
-                    comparison=selected_idea.get(
-                        "comparison",
-                        ""
-                    ),
-                    primary_outcome=selected_idea.get(
-                        "primary_outcome",
-                        ""
-                    )
+                    selected_research_idea=selected_idea,
+                    idea_title=selected_idea.get("title", ""),
+                    idea_rationale=selected_idea.get("rationale", "")
                 )
 
                 st.session_state[
