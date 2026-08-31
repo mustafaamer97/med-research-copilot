@@ -206,10 +206,11 @@ def validate_idea_quality(context: dict) -> dict:
 
 
 def validate_manual_idea(
-    disease: str,
-    outcome: str,
-    description: str
+    description: str,
+    context: dict
 ) -> dict:
+    disease = context.get("disease", "")
+    outcome = context.get("outcome", "")
     score = 100
     notes = []
 
