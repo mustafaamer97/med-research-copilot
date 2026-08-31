@@ -46,7 +46,7 @@ def render():
 
             return
 
-        # التعديل 1: التحقق من اكتمال وحفظ Step 1
+        # التحقق من اكتمال وحفظ Step 1
         if not st.session_state.get(
             "context_completed"
         ):
@@ -92,7 +92,7 @@ Location:
                     research_context=context
                 )
 
-            # التعديل 2: التعامل مع حالة الفشل أو عدم وجود أدلة
+            # التعامل مع حالة الفشل أو عدم وجود أدلة
             if ideas.get("status") != "success":
                 st.error(
                     ideas.get(
@@ -114,7 +114,6 @@ Location:
                 "Suggested Research Ideas"
             )
 
-            # التعديل 3: العرض باستخدام st.markdown
             generated_text = (
                 st.session_state[
                     "generated_ideas"
@@ -128,7 +127,7 @@ Location:
                 "Generated using evidence retrieval, research gap analysis, and medical research methodology rules."
             )
 
-            # [التعديل المطلوبة رقم 1]
+            # التعديل 1: التقييم يمرر context فقط
             validation = validate_idea_quality(
                 context
             )
@@ -170,7 +169,6 @@ Location:
                 "Select Best Research Idea"
             ):
 
-                # تجهيز قاموس الفكرة المختارة
                 raw_generated_idea = st.session_state["generated_ideas"]
                 selected_idea = {
                     "title": st.session_state.get("generated_title", "AI Generated Research Idea"),
@@ -188,7 +186,6 @@ Location:
                     "field": context.get("field", ""),
                 }
 
-                # التعديل المطلوب لـ st.session_state["selected_research_idea"]
                 st.session_state[
                     "selected_research_idea"
                 ] = {
@@ -224,7 +221,7 @@ Location:
                     )
                 }
 
-                # [التعديل المطلوب رقم 2]
+                # التعديل 2: تحديث update_context بالفكرة المختارة والعنوان والـ rationale
                 update_context(
                     selected_research_idea=selected_idea,
                     idea_title=selected_idea.get("title", ""),
@@ -235,7 +232,6 @@ Location:
                     "idea_completed"
                 ] = True
 
-                # التعديل 5: إضافة selected_idea_title في session_state
                 st.session_state[
                     "selected_idea_title"
                 ] = st.session_state[
@@ -329,6 +325,7 @@ Description:
                 "Please add title and description."
             )
 
+        # التقييم اليدوي مع إرسال description بشكل مباشر من idea_description
         manual_validation = validate_manual_idea(
             disease=disease,
             outcome=outcome,
@@ -353,7 +350,6 @@ Description:
                     "• " + note
                 )
 
-        # التعديل 6: اشتراط وجود Title و Description و Disease قبل حفظ الفكرة اليدوية
         if (
             idea_title
             and idea_description
@@ -379,7 +375,6 @@ Description:
                     "field": st.session_state.get("field", ""),
                 }
 
-                # التعديل المطلوب لـ st.session_state["selected_research_idea"]
                 st.session_state[
                     "selected_research_idea"
                 ] = {
@@ -415,7 +410,7 @@ Description:
                     )
                 }
 
-                # [التعديل المطلوب رقم 3]
+                # التعديل 3: تحديث update_context للفكرة اليدوية
                 update_context(
                     selected_research_idea=selected_idea,
                     idea_title=selected_idea.get("title", ""),
@@ -426,7 +421,6 @@ Description:
                     "idea_completed"
                 ] = True
 
-                # التعديل 5 أيضاً للفكرة اليدوية لضمان تعيين العنوان
                 st.session_state[
                     "selected_idea_title"
                 ] = idea_title
