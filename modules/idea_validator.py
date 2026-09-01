@@ -2,15 +2,6 @@
 # Constants & Rule Engine Definitions
 # ==========================================
 
-COMPARATOR_REQUIRED_DESIGNS = {
-    "Randomized",
-    "Clinical Trial",
-    "Case-Control",
-    "Cohort",
-    "Diagnostic",
-    "Prediction"
-}
-
 VALID_DESIGNS_BY_DATA_SOURCE = {
     "Hospital Records": {
         "Cohort", "Longitudinal", "Prospective", "Retrospective",
@@ -83,17 +74,6 @@ def validate_research_idea(context: dict) -> dict:
     research_goal = context.get("research_goal", "")
     population = context.get("population", "")
     outcome = context.get("outcome", "")
-    intervention = context.get("intervention", "")
-    comparison = context.get("comparison", "")
-    objective = context.get("objective", "")
-    confidence = context.get("confidence", 100)
-
-    # =========================
-    # Confidence Penalty (Step 1 Integration)
-    # =========================
-    if confidence < 70:
-        score -= 10
-        notes.append("Research topic classification confidence is low.")
 
     # =========================
     # Study Design Feasibility
@@ -142,37 +122,15 @@ def validate_research_idea(context: dict) -> dict:
             notes.append("Epidemiological trends require reliable population-level data.")
 
     # =========================
-    # Completeness & PICO Evaluation
+    # Basic Completeness Checks
     # =========================
     if not population:
-        score -= 5
+        score -= 10
         notes.append("Target population is not clearly defined.")
 
     if not outcome:
         score -= 10
         notes.append("Primary outcome should be specified.")
-
-    if not intervention:
-        score -= 5
-        notes.append("Intervention/Exposure not specified.")
-
-    if any(x in study_design for x in COMPARATOR_REQUIRED_DESIGNS):
-        if not comparison:
-            score -= 5
-            notes.append("Comparator not specified.")
-
-    if not objective:
-        score -= 5
-        notes.append("Study objective is not defined.")
-    elif len(objective) < 20:
-        score -= 5
-        notes.append("Study objective appears too short.")
-
-    # Full PICO check (Population, Intervention, Comparison, Outcome)
-    pico_score = sum(1 for item in [population, intervention, comparison, outcome] if item)
-    if pico_score < 3:
-        score -= 10
-        notes.append("PICO framework is incomplete.")
 
     # =========================
     # Final Score Normalization
@@ -187,20 +145,6 @@ def validate_research_idea(context: dict) -> dict:
         "score": score,
         "feasibility": feasibility,
         "notes": notes,
-        "validated": True
-    }
-
-
-def validate_idea_quality(context: dict) -> dict:
-    result = validate_research_idea(context)
-    score = result["score"]
-
-    return {
-        "feasibility": score,
-        "novelty": None,
-        "clinical_importance": None,
-        "overall_score": score,
-        "notes": result["notes"],
         "validated": True
     }
 
