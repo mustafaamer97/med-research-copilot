@@ -10,9 +10,34 @@ from modules.idea_generator import (
     generate_research_ideas
 )
 from modules.idea_validator import (
-    validate_idea_quality,
     validate_manual_idea
 )
+
+
+def save_selected_idea(selected_idea: dict):
+    """
+    دالة موحدة لحفظ الفكرة المختارة داخل Context Manager 
+    وتحديث مخرجاتها لضمان وصول pico و objectives و research_question لـ Step 3.
+    """
+    context_updates = {
+        "selected_research_idea": selected_idea,
+        "idea_title": selected_idea.get("title", ""),
+        "idea_rationale": selected_idea.get("rationale", ""),
+        "research_question": selected_idea.get("research_question", "")
+    }
+
+    # إذا كانت الفكرة تحتوي على تفكيك PICO، نحدث Context بها مباشرة لـ Step 3
+    pico = selected_idea.get("pico", {})
+    if pico:
+        context_updates.update({
+            "population": pico.get("population", get_context().get("population", "")),
+            "exposure_or_intervention": pico.get("intervention", pico.get("exposure", "")),
+            "comparison": pico.get("comparison", ""),
+            "primary_outcome": pico.get("outcome", get_context().get("outcome", ""))
+        })
+
+    update_context(**context_updates)
+    mark_completed("idea")
 
 
 def render():
@@ -29,49 +54,31 @@ def render():
         ]
     )
 
+    context = get_context()
+
     # ==================================
     # Generate New Idea
     # ==================================
 
     if idea_mode == "Generate New Research Idea":
 
-        context = get_context()
-
         if not context:
-            st.warning(
-                "Please complete Step 1 first."
-            )
+            st.warning("Please complete Step 1 first.")
             return
 
-        # 3. الاعتماد على is_completed بدلاً من session_state
         if not is_completed("context"):
-            st.warning(
-                "Please complete and save Step 1 first."
-            )
+            st.warning("Please complete and save Step 1 first.")
             return
 
         st.info(
             f"""
-Field:
-{context.get('field','')}
-
-Topic:
-{context.get('disease','')}
-
-Goal:
-{context.get('research_goal','')}
-
-Population:
-{context.get('population','')}
-
-Recommended Design:
-{context.get('recommended_design','')}
-
-Data Source:
-{context.get('data_source','')}
-
-Location:
-{context.get('location','')}
+Field: {context.get('field', '')}
+Topic: {context.get('disease', '')}
+Goal: {context.get('research_goal', '')}
+Population: {context.get('population', '')}
+Recommended Design: {context.get('recommended_design', '')}
+Data Source: {context.get('data_source', '')}
+Location: {context.get('location', '')}
 """
         )
 
@@ -83,17 +90,18 @@ Location:
 
             if ideas_result.get("status") != "success":
                 st.error(
-                    ideas_result.get(
-                        "message",
-                        "Unable to generate ideas."
-                    )
+                    ideas_result.get("message", "Unable to generate ideas.")
                 )
                 return
 
-            st.session_state["generated_ideas"] = ideas_result.get("ideas", [])
+            # التخزين الحصري داخل Context Manager باستخدام المفتاح الصحيح top_ideas
+            update_context(
+                generated_ideas=ideas_result.get("top_ideas", [])
+            )
+            # إعادة جلب context بعد التحديث
+            context = get_context()
 
-        # 4. إعادة بناء التصميم لعرض الأفكار كقائمة تفاعلية
-        generated_ideas_list = st.session_state.get("generated_ideas", [])
+        generated_ideas_list = context.get("generated_ideas", [])
 
         if generated_ideas_list:
             st.subheader("Suggested Research Ideas")
@@ -103,49 +111,40 @@ Location:
                 
                 with st.expander(f"💡 Idea {index}: {idea_title}", expanded=(index == 1)):
                     st.markdown(f"**Research Question:** {idea.get('research_question', 'N/A')}")
-                    st.markdown(f"**Research Gap:** {idea.get('gap', 'N/A')}")
+                    st.markdown(f"**Research Gap:** {idea.get('research_gap', 'N/A')}")
                     st.markdown(f"**Clinical Impact:** {idea.get('impact', 'N/A')}")
                     st.markdown(f"**Rationale:** {idea.get('rationale', 'N/A')}")
 
-                    # إجراء تقييم آلي للفكرة الفردية بناءً على الـ context
-                    validation = validate_idea_quality(context)
+                    # عرض الأهداف Objectives إذا كانت متوفرة
+                    objectives = idea.get("objectives", [])
+                    if objectives:
+                        st.markdown("**Objectives:**")
+                        for obj in objectives:
+                            st.markdown(f"- {obj}")
 
+                    # عرض الدرجات الحقيقية المسبقة التوليد من الـ Generator
+                    scores = idea.get("scores", {})
                     st.markdown("---")
                     st.markdown("##### 🔬 Automated Idea Validation")
                     col1, col2, col3, col4 = st.columns(4)
-                    col1.metric("Feasibility", validation.get("feasibility", "-"))
-                    col2.metric("Novelty", validation.get("novelty", "-"))
-                    col3.metric("Clinical Importance", validation.get("clinical_importance", "-"))
-                    col4.metric("Overall Score", validation.get("overall_score", "-"))
+                    col1.metric("Novelty", scores.get("novelty", "-"))
+                    col2.metric("Feasibility", scores.get("feasibility", "-"))
+                    col3.metric("Clinical", scores.get("clinical_importance", "-"))
+                    col4.metric("Overall", scores.get("overall", "-"))
 
                     if st.button(f"Select Idea {index}", key=f"select_idea_{index}"):
                         selected_idea = {
-                            "title": idea_title,
-                            "rationale": idea.get("rationale", ""),
-                            "research_question": idea.get("research_question", ""),
-                            "gap": idea.get("gap", ""),
-                            "impact": idea.get("impact", ""),
+                            **idea,
                             "source": "AI",
-                            "validation": validation,
-                            "research_goal": context.get("research_goal", ""),
                             "disease": context.get("disease", ""),
-                            "population": context.get("population", ""),
-                            "outcome": context.get("outcome", ""),
+                            "field": context.get("field", ""),
                             "study_design": context.get("recommended_design", context.get("study_design", "")),
                             "data_source": context.get("data_source", ""),
-                            "field": context.get("field", ""),
                             "location": context.get("location", ""),
                             "study_period": context.get("study_period", "")
                         }
 
-                        # 2. تحديث التخزين عبر Context Manager وحذف Session State الزائد
-                        update_context(
-                            selected_research_idea=selected_idea,
-                            idea_title=selected_idea.get("title", ""),
-                            idea_rationale=selected_idea.get("rationale", "")
-                        )
-                        
-                        mark_completed("idea")
+                        save_selected_idea(selected_idea)
                         st.success("Research idea saved successfully.")
 
     # ==================================
@@ -153,8 +152,6 @@ Location:
     # ==================================
 
     else:
-
-        context = get_context()
 
         st.info("Describe your research idea in a structured format.")
 
@@ -211,6 +208,7 @@ Description:
                 selected_idea = {
                     "title": idea_title,
                     "rationale": idea_description,
+                    "research_question": f"What is the {research_goal or 'association'} regarding {disease} in terms of {outcome}?",
                     "source": "manual",
                     "disease": disease,
                     "location": location,
@@ -218,26 +216,18 @@ Description:
                     "period": period,
                     "validation": manual_validation,
                     "research_goal": research_goal,
-                    # 3. الاعتماد على context مباشرة
                     "population": context.get("population", ""),
                     "study_design": context.get("recommended_design", context.get("study_design", "")),
                     "data_source": context.get("data_source", ""),
-                    "field": context.get("field", ""),
+                    "field": context.get("field", "")
                 }
 
-                # 2 & 3. التحديث الحصري عبر Context Manager واستدعاء mark_completed
-                update_context(
-                    selected_research_idea=selected_idea,
-                    idea_title=selected_idea.get("title", ""),
-                    idea_rationale=selected_idea.get("rationale", "")
-                )
-
-                mark_completed("idea")
+                save_selected_idea(selected_idea)
                 st.success("Research idea saved successfully.")
 
     # ==================================
     # Completion Status
     # ==================================
 
-    if is_completed("idea") or get_context().get("selected_research_idea"):
+    if is_completed("idea"):
         st.success("✅ Step 2 Completed")
