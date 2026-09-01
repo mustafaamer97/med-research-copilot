@@ -17,23 +17,26 @@ from modules.idea_validator import (
 def save_selected_idea(selected_idea: dict):
     """
     دالة موحدة لحفظ الفكرة المختارة داخل Context Manager 
-    وتحديث مخرجاتها لضمان وصول pico و objectives و research_question لـ Step 3.
+    وتحديث مخرجاتها مع حفظ Objectives و PICO وتحديث مفاتيح P, I, C, O لـ Step 3.
     """
+    # [التعديل 2]: إضافة objectives و pico داخل context_updates
     context_updates = {
         "selected_research_idea": selected_idea,
         "idea_title": selected_idea.get("title", ""),
         "idea_rationale": selected_idea.get("rationale", ""),
-        "research_question": selected_idea.get("research_question", "")
+        "research_question": selected_idea.get("research_question", ""),
+        "objectives": selected_idea.get("objectives", []),
+        "pico": selected_idea.get("pico", {})
     }
 
-    # إذا كانت الفكرة تحتوي على تفكيك PICO، نحدث Context بها مباشرة لـ Step 3
+    # [التعديل 1]: إصلاح مفاتيح PICO للربط مع مفاتيح الـ P, I, C, O الصحيحة
     pico = selected_idea.get("pico", {})
     if pico:
         context_updates.update({
-            "population": pico.get("population", get_context().get("population", "")),
-            "exposure_or_intervention": pico.get("intervention", pico.get("exposure", "")),
-            "comparison": pico.get("comparison", ""),
-            "primary_outcome": pico.get("outcome", get_context().get("outcome", ""))
+            "population": pico.get("P", get_context().get("population", "")),
+            "exposure_or_intervention": pico.get("I", ""),
+            "comparison": pico.get("C", ""),
+            "primary_outcome": pico.get("O", get_context().get("outcome", ""))
         })
 
     update_context(**context_updates)
@@ -94,11 +97,9 @@ Location: {context.get('location', '')}
                 )
                 return
 
-            # التخزين الحصري داخل Context Manager باستخدام المفتاح الصحيح top_ideas
             update_context(
                 generated_ideas=ideas_result.get("top_ideas", [])
             )
-            # إعادة جلب context بعد التحديث
             context = get_context()
 
         generated_ideas_list = context.get("generated_ideas", [])
@@ -115,14 +116,12 @@ Location: {context.get('location', '')}
                     st.markdown(f"**Clinical Impact:** {idea.get('impact', 'N/A')}")
                     st.markdown(f"**Rationale:** {idea.get('rationale', 'N/A')}")
 
-                    # عرض الأهداف Objectives إذا كانت متوفرة
                     objectives = idea.get("objectives", [])
                     if objectives:
                         st.markdown("**Objectives:**")
                         for obj in objectives:
                             st.markdown(f"- {obj}")
 
-                    # عرض الدرجات الحقيقية المسبقة التوليد من الـ Generator
                     scores = idea.get("scores", {})
                     st.markdown("---")
                     st.markdown("##### 🔬 Automated Idea Validation")
@@ -145,6 +144,8 @@ Location: {context.get('location', '')}
                         }
 
                         save_selected_idea(selected_idea)
+                        # [التعديل 5]: إضافة الاحتفال بتحسين تجربة المستخدم
+                        st.balloons()
                         st.success("Research idea saved successfully.")
 
     # ==================================
@@ -190,10 +191,10 @@ Description:
         else:
             st.warning("Please add title and description.")
 
+        # [التعديل 3]: تعديل استدعاء validate_manual_idea لتمرير description و context
         manual_validation = validate_manual_idea(
-            disease=disease,
-            outcome=outcome,
-            description=idea_description
+            description=idea_description,
+            context=context
         )
 
         st.subheader("Idea Quality Check")
@@ -205,6 +206,7 @@ Description:
 
         if idea_title and idea_description and disease:
             if st.button("Save Research Idea"):
+                # [التعديل 4]: إدراج objectives و pico في الفكرة اليدوية
                 selected_idea = {
                     "title": idea_title,
                     "rationale": idea_description,
@@ -219,10 +221,14 @@ Description:
                     "population": context.get("population", ""),
                     "study_design": context.get("recommended_design", context.get("study_design", "")),
                     "data_source": context.get("data_source", ""),
-                    "field": context.get("field", "")
+                    "field": context.get("field", ""),
+                    "objectives": [],
+                    "pico": {}
                 }
 
                 save_selected_idea(selected_idea)
+                # [التعديل 5]: إضافة الاحتفال تحسين تجربة المستخدم
+                st.balloons()
                 st.success("Research idea saved successfully.")
 
     # ==================================
