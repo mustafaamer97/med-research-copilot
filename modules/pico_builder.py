@@ -465,6 +465,7 @@ def build_pico(
     outcome,
     study_design="",
     research_goal="",
+    framework="PICO"
 ):
     """
     Build an adaptive research question and search strategy.
@@ -532,12 +533,7 @@ def build_pico(
     # التعديل 3: تحديد إطار العمل (PECO أو PICO) وتحديث الـ Return
     # --------------------------------------------------------
 
-    if is_observational_design(
-        study_design
-    ):
-        pico_framework = "PECO"
-    else:
-        pico_framework = "PICO"
+    pico_framework = framework
 
     # --------------------------------------------------------
     # Generate appropriate research question
@@ -606,6 +602,7 @@ def build_pico(
         "keywords": keywords,
         "pico": pico,
         "framework": pico_framework,
+        "framework_selected": pico_framework,
         "study_design": study_design,
         "research_goal": research_goal,
     }
