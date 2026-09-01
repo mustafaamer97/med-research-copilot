@@ -83,7 +83,7 @@ VALID_DESIGNS = {
     ],
 }
 
-# التحسين الثالث: الأهداف الافتراضية التلقائية بناءً على هدف البحث
+# الأهداف الافتراضية التلقائية بناءً على هدف البحث
 AUTO_OBJECTIVES = {
     "Trend Analysis": "Evaluate temporal trends of the selected outcome over the study period.",
     "Incidence": "Estimate disease incidence and demographic distribution in the target population.",
@@ -275,7 +275,6 @@ def render():
     else:
         outcome = selected_outcome_option
 
-    # التحسين الثالث: تطبيق Auto Objective بناءً على Goal في حال عدم وجود هدف مدخل
     default_auto_obj = AUTO_OBJECTIVES.get(research_goal, "")
     study_objective = st.text_area(
         "Study Objective",
@@ -333,9 +332,7 @@ Allowed Designs: {", ".join(available_designs)}
         st.write(" ")
         st.write(" ")
         if st.button("🔄 Refresh Keywords", help="Regenerate keywords based on current topic"):
-            if "research_context" not in st.session_state:
-                st.session_state["research_context"] = {}
-            st.session_state["research_context"]["keywords"] = default_keywords
+            update_context(keywords=default_keywords)
             st.rerun()
 
     form_data = {
@@ -358,7 +355,6 @@ Allowed Designs: {", ".join(available_designs)}
 
     validation = None
     if disease and outcome and design_is_valid:
-        # التحسين الأول: تعديل الاستدعاء ليمرر context فقط
         validation = validate_research_idea(context)
 
     if validation:
@@ -396,8 +392,7 @@ Allowed Designs: {", ".join(available_designs)}
     if research_type == "Primary Research":
         required_fields.append(location)
 
-    # التحسين الرابع: حساب دقيق وموزون لـ Readiness Score
-    # 80% للحقول الإلزامية الأساسية و 20% للحقول الاختيارية المفيدة (PICO completeness)
+    # حساب دقيق وموزون لـ Readiness Score
     core_completed = sum(1 for x in required_fields if str(x).strip())
     core_score = (core_completed / len(required_fields)) * 80
 
@@ -434,7 +429,6 @@ Allowed Designs: {", ".join(available_designs)}
             st.session_state["study_period"] = study_period
             st.session_state["keywords"] = keywords
 
-            # التحسين الثاني: حفظ Confidence و Confidence Level في session_state
             st.session_state["confidence"] = context.get("confidence", 0)
             st.session_state["confidence_level"] = context.get("confidence_level", "Unknown")
 
@@ -452,7 +446,7 @@ Allowed Designs: {", ".join(available_designs)}
         st.markdown("---")
         st.success("✅ Step 1 Completed")
 
-        ctx = st.session_state.get("research_context", {})
+        ctx = get_context()
         st.info(
             f"""
 **Disease / Topic:** {ctx.get('disease', 'N/A')}  
