@@ -74,6 +74,10 @@ def validate_research_idea(context: dict) -> dict:
     research_goal = context.get("research_goal", "")
     population = context.get("population", "")
     outcome = context.get("outcome", "")
+    
+    # ربط وتوحيد الحقول مع Step2 & Generator
+    intervention = context.get("exposure_or_intervention", context.get("intervention", ""))
+    objectives = context.get("objectives", [])
 
     # =========================
     # Study Design Feasibility
@@ -122,7 +126,7 @@ def validate_research_idea(context: dict) -> dict:
             notes.append("Epidemiological trends require reliable population-level data.")
 
     # =========================
-    # Basic Completeness Checks
+    # Basic & Field Integrity Checks
     # =========================
     if not population:
         score -= 10
@@ -131,6 +135,17 @@ def validate_research_idea(context: dict) -> dict:
     if not outcome:
         score -= 10
         notes.append("Primary outcome should be specified.")
+
+    if not intervention:
+        score -= 5
+        notes.append("Intervention or exposure is not specified.")
+
+    if not objectives:
+        score -= 5
+        notes.append("Study objectives are not defined.")
+    elif len(" ".join(objectives) if isinstance(objectives, list) else str(objectives)) < 20:
+        score -= 5
+        notes.append("Study objectives appear too short.")
 
     # =========================
     # Final Score Normalization
@@ -144,8 +159,8 @@ def validate_research_idea(context: dict) -> dict:
     return {
         "score": score,
         "feasibility": feasibility,
-        "notes": notes,
-        "validated": True
+        "quality": feasibility,
+        "notes": notes
     }
 
 
@@ -155,30 +170,35 @@ def validate_manual_idea(
 ) -> dict:
     disease = context.get("disease", "")
     outcome = context.get("outcome", "")
+    population = context.get("population", "")
+    
     score = 100
     notes = []
 
     if not disease:
-        score -= 20
+        score -= 15
         notes.append("Disease or research topic is missing.")
 
     if not outcome:
-        score -= 20
+        score -= 15
         notes.append("Main outcome is not specified.")
 
+    if not population:
+        score -= 10
+        notes.append("Target population is not specified.")
+
     if not description:
-        score -= 20
+        score -= 30
         notes.append("Research description is incomplete.")
     elif len(description) < 50:
         score -= 10
         notes.append("Research description is too short.")
 
-    score = max(0, score)
+    score = max(0, min(score, 100))
     quality = score_to_level(score)
 
     return {
         "overall_score": score,
         "quality": quality,
-        "notes": notes,
-        "validated": True
+        "notes": notes
     }
