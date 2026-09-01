@@ -94,7 +94,18 @@ def get_context():
     )
 
     merged = deepcopy(DEFAULT_CONTEXT)
-    merged.update(current)
+
+    for key, value in current.items():
+
+        if (
+            isinstance(value, dict)
+            and key in merged
+            and isinstance(merged[key], dict)
+        ):
+            merged[key].update(value)
+
+        else:
+            merged[key] = value
 
     return merged
 
