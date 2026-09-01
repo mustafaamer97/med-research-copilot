@@ -33,10 +33,8 @@ def render():
 
     if idea_mode == "Generate New Research Idea":
 
-        context = st.session_state.get(
-            "research_context",
-            {}
-        )
+        # التعديل الجديد: استخدام get_context() بدلاً من st.session_state.get
+        context = get_context()
 
         if not context:
 
@@ -127,7 +125,6 @@ Location:
                 "Generated using evidence retrieval, research gap analysis, and medical research methodology rules."
             )
 
-            # التعديل 1: التقييم يمرر context فقط
             validation = validate_idea_quality(
                 context
             )
@@ -186,6 +183,7 @@ Location:
                     "field": context.get("field", ""),
                 }
 
+                # تم الإبقاء عليه مؤقتاً بناءً على طلبك
                 st.session_state[
                     "selected_research_idea"
                 ] = {
@@ -221,7 +219,6 @@ Location:
                     )
                 }
 
-                # التعديل 2: تحديث update_context بالفكرة المختارة والعنوان والـ rationale
                 update_context(
                     selected_research_idea=selected_idea,
                     idea_title=selected_idea.get("title", ""),
@@ -325,7 +322,6 @@ Description:
                 "Please add title and description."
             )
 
-        # التقييم اليدوي مع إرسال description بشكل مباشر من idea_description
         manual_validation = validate_manual_idea(
             disease=disease,
             outcome=outcome,
@@ -375,6 +371,7 @@ Description:
                     "field": st.session_state.get("field", ""),
                 }
 
+                # تم الإبقاء عليه مؤقتاً بناءً على طلبك
                 st.session_state[
                     "selected_research_idea"
                 ] = {
@@ -410,7 +407,6 @@ Description:
                     )
                 }
 
-                # التعديل 3: تحديث update_context للفكرة اليدوية
                 update_context(
                     selected_research_idea=selected_idea,
                     idea_title=selected_idea.get("title", ""),
@@ -437,7 +433,8 @@ Description:
     # Completion Status
     # ==================================
 
-    if st.session_state.get(
+    # التعديل الجديد: التحقق باستخدام get_context() بدلاً من st.session_state.get
+    if get_context().get(
         "selected_research_idea"
     ):
 
