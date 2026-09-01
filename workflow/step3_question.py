@@ -47,10 +47,19 @@ def render():
         expanded=True
     ):
         st.write(
+            f"**Disease / Topic:** {context.get('disease','')}"
+        )
+        st.write(
             f"**Population:** {population}"
         )
         st.write(
             f"**Outcome:** {outcome}"
+        )
+        st.write(
+            f"**Location:** {context.get('location','')}"
+        )
+        st.write(
+            f"**Study Period:** {context.get('study_period','')}"
         )
         st.write(
             f"**Study Design:** {study_design}"
@@ -58,12 +67,17 @@ def render():
         st.write(
             f"**Research Goal:** {research_goal}"
         )
-        st.write(
-            f"**Location:** {location}"
-        )
-        st.write(
-            f"**Study Period:** {study_period}"
-        )
+    
+    framework = st.selectbox(
+        "Research Framework",
+        [
+            "PICO",
+            "PECO",
+            "PICO",
+            "Custom"
+        ]
+    )
+
     intervention = st.text_input(
         "Intervention / Exposure",
         value=context.get(
@@ -90,12 +104,53 @@ def render():
             outcome=outcome,
             study_design=study_design,
             research_goal=research_goal,
+            framework=framework
         )
         if result.get("error"):
             st.error(
                 result["error"]
             )
             return
+        
+        result["location"] = location
+        result["study_period"] = study_period
+        result["framework_selected"] = framework
+        
+        # حفظ النسخة المعدلة (أو الناتجة قبل التعديل المباشر، وسيتم تحديثها إن عدلها المستخدم لاحقاً أو تمريرها)
+        # هنا سنأخذ النتيجة ونتيح تعديلها في الأسفل، أو يمكننا تطبيق التعديل إذا تم إدخاله. 
+        # ملاحظة: بما أن التعديل يتم عبر حقل نصي يظهر بعد توليد السؤال، فالأفضل تحديثه عند التوليد أو حفظه بالشكل المناسب:
+        update_context(
+            intervention=intervention,
+            comparison=comparison,
+            research_question_data=result,
+            question_completed=True
+        )
+        st.rerun()
+
+    research_question = context.get(
+        "research_question_data",
+        {}
+    )
+    if research_question:
+        st.divider()
+        st.subheader(
+            "Generated Research Question"
+        )
+        
+        question = research_question.get(
+            "question",
+            ""
+        )
+        
+        edited_question = st.text_area(
+            "Edit Research Question",
+            value=question,
+            height=120
+        )
+        
+        # تحديث السؤال المعدل في النتيجة وحفظ السياق مباشرة عند أي تعديل أو بقاء الصفحة
+        research_question["question"] = edited_question
+        result = research_question
         
         result["location"] = location
         result["study_period"] = study_period
@@ -106,28 +161,26 @@ def render():
             research_question_data=result,
             question_completed=True
         )
-        st.rerun()
-    research_question = context.get(
-        "research_question_data",
-        {}
-    )
-    if research_question:
-        st.divider()
-        st.subheader(
-            "Generated Research Question"
-        )
+
         st.success(
-            research_question.get(
-                "question",
-                ""
-            )
+            edited_question
         )
+        
+        st.info(
+            f"""
+Research Topic: {context.get('disease','')}
+Location: {context.get('location','')}
+Outcome: {context.get('outcome','')}
+Period: {context.get('study_period','')}
+"""
+        )
+
         col1, col2 = st.columns(2)
         with col1:
             st.metric(
                 "Framework",
                 research_question.get(
-                    "framework",
+                    "framework_selected",
                     "PICO"
                 )
             )
