@@ -2,7 +2,10 @@ import re
 import streamlit as st
 
 from modules.context_manager import (
-    update_context
+    get_context,
+    update_context,
+    mark_completed,
+    is_completed
 )
 from modules.idea_validator import validate_research_idea
 from modules.medical_knowledge_engine import analyze_research_topic
@@ -160,7 +163,7 @@ def build_context(analysis, form_data):
 
 
 def render():
-    saved_context = st.session_state.get("research_context", {})
+    saved_context = get_context()
 
     st.header("🧭 Research Context & Scope")
     st.write("Define your research area before building the research question.")
@@ -411,9 +414,15 @@ Allowed Designs: {", ".join(available_designs)}
     can_save = all(str(x).strip() for x in required_fields) and design_is_valid and valid_period
 
     if can_save:
-        if st.button("💾 Save Research Context", use_container_width=True, type="primary"):
-            st.session_state["context_completed"] = True
+        if st.button(
+            "💾 Save Research Context",
+            use_container_width=True,
+            type="primary"
+        ):
             update_context(**context)
+            mark_completed("context")
+            # Temporary compatibility layer
+            st.session_state["context_completed"] = True
             st.session_state["disease"] = disease
             st.session_state["population"] = target_population
             st.session_state["study_design"] = study_design
@@ -439,7 +448,7 @@ Allowed Designs: {", ".join(available_designs)}
         else:
             st.warning("Please complete Disease, Target Population, Location, Outcome, Study Objective, Study Period and Keywords to continue.")
 
-    if st.session_state.get("context_completed"):
+    if is_completed("context"):
         st.markdown("---")
         st.success("✅ Step 1 Completed")
 
