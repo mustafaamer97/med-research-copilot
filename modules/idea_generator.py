@@ -11,7 +11,7 @@ from modules.research_gap_detector import detect_research_gaps
 def build_fallback_ideas(population, study_design, outcome):
     """
     Generates 3 basic fallback research ideas if LLM fails.
-    Removes mock scores as actual validation occurs in idea_validator.py.
+    No mock scores or design validation logic included.
     """
     pico_obj = {
         "P": population,
@@ -78,8 +78,8 @@ def build_fallback_ideas(population, study_design, outcome):
 
 def generate_research_ideas(research_context):
     """
-    Pure Generation Flow:
-    Context -> Evidence Search -> Gap Detection -> AI Generation -> Top 3 Ideas
+    Pure Generator Flow:
+    Context Parsing -> Evidence Search -> Gap Detection -> AI Generation -> Top 3 Ideas
     """
     # 1. Context Parsing
     topic = research_context.get("research_topic", research_context.get("disease", ""))
@@ -174,26 +174,49 @@ RULES FOR THE 3 IDEAS:
 
     response = ask_ai(prompt)
 
-    # 5. Parsing Output & Fallback Handling
+    # 5. Robust Parsing, Filtering & Required Fields Check
     try:
         if isinstance(response, str):
-            clean_json = response.strip().lstrip("```json").rstrip("```").strip()
+            clean_json = response.replace("```json", "").replace("```", "").strip()
             ideas_list = json.loads(clean_json)
         else:
             ideas_list = response
 
-        if not isinstance(ideas_list, list) or len(ideas_list) < 3:
-            raise ValueError("LLM response did not contain at least 3 valid ideas.")
+        if not isinstance(ideas_list, list):
+            raise ValueError("LLM response is not a valid list.")
+
+        # Filter out empty or incomplete title items
+        ideas_list = [idea for idea in ideas_list if isinstance(idea, dict) and idea.get("title")]
+
+        if len(ideas_list) < 3:
+            raise ValueError("Fewer than 3 valid ideas retrieved from LLM.")
 
         ideas_list = ideas_list[:3]
 
+        # Ensure all structural fields exist
+        required_fields = [
+            "title",
+            "research_question",
+            "rationale",
+            "research_gap",
+            "study_design",
+            "target_population",
+            "main_outcome",
+            "objectives",
+            "pico"
+        ]
+        
+        for idea in ideas_list:
+            for field_name in required_fields:
+                if field_name not in idea or not idea[field_name]:
+                    raise ValueError(f"Missing required field: {field_name}")
+
     except Exception:
+        # Fallback to deterministic clean structure
         ideas_list = build_fallback_ideas(population, study_design, outcome)
 
-    # 6. Clean Return Payload
+    # 6. Minimal & Focused Return Payload for Step 2
     return {
         "status": "success",
-        "top_ideas": ideas_list,
-        "evidence_count": len(papers),
-        "gap_analysis": gap_report
+        "top_ideas": ideas_list
     }
